@@ -1,4 +1,4 @@
-# Code Generation — full-stack project
+# Code Generation — ATM Booth (full-stack)
 
 This repository contains a **Spring Boot** backend and a **Vue 3** frontend. Run both locally during development: the frontend talks to the backend through a **Vite proxy** (no manual CORS setup needed when using `npm run dev`).
 
