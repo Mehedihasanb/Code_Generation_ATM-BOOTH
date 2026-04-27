@@ -3,6 +3,7 @@ package com.example.backend.web;
 import com.example.backend.domain.Message;
 import com.example.backend.repository.MessageRepository;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -23,6 +24,7 @@ public class MessageController {
 
 	@GetMapping
 	@Operation(summary = "List messages from the database (JPA + H2)")
+	@SecurityRequirement(name = "bearerAuth")
 	public List<Message> list() {
 		return messageRepository.findAll();
 	}
