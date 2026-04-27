@@ -68,7 +68,6 @@ cd backend
 
 .\\mvnw.cmd test
 
-
 ## 2. Run the frontend (Vue)
 
 First time only — install dependencies:
@@ -114,6 +113,7 @@ For a real deployment you would point the frontend at your deployed API URL (env
 \---
 
 ## 3. Typical daily workflow
+
 1. Terminal A: `cd backend` → `.\\mvnw.cmd spring-boot:run` (or `./mvnw`).
 2. Terminal B: `cd frontend` → `npm run dev`.
 3. Browser: open the Vite URL and work on features.

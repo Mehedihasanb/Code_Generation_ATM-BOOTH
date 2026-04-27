@@ -34,6 +34,7 @@ body {
 .nav a {
 	color: #2563eb;
 	text-decoration: none;
+	margin-left: 1rem;
 }
 
 .nav a.router-link-active {
@@ -111,4 +112,38 @@ ul {
 .btn:disabled {
 	opacity: 0.6;
 	cursor: not-allowed;
+}
+
+.register-panel {
+	max-width: 36rem;
+}
+
+.register-form {
+	display: grid;
+	gap: 0.85rem;
+}
+
+.register-form label {
+	display: grid;
+	gap: 0.35rem;
+	font-weight: 600;
+	color: #111827;
+}
+
+.register-form input {
+	padding: 0.6rem 0.75rem;
+	border: 1px solid #d1d5db;
+	border-radius: 8px;
+	font: inherit;
+}
+
+.register-form input:focus {
+	outline: none;
+	border-color: #2563eb;
+	box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+
+.success {
+	color: #166534;
+	font-weight: 600;
 }
