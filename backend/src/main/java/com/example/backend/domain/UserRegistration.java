@@ -15,7 +15,7 @@ public class UserRegistration {
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
 
-	@Column(nullable = false)
+	@Column(name = "FIRST_NAME")
 	private String firstName;
 
 	@Column(nullable = false)
@@ -27,15 +27,45 @@ public class UserRegistration {
 	@Column(nullable = false)
 	private String password;
 
-	public UserRegistration() {
-	}
 
-	public UserRegistration(String firstName, String lastName, String email, String password) {
-		this.firstName = firstName;
-		this.lastName = lastName;
-		this.email = email;
-		this.password = password;
-	}
+	@Column(nullable = false)
+	private String role;
+
+	// Only for employees: "REGULAR" or "SERVICE_DESK". Null for customers.
+	@Column(nullable = true)
+	private String employeeType;
+
+	@Column(nullable = false)
+	private boolean approved;
+
+	@Column(nullable = true)
+	private String bsnNumber;
+
+	@Column(nullable = true)
+	private String phoneNumber;
+
+	   public UserRegistration() {
+	   }
+
+	   public UserRegistration(String firstName, String lastName, String email, String password, String role) {
+		   this(firstName, lastName, email, password, role, false, null, null, null);
+	   }
+
+	   public UserRegistration(String firstName, String lastName, String email, String password, String role, boolean approved, String bsnNumber, String phoneNumber) {
+		   this(firstName, lastName, email, password, role, approved, bsnNumber, phoneNumber, null);
+	   }
+
+	   public UserRegistration(String firstName, String lastName, String email, String password, String role, boolean approved, String bsnNumber, String phoneNumber, String employeeType) {
+		   this.firstName = firstName;
+		   this.lastName = lastName;
+		   this.email = email;
+		   this.password = password;
+		   this.role = role;
+		   this.approved = approved;
+		   this.bsnNumber = bsnNumber;
+		   this.phoneNumber = phoneNumber;
+		   this.employeeType = employeeType;
+	   }
 
 	public Long getId() {
 		return id;
@@ -57,6 +87,27 @@ public class UserRegistration {
 		return password;
 	}
 
+
+	   public String getRole() {
+		   return role;
+	   }
+
+	   public String getEmployeeType() {
+		   return employeeType;
+	   }
+
+	public boolean isApproved() {
+		return approved;
+	}
+
+	public String getBsnNumber() {
+		return bsnNumber;
+	}
+
+	public String getPhoneNumber() {
+		return phoneNumber;
+	}
+
 	public void setFirstName(String firstName) {
 		this.firstName = firstName;
 	}
@@ -71,5 +122,26 @@ public class UserRegistration {
 
 	public void setPassword(String password) {
 		this.password = password;
+	}
+
+
+	   public void setRole(String role) {
+		   this.role = role;
+	   }
+
+	   public void setEmployeeType(String employeeType) {
+		   this.employeeType = employeeType;
+	   }
+
+	public void setApproved(boolean approved) {
+		this.approved = approved;
+	}
+
+	public void setBsnNumber(String bsnNumber) {
+		this.bsnNumber = bsnNumber;
+	}
+
+	public void setPhoneNumber(String phoneNumber) {
+		this.phoneNumber = phoneNumber;
 	}
 }

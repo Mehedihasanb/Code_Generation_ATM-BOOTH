@@ -7,6 +7,8 @@ type RegistrationForm = {
 	lastName: string;
 	email: string;
 	password: string;
+    bsnNumber: string;
+    phoneNumber: string;
 };
 
 const registration = useRegistrationStore();
@@ -16,6 +18,8 @@ const form = reactive<RegistrationForm>({
 	lastName: '',
 	email: '',
 	password: '',
+    bsnNumber: '',
+    phoneNumber: '',
 });
 
 const fieldError = reactive<Record<keyof RegistrationForm, string>>({
@@ -23,6 +27,8 @@ const fieldError = reactive<Record<keyof RegistrationForm, string>>({
 	lastName: '',
 	email: '',
 	password: '',
+    bsnNumber: '',
+    phoneNumber: '',
 });
 
 function clearFieldErrors() {
@@ -59,6 +65,16 @@ function validate(): boolean {
 		valid = false;
 	}
 
+	if (!form.bsnNumber.trim()) {
+		fieldError.bsnNumber = 'BSN number is required.';
+		valid = false;
+	}
+
+	if (!form.phoneNumber.trim()) {
+		fieldError.phoneNumber = 'Phone number is required.';
+		valid = false;
+	}
+
 	return valid;
 }
 
@@ -72,6 +88,8 @@ async function submit() {
 		lastName: form.lastName.trim(),
 		email: form.email.trim(),
 		password: form.password,
+		bsnNumber: form.bsnNumber.trim(),
+		phoneNumber: form.phoneNumber.trim(),
 	});
 
 	form.firstName = '';
@@ -110,6 +128,18 @@ async function submit() {
 				<span>Password</span>
 				<input v-model="form.password" type="password" autocomplete="new-password" />
 				<small v-if="fieldError.password" class="error">{{ fieldError.password }}</small>
+			</label>
+
+			<label>
+				<span>BSN Number</span>
+				<input v-model="form.bsnNumber" type="text" autocomplete="bsn" />
+				<small v-if="fieldError.bsnNumber" class="error">{{ fieldError.bsnNumber }}</small>
+			</label>
+
+			<label>
+				<span>Phone Number</span>
+				<input v-model="form.phoneNumber" type="tel" autocomplete="tel" />
+				<small v-if="fieldError.phoneNumber" class="error">{{ fieldError.phoneNumber }}</small>
 			</label>
 
 			<p v-if="registration.success" class="success">{{ registration.success }}</p>

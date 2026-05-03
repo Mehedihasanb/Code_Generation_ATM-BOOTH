@@ -6,6 +6,8 @@ export type RegisterPayload = {
 	lastName: string;
 	email: string;
 	password: string;
+    bsnNumber: string;
+    phoneNumber: string;
 };
 
 export type RegisterResponse = {

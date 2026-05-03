@@ -14,5 +14,10 @@ public record RegisterRequest(
 	String email,
 	@Size(min = 8, message = "Password must be at least 8 characters")
 	String password
+,
+	@NotBlank(message = "BSN number is required")
+	String bsnNumber,
+	@NotBlank(message = "Phone number is required")
+	String phoneNumber
 ) {
 }
