@@ -23,5 +23,6 @@ server:
 
 security:
   jwt:
+    # HMAC signing key for JwtService; swap per env on Render etc., never commit real prod secrets.
     secret: "change-this-secret-key-at-least-32-characters-long"
     expiration-ms: 86400000

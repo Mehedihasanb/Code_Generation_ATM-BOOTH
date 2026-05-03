@@ -14,6 +14,9 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
 
+/**
+ * Creates JWT after login and checks JWT later using the same secret from application.yml.
+ */
 @Service
 public class JwtService {
 
@@ -24,12 +27,14 @@ public class JwtService {
 		@Value("${security.jwt.secret}") String jwtSecret,
 		@Value("${security.jwt.expiration-ms}") long expirationMs
 	) {
+		// Must stay identical across restarts or old tokens fail verification.
 		this.signingKey = Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
 		this.expirationMs = expirationMs;
 	}
 
 	public String generateToken(UserDetails userDetails) {
 		Map<String, Object> claims = new HashMap<>();
+		// Stored inside JWT payload so filters later know ROLE_CUSTOMER vs ROLE_EMPLOYEE.
 		claims.put("roles", userDetails.getAuthorities());
 
 		Date now = new Date();
@@ -37,6 +42,7 @@ public class JwtService {
 
 		return Jwts.builder()
 			.claims(claims)
+			// Same string Spring Security uses as username (here the email).
 			.subject(userDetails.getUsername())
 			.issuedAt(now)
 			.expiration(expiresAt)
@@ -62,6 +68,7 @@ public class JwtService {
 		Claims claims = Jwts.parser()
 			.verifyWith(signingKey)
 			.build()
+			// Throws if signature broken or token tampered.
 			.parseSignedClaims(token)
 			.getPayload();
 		return claimsResolver.apply(claims);

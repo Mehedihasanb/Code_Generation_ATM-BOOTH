@@ -15,10 +15,12 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
+/**
+ * Public login endpoint. Everything else stays locked until JwtAuthenticationFilter accepts a Bearer token.
+ */
 @RestController
 @RequestMapping("/auth")
 @Tag(name = "Authentication")
@@ -36,11 +38,13 @@ public class AuthController {
 	@Operation(summary = "Authenticate with email and password and receive a JWT")
 	public LoginResponse login(@Valid @RequestBody LoginRequest request) {
 		try {
+			// Checks password using UserDetailsService + PasswordEncoder beans from SecurityConfig.
 			Authentication authentication = authenticationManager.authenticate(
 				new UsernamePasswordAuthenticationToken(request.email(), request.password())
 			);
 
 			UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+			// Client sends this token back as Authorization: Bearer ... on later requests.
 			String token = jwtService.generateToken(userDetails);
 			return new LoginResponse(token);
 		} catch (BadCredentialsException ex) {
