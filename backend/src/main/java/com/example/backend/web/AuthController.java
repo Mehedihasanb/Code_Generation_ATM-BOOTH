@@ -1,6 +1,9 @@
 package com.example.backend.web;
 
 import com.example.backend.config.JwtService;
+import com.example.backend.repository.UserRegistrationRepository;
+import com.example.backend.domain.UserRegistration;
+import org.springframework.http.ResponseEntity;
 import com.example.backend.web.dto.LoginRequest;
 import com.example.backend.web.dto.LoginResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -17,38 +20,54 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
+import org.springframework.web.bind.annotation.*;
+
 
 /**
  * Public login endpoint. Everything else stays locked until JwtAuthenticationFilter accepts a Bearer token.
  */
 @RestController
 @RequestMapping("/auth")
-@Tag(name = "Authentication")
 public class AuthController {
 
-	private final AuthenticationManager authenticationManager;
-	private final JwtService jwtService;
+    private final AuthenticationManager authenticationManager;
+    private final JwtService jwtService;
+    private final UserRegistrationRepository userRepository;
 
-	public AuthController(AuthenticationManager authenticationManager, JwtService jwtService) {
-		this.authenticationManager = authenticationManager;
-		this.jwtService = jwtService;
-	}
+    // Inject the repository so we can fetch the user details
+    public AuthController(AuthenticationManager authenticationManager, 
+                          JwtService jwtService, 
+                          UserRegistrationRepository userRepository) {
+        this.authenticationManager = authenticationManager;
+        this.jwtService = jwtService;
+        this.userRepository = userRepository;
+    }
 
-	@PostMapping("/login")
-	@Operation(summary = "Authenticate with email and password and receive a JWT")
-	public LoginResponse login(@Valid @RequestBody LoginRequest request) {
-		try {
-			// Checks password using UserDetailsService + PasswordEncoder beans from SecurityConfig.
-			Authentication authentication = authenticationManager.authenticate(
-				new UsernamePasswordAuthenticationToken(request.email(), request.password())
-			);
+    @PostMapping("/login")
+    public ResponseEntity<LoginResponse> login(@RequestBody LoginRequest request) {
+        
+        // 1. Authenticate credentials (throws exception if invalid)
+        Authentication authentication = authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
+        );
 
-			UserDetails userDetails = (UserDetails) authentication.getPrincipal();
-			// Client sends this token back as Authorization: Bearer ... on later requests.
-			String token = jwtService.generateToken(userDetails);
-			return new LoginResponse(token);
-		} catch (BadCredentialsException ex) {
-			throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid credentials");
-		}
-	}
+        // 2. Fetch the full user entity from the database using their email
+        UserRegistration user = userRepository.findByEmail(request.getEmail())
+                .orElseThrow(() -> new RuntimeException("User not found after authentication"));
+
+        // 3. Generate the JWT Token
+        String token = jwtService.generateToken(authentication);
+
+        // 4. Build the response and include the user's first name
+        LoginResponse response = new LoginResponse();
+        response.setToken(token);
+        response.setRole(user.getRole());
+        response.setApproved(user.isApproved());
+        response.setEmployeeType(user.getEmployeeType());
+        
+        // NEW: Attach the first name here!
+        response.setFirstName(user.getFirstName()); 
+
+        return ResponseEntity.ok(response);
+    }
 }

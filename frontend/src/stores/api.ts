@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
+import { useAuthStore } from './auth';
 
 export type HealthResponse = { status: string };
 export type MessageDto = { id: number; text: string };
@@ -13,6 +14,12 @@ export const useApiStore = defineStore('api', () => {
 	async function fetchFromBackend() {
 		loading.value = true;
 		error.value = null;
+		const auth = useAuthStore();
+		const headers: HeadersInit = {};
+
+		if (auth.token) {
+			headers.Authorization = `Bearer ${auth.token}`;
+		}
 		try {
 			const healthRes = await fetch('/api/health');
 			if (!healthRes.ok) {
@@ -20,9 +27,9 @@ export const useApiStore = defineStore('api', () => {
 			}
 			health.value = (await healthRes.json()) as HealthResponse;
 
-			const messagesRes = await fetch('/api/messages');
+			const messagesRes = await fetch('/api/messages', { headers });
 			if (!messagesRes.ok) {
-				throw new Error(`Messages: ${messagesRes.status}`);
+				throw new Error(messagesRes.status === 401 ? 'Please log in to view messages.' : `Messages: ${messagesRes.status}`);
 			}
 			messages.value = (await messagesRes.json()) as MessageDto[];
 		} catch (e) {

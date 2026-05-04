@@ -1,0 +1,299 @@
+/* Footer container */
+.footer {
+	background: #111827;
+	color: #9ca3af;
+	padding: 2rem 0;
+	margin-top: auto;
+	border-top: 1px solid #1f2937;
+}
+
+.footer-container {
+	max-width: 80rem;
+	margin: 0 auto;
+	padding: 0 1.5rem;
+	display: flex;
+	flex-direction: column;
+	justify-content: space-between;
+	align-items: center;
+	gap: 1rem;
+}
+
+@media (min-width: 768px) {
+	.footer-container {
+		flex-direction: row;
+	}
+}
+
+.footer-text {
+	font-size: 0.875rem;
+}
+
+.footer-links {
+	display: flex;
+	gap: 1.5rem;
+	font-size: 0.875rem;
+	font-weight: 500;
+}
+
+.footer-links button {
+	background: none;
+	border: none;
+	color: #9ca3af;
+	cursor: pointer;
+	font: inherit;
+	padding: 0;
+	transition: color 0.2s ease;
+}
+
+.footer-links button:hover {
+	color: #fff;
+}
+
+/* Modal overlay */
+.modal-overlay {
+	position: fixed;
+	inset: 0;
+	background: rgba(0, 0, 0, 0.4);
+	backdrop-filter: blur(4px);
+	z-index: 50;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 1rem;
+	transition: all 0.2s ease;
+}
+
+/* Modal content */
+.modal {
+	background: #fff;
+	border-radius: 12px;
+	box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+	max-width: 32rem;
+	width: 100%;
+	overflow: hidden;
+	color: #1f2937;
+	position: relative;
+}
+
+.modal-close-btn {
+	position: absolute;
+	top: 1rem;
+	right: 1rem;
+	color: #9ca3af;
+	background: #f3f4f6;
+	border: none;
+	cursor: pointer;
+	border-radius: 50%;
+	padding: 0.25rem;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	transition: all 0.2s ease;
+}
+
+.modal-close-btn:hover {
+	color: #374151;
+	background: #e5e7eb;
+}
+
+.modal-close-btn svg {
+	width: 1.25rem;
+	height: 1.25rem;
+}
+
+/* Modal content sections */
+.modal-content {
+	padding: 2rem;
+}
+
+.modal-title {
+	font-size: 1.5rem;
+	font-weight: 700;
+	margin-bottom: 1rem;
+	color: #111827;
+}
+
+.modal-description {
+	font-size: 0.875rem;
+	color: #6b7280;
+	margin-bottom: 1.5rem;
+}
+
+.modal-text {
+	color: #4b5563;
+	line-height: 1.6;
+	space-y: 0.75rem;
+	font-size: 0.875rem;
+	max-height: 24rem;
+	overflow-y: auto;
+	padding-right: 0.5rem;
+}
+
+.modal-text p {
+	margin: 0.5rem 0;
+}
+
+.modal-text strong {
+	font-weight: 700;
+}
+
+.modal-text ul {
+	margin: 0.5rem 0 0;
+	padding-left: 1.25rem;
+}
+
+.modal-text li {
+	margin: 0.25rem 0;
+}
+
+.modal-text .small-text {
+	font-size: 0.75rem;
+	color: #9ca3af;
+	font-style: italic;
+}
+
+/* Form elements */
+.modal-form {
+	display: flex;
+	flex-direction: column;
+	gap: 1rem;
+}
+
+.form-group {
+	display: flex;
+	flex-direction: column;
+}
+
+.form-label {
+	display: block;
+	font-size: 0.875rem;
+	font-weight: 700;
+	color: #374151;
+	margin-bottom: 0.25rem;
+}
+
+.form-input,
+.form-select,
+.form-textarea {
+	border: 1px solid #d1d5db;
+	border-radius: 0.5rem;
+	padding: 0.5rem;
+	font: inherit;
+	transition: all 0.2s ease;
+}
+
+.form-input:focus,
+.form-select:focus,
+.form-textarea:focus {
+	outline: none;
+	ring: 2px;
+	ring-color: #3b82f6;
+	border-color: #3b82f6;
+	box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.form-textarea {
+	resize: vertical;
+	min-height: 6rem;
+}
+
+/* Button styles */
+.btn-primary {
+	width: 100%;
+	padding: 0.75rem 1rem;
+	font-weight: 700;
+	border: none;
+	border-radius: 0.5rem;
+	cursor: pointer;
+	transition: all 0.2s ease;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	gap: 0.5rem;
+	font: inherit;
+}
+
+.btn-primary.blue {
+	background: #2563eb;
+	color: #fff;
+}
+
+.btn-primary.blue:hover:not(:disabled) {
+	background: #1d4ed8;
+}
+
+.btn-primary.dark {
+	background: #111827;
+	color: #fff;
+}
+
+.btn-primary.dark:hover:not(:disabled) {
+	background: #000;
+}
+
+.btn-primary:disabled {
+	background: #9ca3af;
+	cursor: not-allowed;
+	opacity: 0.6;
+}
+
+/* Success modal */
+.modal-success {
+	text-align: center;
+}
+
+.success-icon {
+	width: 4rem;
+	height: 4rem;
+	background: #dcfce7;
+	border-radius: 50%;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	margin: 0 auto 1rem;
+	color: #16a34a;
+}
+
+.success-icon svg {
+	width: 2rem;
+	height: 2rem;
+}
+
+.success-title {
+	font-size: 1.5rem;
+	font-weight: 700;
+	margin-bottom: 0.5rem;
+	color: #111827;
+}
+
+.success-text {
+	color: #4b5563;
+}
+
+/* Spinner animation */
+@keyframes spin {
+	to {
+		transform: rotate(360deg);
+	}
+}
+
+.spinner {
+	animation: spin 0.75s linear infinite;
+	display: inline-block;
+	margin-left: -0.25rem;
+	margin-right: 0.5rem;
+	height: 1.25rem;
+	width: 1.25rem;
+	color: #fff;
+}
+
+.spinner circle {
+	opacity: 0.25;
+	stroke: currentColor;
+	stroke-width: 4;
+}
+
+.spinner path {
+	opacity: 0.75;
+	fill: currentColor;
+}
