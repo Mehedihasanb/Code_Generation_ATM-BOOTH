@@ -32,11 +32,16 @@ public class SecurityConfig {
 	@Bean
 	public SecurityFilterChain securityFilterChain(HttpSecurity http, JwtAuthenticationFilter jwtAuthenticationFilter) throws Exception {
 		http
+			// Vue dev server calls this API from another origin; Spring applies corsConfigurationSource below.
 			.cors(Customizer.withDefaults())
+			// REST API + JWT: no browser session cookie CSRF flow.
 			.csrf(csrf -> csrf.disable())
+			// We issue JWT ourselves from /auth/login, not Spring's built-in login forms.
 			.formLogin(form -> form.disable())
 			.httpBasic(httpBasic -> httpBasic.disable())
+			// No server-side session: each request must carry Authorization Bearer token.
 			.sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+			// If request hits a protected route without a valid login context, answer 401 (not a redirect).
 			.exceptionHandling(ex -> ex.authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)))
 			.authorizeHttpRequests(auth -> auth
 				.requestMatchers(HttpMethod.PATCH, "/api/registrations/*/approve").hasRole("EMPLOYEE")
@@ -52,18 +57,22 @@ public class SecurityConfig {
 				).permitAll()
 				.anyRequest().hasAnyRole("CUSTOMER", "EMPLOYEE")
 			)
+			// Turn Authorization header into Spring Security authentication before controllers run.
 			.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+			// Lets H2 console load inside an iframe while developing.
 			.headers(h -> h.frameOptions(f -> f.sameOrigin()));
 		return http.build();
 	}
 
 	@Bean
 	public PasswordEncoder passwordEncoder() {
+		// Stores passwords hashed; AuthenticationManager compares raw password from login to this hash.
 		return new BCryptPasswordEncoder();
 	}
 
 	@Bean
 	public AuthenticationManager authenticationManager(AuthenticationConfiguration configuration) throws Exception {
+		// Used by AuthController to check email + password in one line.
 		return configuration.getAuthenticationManager();
 	}
 
@@ -87,6 +96,7 @@ public class SecurityConfig {
 	@Bean
 	public CorsConfigurationSource corsConfigurationSource() {
 		CorsConfiguration config = new CorsConfiguration();
+		// Vite dev URL; browser blocks cross-origin calls unless these headers are allowed.
 		config.setAllowedOrigins(List.of("http://localhost:5173", "http://127.0.0.1:5173"));
 		config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
 		config.setAllowedHeaders(List.of("*"));

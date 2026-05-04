@@ -18,12 +18,14 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.bind.annotation.*;
 
 
+/**
+ * Public login endpoint. Everything else stays locked until JwtAuthenticationFilter accepts a Bearer token.
+ */
 @RestController
 @RequestMapping("/auth")
 public class AuthController {

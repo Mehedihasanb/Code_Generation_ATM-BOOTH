@@ -24,6 +24,7 @@ public class MessageController {
 
 	@GetMapping
 	@Operation(summary = "List messages from the database (JPA + H2)")
+	// Marks this route as needing JWT in Swagger UI Authorize dialog.
 	@SecurityRequirement(name = "bearerAuth")
 	public List<Message> list() {
 		return messageRepository.findAll();

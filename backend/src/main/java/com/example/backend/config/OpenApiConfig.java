@@ -13,6 +13,7 @@ public class OpenApiConfig {
 	@Bean
 	public OpenAPI openAPI() {
 		return new OpenAPI()
+			// Name "bearerAuth" must match @SecurityRequirement on protected controllers.
 			.components(new Components()
 				.addSecuritySchemes("bearerAuth", new SecurityScheme()
 					.name("Authorization")

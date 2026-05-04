@@ -14,6 +14,9 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 
+/**
+ * Reads JWT from the Authorization header and fills Spring Security context so authorizeHttpRequests can pass or block.
+ */
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
@@ -33,6 +36,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 	) throws ServletException, IOException {
 		String authHeader = request.getHeader("Authorization");
 
+		// Public routes still hit this filter; no header means "not logged in via JWT yet".
 		if (authHeader == null || !authHeader.startsWith("Bearer ")) {
 			filterChain.doFilter(request, response);
 			return;
@@ -45,6 +49,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 			if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
 				UserDetails userDetails = userDetailsService.loadUserByUsername(username);
 
+				// Signature and expiry checked against jwt.secret in application.yml.
 				if (jwtService.isTokenValid(jwtToken, userDetails)) {
 					UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
 						userDetails,
@@ -56,6 +61,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 				}
 			}
 		} catch (Exception ignored) {
+			// Bad signature, wrong secret, malformed token: behave like "no user".
 			SecurityContextHolder.clearContext();
 		}
 
