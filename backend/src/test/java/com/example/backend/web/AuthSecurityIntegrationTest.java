@@ -25,58 +25,61 @@ class AuthSecurityIntegrationTest {
 	@Autowired
 	private ObjectMapper objectMapper;
 
+	private String employeeJwt() throws Exception {
+		String body = objectMapper.writeValueAsString(Map.of(
+			"email", "employee@inholland.nl",
+			"password", "Password123!"
+		));
+		String response = mockMvc.perform(post("/auth/login")
+				.contentType(MediaType.APPLICATION_JSON)
+				.content(body))
+			.andExpect(status().isOk())
+			.andReturn()
+			.getResponse()
+			.getContentAsString();
+		return objectMapper.readTree(response).get("token").asText();
+	}
+
 	@Test
 	void loginReturnsJwtWhenCredentialsAreValid() throws Exception {
-		Map<String, String> body = Map.of(
+		Map<String, String> validLoginRequestBody = Map.of(
 			"email", "customer@inholland.nl",
 			"password", "Password123!"
 		);
 
 		mockMvc.perform(post("/auth/login")
 				.contentType(MediaType.APPLICATION_JSON)
-				.content(objectMapper.writeValueAsString(body)))
+				.content(objectMapper.writeValueAsString(validLoginRequestBody)))
 			.andExpect(status().isOk())
-			.andExpect(jsonPath("$.token").isString());
+			.andExpect(jsonPath("$.token").isString())
+			.andExpect(jsonPath("$.customerApprovalStatus").value("APPROVED"));
 	}
 
 	@Test
 	void loginReturnsUnauthorizedForInvalidCredentials() throws Exception {
-		Map<String, String> body = Map.of(
+		Map<String, String> invalidLoginRequestBody = Map.of(
 			"email", "customer@inholland.nl",
 			"password", "wrong-password"
 		);
 
 		mockMvc.perform(post("/auth/login")
 				.contentType(MediaType.APPLICATION_JSON)
-				.content(objectMapper.writeValueAsString(body)))
+				.content(objectMapper.writeValueAsString(invalidLoginRequestBody)))
 			.andExpect(status().isUnauthorized());
 	}
 
 	@Test
-	void privateEndpointReturnsUnauthorizedWithoutJwt() throws Exception {
-		mockMvc.perform(get("/api/messages"))
+	void protectedEmployeeRouteReturnsUnauthorizedWithoutJwt() throws Exception {
+		mockMvc.perform(get("/users"))
 			.andExpect(status().isUnauthorized());
 	}
 
 	@Test
-	void privateEndpointReturnsOkWithValidJwt() throws Exception {
-		Map<String, String> body = Map.of(
-			"email", "customer@inholland.nl",
-			"password", "Password123!"
-		);
-
-		String loginResponse = mockMvc.perform(post("/auth/login")
-				.contentType(MediaType.APPLICATION_JSON)
-				.content(objectMapper.writeValueAsString(body)))
+	void protectedEmployeeRouteReturnsOkWithValidEmployeeJwt() throws Exception {
+		mockMvc.perform(get("/users")
+				.param("size", "10")
+				.header("Authorization", "Bearer " + employeeJwt()))
 			.andExpect(status().isOk())
-			.andReturn()
-			.getResponse()
-			.getContentAsString();
-
-		String token = objectMapper.readTree(loginResponse).get("token").asText();
-
-		mockMvc.perform(get("/api/messages")
-				.header("Authorization", "Bearer " + token))
-			.andExpect(status().isOk());
+			.andExpect(jsonPath("$.content").isArray());
 	}
 }

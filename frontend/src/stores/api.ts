@@ -1,45 +1,32 @@
-import { defineStore } from 'pinia';
-import { ref } from 'vue';
-import { useAuthStore } from './auth';
-
-export type HealthResponse = { status: string };
-export type MessageDto = { id: number; text: string };
-
-export const useApiStore = defineStore('api', () => {
-	const health = ref<HealthResponse | null>(null);
-	const messages = ref<MessageDto[]>([]);
-	const loading = ref(false);
-	const error = ref<string | null>(null);
-
-	async function fetchFromBackend() {
-		loading.value = true;
-		error.value = null;
-		const auth = useAuthStore();
-		const headers: HeadersInit = {};
-
-		if (auth.token) {
-			headers.Authorization = `Bearer ${auth.token}`;
-		}
-		try {
-			const healthRes = await fetch('/api/health');
-			if (!healthRes.ok) {
-				throw new Error(`Health: ${healthRes.status}`);
-			}
-			health.value = (await healthRes.json()) as HealthResponse;
-
-			const messagesRes = await fetch('/api/messages', { headers });
-			if (!messagesRes.ok) {
-				throw new Error(messagesRes.status === 401 ? 'Please log in to view messages.' : `Messages: ${messagesRes.status}`);
-			}
-			messages.value = (await messagesRes.json()) as MessageDto[];
-		} catch (e) {
-			error.value = e instanceof Error ? e.message : String(e);
-			health.value = null;
-			messages.value = [];
-		} finally {
-			loading.value = false;
-		}
-	}
-
-	return { health, messages, loading, error, fetchFromBackend };
-});
+import { defineStore } from 'pinia';
+import { ref } from 'vue';
+
+export type HealthResponse = { status: string };
+
+/**
+ * Calls the public health endpoint. (Messages demo API was removed from the backend.)
+ */
+export const useApiStore = defineStore('api', () => {
+	const health = ref<HealthResponse | null>(null);
+	const loading = ref(false);
+	const error = ref<string | null>(null);
+
+	async function fetchFromBackend() {
+		loading.value = true;
+		error.value = null;
+		try {
+			const healthCheckResponse = await fetch('/api/health');
+			if (!healthCheckResponse.ok) {
+				throw new Error(`Health: ${healthCheckResponse.status}`);
+			}
+			health.value = (await healthCheckResponse.json()) as HealthResponse;
+		} catch (backendFetchFailure) {
+			error.value = backendFetchFailure instanceof Error ? backendFetchFailure.message : String(backendFetchFailure);
+			health.value = null;
+		} finally {
+			loading.value = false;
+		}
+	}
+
+	return { health, loading, error, fetchFromBackend };
+});

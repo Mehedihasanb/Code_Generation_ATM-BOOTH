@@ -2,6 +2,8 @@ package com.example.backend.domain;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -27,16 +29,18 @@ public class UserRegistration {
 	@Column(nullable = false)
 	private String password;
 
-
 	@Column(nullable = false)
 	private String role;
 
-	// Only for employees: "REGULAR" or "SERVICE_DESK". Null for customers.
 	@Column(nullable = true)
 	private String employeeType;
 
-	@Column(nullable = false)
-	private boolean approved;
+	/**
+	 * {@code null} for employees. For customers: pending until an employee opens accounts or denies.
+	 */
+	@Enumerated(EnumType.STRING)
+	@Column(name = "customer_approval_status", length = 20, nullable = true)
+	private CustomerApprovalStatus customerApprovalStatus;
 
 	@Column(nullable = true)
 	private String bsnNumber;
@@ -44,28 +48,30 @@ public class UserRegistration {
 	@Column(nullable = true)
 	private String phoneNumber;
 
-	   public UserRegistration() {
-	   }
+	public UserRegistration() {
+	}
 
-	   public UserRegistration(String firstName, String lastName, String email, String password, String role) {
-		   this(firstName, lastName, email, password, role, false, null, null, null);
-	   }
-
-	   public UserRegistration(String firstName, String lastName, String email, String password, String role, boolean approved, String bsnNumber, String phoneNumber) {
-		   this(firstName, lastName, email, password, role, approved, bsnNumber, phoneNumber, null);
-	   }
-
-	   public UserRegistration(String firstName, String lastName, String email, String password, String role, boolean approved, String bsnNumber, String phoneNumber, String employeeType) {
-		   this.firstName = firstName;
-		   this.lastName = lastName;
-		   this.email = email;
-		   this.password = password;
-		   this.role = role;
-		   this.approved = approved;
-		   this.bsnNumber = bsnNumber;
-		   this.phoneNumber = phoneNumber;
-		   this.employeeType = employeeType;
-	   }
+	public UserRegistration(
+		String firstName,
+		String lastName,
+		String email,
+		String password,
+		String role,
+		CustomerApprovalStatus customerApprovalStatus,
+		String bsnNumber,
+		String phoneNumber,
+		String employeeType
+	) {
+		this.firstName = firstName;
+		this.lastName = lastName;
+		this.email = email;
+		this.password = password;
+		this.role = role;
+		this.customerApprovalStatus = customerApprovalStatus;
+		this.bsnNumber = bsnNumber;
+		this.phoneNumber = phoneNumber;
+		this.employeeType = employeeType;
+	}
 
 	public Long getId() {
 		return id;
@@ -87,17 +93,16 @@ public class UserRegistration {
 		return password;
 	}
 
+	public String getRole() {
+		return role;
+	}
 
-	   public String getRole() {
-		   return role;
-	   }
+	public String getEmployeeType() {
+		return employeeType;
+	}
 
-	   public String getEmployeeType() {
-		   return employeeType;
-	   }
-
-	public boolean isApproved() {
-		return approved;
+	public CustomerApprovalStatus getCustomerApprovalStatus() {
+		return customerApprovalStatus;
 	}
 
 	public String getBsnNumber() {
@@ -124,17 +129,16 @@ public class UserRegistration {
 		this.password = password;
 	}
 
+	public void setRole(String role) {
+		this.role = role;
+	}
 
-	   public void setRole(String role) {
-		   this.role = role;
-	   }
+	public void setEmployeeType(String employeeType) {
+		this.employeeType = employeeType;
+	}
 
-	   public void setEmployeeType(String employeeType) {
-		   this.employeeType = employeeType;
-	   }
-
-	public void setApproved(boolean approved) {
-		this.approved = approved;
+	public void setCustomerApprovalStatus(CustomerApprovalStatus customerApprovalStatus) {
+		this.customerApprovalStatus = customerApprovalStatus;
 	}
 
 	public void setBsnNumber(String bsnNumber) {

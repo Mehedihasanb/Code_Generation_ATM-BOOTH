@@ -53,17 +53,21 @@ async function submit() {
 		return;
 	}
 
-	await auth.login({
-		email: form.email.trim(),
-		password: form.password,
-	});
+	try {
+		await auth.login({
+			email: form.email.trim(),
+			password: form.password,
+		});
 
-	if (auth.isPendingCustomer) {
-		await router.push('/pending-approval');
-		return;
+		if (auth.isPendingCustomer) {
+			await router.push('/pending-approval');
+			return;
+		}
+
+		await router.push('/');
+	} catch {
+		// `auth.login` sets `auth.error` when the backend rejects the request (e.g. denied registration).
 	}
-
-	await router.push('/');
 }
 </script>
 

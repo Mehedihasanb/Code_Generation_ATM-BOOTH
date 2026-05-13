@@ -4,6 +4,7 @@ import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
+/** DTO for {@code POST /auth/register}: validates input before the service maps it to a {@code UserRegistration} row. */
 public record RegisterRequest(
 	@NotBlank(message = "First name is required")
 	String firstName,

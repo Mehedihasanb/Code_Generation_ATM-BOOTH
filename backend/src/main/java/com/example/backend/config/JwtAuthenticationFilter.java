@@ -11,6 +11,8 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 
@@ -19,6 +21,8 @@ import java.io.IOException;
  */
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
+
+	private static final Logger logger = LoggerFactory.getLogger(JwtAuthenticationFilter.class);
 
 	private final JwtService jwtService;
 	private final UserDetailsService userDetailsService;
@@ -44,24 +48,25 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
 		String jwtToken = authHeader.substring(7);
 		try {
-			String username = jwtService.extractUsername(jwtToken);
+			String emailFromTokenSubject = jwtService.extractUsername(jwtToken);
 
-			if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-				UserDetails userDetails = userDetailsService.loadUserByUsername(username);
+			if (emailFromTokenSubject != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+				UserDetails userDetails = userDetailsService.loadUserByUsername(emailFromTokenSubject);
 
 				// Signature and expiry checked against jwt.secret in application.yml.
 				if (jwtService.isTokenValid(jwtToken, userDetails)) {
-					UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
+					UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(
 						userDetails,
 						null,
 						userDetails.getAuthorities()
 					);
-					authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-					SecurityContextHolder.getContext().setAuthentication(authToken);
+					authenticationToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+					SecurityContextHolder.getContext().setAuthentication(authenticationToken);
 				}
 			}
-		} catch (Exception ignored) {
+		} catch (Exception invalidJwtException) {
 			// Bad signature, wrong secret, malformed token: behave like "no user".
+			logger.debug("JWT rejected for request {}", request.getRequestURI(), invalidJwtException);
 			SecurityContextHolder.clearContext();
 		}
 

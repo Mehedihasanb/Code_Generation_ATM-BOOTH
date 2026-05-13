@@ -8,13 +8,17 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.Map;
 
+/**
+ * Lightweight endpoint so load balancers or monitoring can verify the process is up without touching the database.
+ * Public in {@link com.example.backend.config.SecurityConfig}; safe to call frequently.
+ */
 @RestController
 @RequestMapping("/api")
 @Tag(name = "Health")
 public class HealthController {
 
 	@GetMapping("/health")
-	@Operation(summary = "Liveness check for the API")
+	@Operation(summary = "Liveness check for the API (no auth)")
 	public Map<String, String> health() {
 		return Map.of("status", "UP");
 	}

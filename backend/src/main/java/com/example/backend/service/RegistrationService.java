@@ -1,5 +1,6 @@
 package com.example.backend.service;
 
+import com.example.backend.domain.CustomerApprovalStatus;
 import com.example.backend.domain.UserRegistration;
 import com.example.backend.repository.UserRegistrationRepository;
 import com.example.backend.web.dto.RegisterRequest;
@@ -7,6 +8,7 @@ import com.example.backend.web.dto.RegisterResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 @Service
@@ -20,44 +22,48 @@ public class RegistrationService {
 		this.passwordEncoder = passwordEncoder;
 	}
 
-	public RegisterResponse register(RegisterRequest request) {
-		if (userRegistrationRepository.findByEmail(request.email()).isPresent()) {
-			throw new ResponseStatusException(HttpStatus.CONFLICT, "Email is already registered");
+	public RegisterResponse register(RegisterRequest registerRequest) {
+		if (userRegistrationRepository.findByEmail(registerRequest.email()).isPresent()) {
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Email is already registered");
 		}
 
-		UserRegistration created = userRegistrationRepository.save(
+		UserRegistration newlyRegisteredUser = userRegistrationRepository.save(
 			new UserRegistration(
-				request.firstName().trim(),
-				request.lastName().trim(),
-				request.email().trim().toLowerCase(),
-				passwordEncoder.encode(request.password()),
+				registerRequest.firstName().trim(),
+				registerRequest.lastName().trim(),
+				registerRequest.email().trim().toLowerCase(),
+				passwordEncoder.encode(registerRequest.password()),
 				"CUSTOMER",
-				false,
-				request.bsnNumber().trim(),
-				request.phoneNumber().trim()
+				CustomerApprovalStatus.PENDING,
+				registerRequest.bsnNumber().trim(),
+				registerRequest.phoneNumber().trim(),
+				null
 			)
 		);
 
 		return new RegisterResponse(
-			created.getId(),
-			created.getFirstName(),
-			created.getLastName(),
-			created.getEmail(),
+			newlyRegisteredUser.getId(),
+			newlyRegisteredUser.getFirstName(),
+			newlyRegisteredUser.getLastName(),
+			newlyRegisteredUser.getEmail(),
 			"Registration successful"
 		);
 	}
 
-	public void approveCustomer(Long id) {
-		UserRegistration user = userRegistrationRepository.findById(id)
-			.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
+	@Transactional
+	public void denyCustomerRegistration(Long customerRegistrationId) {
+		UserRegistration customer = userRegistrationRepository.findById(customerRegistrationId)
+			.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Customer not found"));
 
-		if (!"CUSTOMER".equals(user.getRole())) {
-			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Only customers can be approved");
+		if (!"CUSTOMER".equals(customer.getRole())) {
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Only customer registrations can be denied");
 		}
 
-		if (!user.isApproved()) {
-			user.setApproved(true);
-			userRegistrationRepository.save(user);
+		if (customer.getCustomerApprovalStatus() != CustomerApprovalStatus.PENDING) {
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Only pending registrations can be denied");
 		}
+
+		customer.setCustomerApprovalStatus(CustomerApprovalStatus.DENIED);
+		userRegistrationRepository.save(customer);
 	}
 }

@@ -36,17 +36,15 @@ Wait until you see something like “Started BackendApplication”. The API list
 
 ### Useful backend URLs
 
-http://localhost:8080/api/health
+http://localhost:8080/api/health — JSON health check (no auth)
 
- Simple JSON health check
+http://localhost:8080/auth/register — public customer registration (`POST` JSON body)
 
-http://localhost:8080/api/messages  
+http://localhost:8080/auth/login — public login (`POST` JSON body, returns JWT)
 
-Example JPA endpoint (list messages)
+http://localhost:8080/swagger-ui/index.html — Swagger UI (OpenAPI; use **Authorize** with `Bearer <token>` for protected routes)
 
-http://localhost:8080/swagger-ui/index.html
-
-Swagger UI (OpenAPI docs)
+Employee-only (JWT with `employee@inholland.nl` or similar): `GET /users`, `POST /accounts`, `PUT /accounts/{iban}/close`, `POST /auth/customers/{id}/deny`
 
 http://localhost:8080/h2-console
 
@@ -92,9 +90,9 @@ Open the URL Vite prints (http://localhost:5173).
 
 - In development,  http://localhost:8080
 
-- So from browser code you can call **`fetch('/api/health')`** and it goes to the Spring Boot app.
+- From the Vue dev server you can call **`fetch('/api/health')`**, **`fetch('/auth/login', …)`**, etc.; Vite proxies `/api`, `/auth`, `/users`, and `/accounts` to port **8080** (see `frontend/vite.config.ts`).
 
-- Important:start the backend first(or at least before you expect data on the home page). If the backend is off, the home page will show an error until you start it and click Retry.
+- Start the **backend first** when testing login/register.
 
 ### Production build (optional)
 
@@ -108,7 +106,7 @@ npm run preview
 
 ```
 
-For a real deployment you would point the frontend at your deployed API URL (env variable or server config), not rely on the Vite proxy.
+For **GitHub Pages** (static hosting) you cannot use the Vite dev proxy: set the API base URL (e.g. your **Render** backend URL) via env at build time and use that in `fetch`. Course handouts: “How to host vue Frontend on Github pages” and “How to host Spring Boot application on render”.
 
 \---
 

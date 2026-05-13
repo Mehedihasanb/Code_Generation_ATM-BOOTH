@@ -33,44 +33,44 @@ public class JwtService {
 	}
 
 	public String generateToken(UserDetails userDetails) {
-		Map<String, Object> claims = new HashMap<>();
+		Map<String, Object> jwtClaims = new HashMap<>();
 		// Stored inside JWT payload so filters later know ROLE_CUSTOMER vs ROLE_EMPLOYEE.
-		claims.put("roles", userDetails.getAuthorities());
+		jwtClaims.put("roles", userDetails.getAuthorities());
 
-		Date now = new Date();
-		Date expiresAt = new Date(now.getTime() + expirationMs);
+		Date issuedAtDate = new Date();
+		Date expiresAtDate = new Date(issuedAtDate.getTime() + expirationMs);
 
 		return Jwts.builder()
-			.claims(claims)
+			.claims(jwtClaims)
 			// Same string Spring Security uses as username (here the email).
 			.subject(userDetails.getUsername())
-			.issuedAt(now)
-			.expiration(expiresAt)
+			.issuedAt(issuedAtDate)
+			.expiration(expiresAtDate)
 			.signWith(signingKey)
 			.compact();
 	}
 
-	public String extractUsername(String token) {
-		return extractClaim(token, Claims::getSubject);
+	public String extractUsername(String jwtTokenString) {
+		return extractClaim(jwtTokenString, Claims::getSubject);
 	}
 
-	public boolean isTokenValid(String token, UserDetails userDetails) {
-		String username = extractUsername(token);
-		return username.equals(userDetails.getUsername()) && !isTokenExpired(token);
+	public boolean isTokenValid(String jwtTokenString, UserDetails userDetails) {
+		String emailFromTokenSubject = extractUsername(jwtTokenString);
+		return emailFromTokenSubject.equals(userDetails.getUsername()) && !isTokenExpired(jwtTokenString);
 	}
 
-	private boolean isTokenExpired(String token) {
-		Date expiration = extractClaim(token, Claims::getExpiration);
-		return expiration.before(new Date());
+	private boolean isTokenExpired(String jwtTokenString) {
+		Date expirationDate = extractClaim(jwtTokenString, Claims::getExpiration);
+		return expirationDate.before(new Date());
 	}
 
-	private <T> T extractClaim(String token, Function<Claims, T> claimsResolver) {
-		Claims claims = Jwts.parser()
+	private <ClaimType> ClaimType extractClaim(String jwtTokenString, Function<Claims, ClaimType> claimsExtractor) {
+		Claims parsedClaims = Jwts.parser()
 			.verifyWith(signingKey)
 			.build()
 			// Throws if signature broken or token tampered.
-			.parseSignedClaims(token)
+			.parseSignedClaims(jwtTokenString)
 			.getPayload();
-		return claimsResolver.apply(claims);
+		return claimsExtractor.apply(parsedClaims);
 	}
 }
