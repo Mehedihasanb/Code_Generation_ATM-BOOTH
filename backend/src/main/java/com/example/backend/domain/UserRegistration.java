@@ -15,7 +15,7 @@ public class UserRegistration {
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
 
-	@Column(name = "FIRST_NAME")
+	@Column(nullable = false)
 	private String firstName;
 
 	@Column(nullable = false)
@@ -31,10 +31,6 @@ public class UserRegistration {
 	@Column(nullable = false)
 	private String role;
 
-	// Only for employees: "REGULAR" or "SERVICE_DESK". Null for customers.
-	@Column(nullable = true)
-	private String employeeType;
-
 	@Column(nullable = false)
 	private boolean approved;
 
@@ -48,14 +44,10 @@ public class UserRegistration {
 	   }
 
 	   public UserRegistration(String firstName, String lastName, String email, String password, String role) {
-		   this(firstName, lastName, email, password, role, false, null, null, null);
+		   this(firstName, lastName, email, password, role, false, null, null);
 	   }
 
 	   public UserRegistration(String firstName, String lastName, String email, String password, String role, boolean approved, String bsnNumber, String phoneNumber) {
-		   this(firstName, lastName, email, password, role, approved, bsnNumber, phoneNumber, null);
-	   }
-
-	   public UserRegistration(String firstName, String lastName, String email, String password, String role, boolean approved, String bsnNumber, String phoneNumber, String employeeType) {
 		   this.firstName = firstName;
 		   this.lastName = lastName;
 		   this.email = email;
@@ -64,7 +56,6 @@ public class UserRegistration {
 		   this.approved = approved;
 		   this.bsnNumber = bsnNumber;
 		   this.phoneNumber = phoneNumber;
-		   this.employeeType = employeeType;
 	   }
 
 	public Long getId() {
@@ -90,10 +81,6 @@ public class UserRegistration {
 
 	   public String getRole() {
 		   return role;
-	   }
-
-	   public String getEmployeeType() {
-		   return employeeType;
 	   }
 
 	public boolean isApproved() {
@@ -127,10 +114,6 @@ public class UserRegistration {
 
 	   public void setRole(String role) {
 		   this.role = role;
-	   }
-
-	   public void setEmployeeType(String employeeType) {
-		   this.employeeType = employeeType;
 	   }
 
 	public void setApproved(boolean approved) {

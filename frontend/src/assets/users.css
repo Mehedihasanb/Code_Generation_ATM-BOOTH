@@ -1,0 +1,78 @@
+/* src/assets/users.css */
+
+.dashboard-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 2rem 1rem;
+}
+
+.dashboard-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 2px solid #eee;
+    padding-bottom: 1rem;
+}
+
+.dashboard-header h1 {
+    margin: 0 0 0.25rem 0;
+}
+
+.tabs {
+    display: flex;
+    gap: 1rem;
+    padding: 1rem;
+}
+
+.tabs button {
+    background: none;
+    border: none;
+    font-size: 1rem;
+    padding: 0.5rem 1rem;
+    cursor: pointer;
+    font-weight: 600;
+    color: #666;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s;
+}
+
+.tabs button:hover {
+    color: #333;
+}
+
+.tabs button.active {
+    color: var(--primary-color, #0056b3);
+    border-bottom: 2px solid var(--primary-color, #0056b3);
+}
+
+.content-section h2 {
+    margin-top: 0;
+}
+
+/* User List Container */
+.data-list {
+    list-style: none;
+    padding: 0;
+    margin: 1rem 0 0 0;
+}
+
+/* Individual User Row */
+.data-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    border: 1px solid #eee;
+    border-radius: 8px;
+    margin-bottom: 0.5rem;
+    background-color: #fff; /* Optional: keeps rows crisp */
+}
+
+/* User Name and Email grouping */
+.user-info {
+    display: flex;
+    flex-direction: column;
+}

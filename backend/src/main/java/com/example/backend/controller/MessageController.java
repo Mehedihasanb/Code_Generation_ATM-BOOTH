@@ -1,4 +1,4 @@
-package com.example.backend.web;
+package com.example.backend.controller;
 
 import com.example.backend.domain.Message;
 import com.example.backend.repository.MessageRepository;

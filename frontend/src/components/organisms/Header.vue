@@ -1,9 +1,15 @@
 <script setup lang="ts">
 import { RouterLink, useRouter } from 'vue-router';
+import { computed } from 'vue';
 import { useAuthStore } from '../../stores/auth'; 
 
 const auth = useAuthStore();
 const router = useRouter();
+
+const displayName = computed(() => {
+    const name = auth.firstName?.trim();
+    return name ? name : 'User';
+});
 
 const handleLogout = () => {
     auth.logout();
@@ -19,7 +25,7 @@ const handleLogout = () => {
             <RouterLink to="/">Home</RouterLink>
 
             <template v-if="auth.isAuthenticated">
-                <span class="greeting">Hello, {{ auth.firstName || 'User' }}</span>
+                <span class="greeting">Hello, {{ displayName }}</span>
                 <button @click="handleLogout" class="btn-link">Logout</button>
             </template>
 

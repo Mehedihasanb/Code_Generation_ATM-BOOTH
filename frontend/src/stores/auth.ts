@@ -21,11 +21,12 @@ const approvedStorageKey = 'code-generation-approved';
 const nameStorageKey = 'code-generation-firstname'; 
 
 export const useAuthStore = defineStore('auth', () => {
-    const token = ref<string | null>(localStorage.getItem(tokenStorageKey));
-    const role = ref<string | null>(localStorage.getItem(roleStorageKey));
-    const approved = ref(localStorage.getItem(approvedStorageKey) === 'true');
-    // by Fernando: Initialize firstName from localStorage
-    const firstName = ref<string | null>(localStorage.getItem(nameStorageKey)); 
+    // Replaced localStorage with sessionStorage
+    const token = ref<string | null>(sessionStorage.getItem(tokenStorageKey));
+    const role = ref<string | null>(sessionStorage.getItem(roleStorageKey));
+    const approved = ref(sessionStorage.getItem(approvedStorageKey) === 'true');
+    // by Fernando: Initialize firstName from sessionStorage
+    const firstName = ref<string | null>(sessionStorage.getItem(nameStorageKey)); 
     
     const loading = ref(false);
     const error = ref<string | null>(null);
@@ -37,11 +38,11 @@ export const useAuthStore = defineStore('auth', () => {
     function setToken(value: string | null) {
         token.value = value;
         if (value) {
-            localStorage.setItem(tokenStorageKey, value);
+            sessionStorage.setItem(tokenStorageKey, value);
             return;
         }
 
-        localStorage.removeItem(tokenStorageKey);
+        sessionStorage.removeItem(tokenStorageKey);
     }
 
     // by Fernando: Update setProfile to also handle the firstName
@@ -51,18 +52,18 @@ export const useAuthStore = defineStore('auth', () => {
         firstName.value = userFirstName; // by Fernando
 
         if (loginRole) {
-            localStorage.setItem(roleStorageKey, loginRole);
+            sessionStorage.setItem(roleStorageKey, loginRole);
         } else {
-            localStorage.removeItem(roleStorageKey);
+            sessionStorage.removeItem(roleStorageKey);
         }
         
-        localStorage.setItem(approvedStorageKey, String(isApproved));
+        sessionStorage.setItem(approvedStorageKey, String(isApproved));
         
-        // by Fernando: Save or remove firstName from localStorage
+        // by Fernando: Save or remove firstName from sessionStorage
         if (userFirstName) {
-            localStorage.setItem(nameStorageKey, userFirstName);
+            sessionStorage.setItem(nameStorageKey, userFirstName);
         } else {
-            localStorage.removeItem(nameStorageKey);
+            sessionStorage.removeItem(nameStorageKey);
         }
     }
 

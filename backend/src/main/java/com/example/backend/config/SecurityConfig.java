@@ -38,20 +38,29 @@ public class SecurityConfig {
 			.httpBasic(httpBasic -> httpBasic.disable())
 			.sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 			.exceptionHandling(ex -> ex.authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)))
-			.authorizeHttpRequests(auth -> auth
-				.requestMatchers(HttpMethod.PATCH, "/api/registrations/*/approve").hasRole("EMPLOYEE")
-				.requestMatchers(
-					"/api/health",
-					"/api/registrations",
-					"/auth/login",
-					"/v3/api-docs/**",
-					"/swagger-ui/**",
-					"/swagger-ui.html",
-					"/swagger-ui/index.html",
-					"/h2-console/**"
-				).permitAll()
-				.anyRequest().hasAnyRole("CUSTOMER", "EMPLOYEE")
-			)
+.authorizeHttpRequests(auth -> auth
+    // CORS preflight requests pass through without authentication
+    .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll() 
+    
+    .requestMatchers(HttpMethod.PATCH, "/api/registrations/*/approve").hasRole("EMPLOYEE")
+    
+    //POST requests to registrations are explicitly permitted
+    .requestMatchers(HttpMethod.POST, "/api/registrations").permitAll()
+    
+    // 4. Your existing public endpoints
+    .requestMatchers(
+        "/api/health",
+        "/auth/login",
+        "/v3/api-docs/**",
+        "/swagger-ui/**",
+        "/swagger-ui.html",
+        "/swagger-ui/index.html",
+        "/h2-console/**"
+    ).permitAll()
+    
+    // Everything else needs authentication
+    .anyRequest().hasAnyRole("CUSTOMER", "EMPLOYEE")
+)
 			.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
 			.headers(h -> h.frameOptions(f -> f.sameOrigin()));
 		return http.build();

@@ -46,22 +46,7 @@ public class DataInitializer {
 					   "EMPLOYEE",
 					   true,
 					   null,
-					   null,
-					   "REGULAR"
-				   ));
-			   }
-
-			   if (registrations.findByEmail("servicedesk@inholland.nl").isEmpty()) {
-				   registrations.save(new UserRegistration(
-					   "ServiceDesk",
-					   "User",
-					   "servicedesk@inholland.nl",
-					   passwordEncoder.encode("Password123!"),
-					   "EMPLOYEE",
-					   true,
-					   null,
-					   null,
-					   "SERVICE_DESK"
+					   null
 				   ));
 			   }
 		};
