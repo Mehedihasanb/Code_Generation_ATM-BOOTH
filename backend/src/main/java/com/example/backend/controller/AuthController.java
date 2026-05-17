@@ -41,7 +41,7 @@ public class AuthController {
 	}
 
 	// Note: Technically this belongs in CustomerDirectoryController,
-	// but I left it here to don't break Majd's routing!
+	// but I left it here to don't break Majd's routing
 	@PostMapping("/customers/{customerRegistrationId}/deny")
 	@ResponseStatus(HttpStatus.NO_CONTENT)
 	@Operation(summary = "Deny a pending customer registration (employee only)")

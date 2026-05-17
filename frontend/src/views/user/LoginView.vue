@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { reactive, computed } from 'vue';
 import { useRouter } from 'vue-router';
-import { useAuthStore } from '../stores/auth';
+import { useAuthStore } from '../../stores/auth';
 
 type LoginForm = {
 	email: string;
@@ -49,25 +49,42 @@ function validate(): boolean {
 }
 
 async function submit() {
-	if (!validate()) {
-		return;
-	}
+    if (!validate()) {
+        return;
+    }
 
-	try {
-		await auth.login({
-			email: form.email.trim(),
-			password: form.password,
-		});
+    try {
+        await auth.login({
+            email: form.email.trim(),
+            password: form.password,
+        });
 
-		if (auth.isPendingCustomer) {
-			await router.push('/pending-approval');
-			return;
-		}
+        // --- THE TRAFFIC COP LOGIC GOES HERE ---
+        
+        // 1. Check for Employees first
+        if (auth.role === 'EMPLOYEE') {
+            if (auth.employeeType === 'SERVICE_DESK') {
+                await router.push('/service-desk');
+                return;
+            }
+            // If they are a REGULAR employee, send them to a general employee page
+            // (You can change this route later if needed)
+            await router.push('/employee-home'); 
+            return;
+        }
 
-		await router.push('/');
-	} catch {
-		// `auth.login` sets `auth.error` when the backend rejects the request (e.g. denied registration).
-	}
+        // 2. Check for Unapproved Customers
+        if (auth.isPendingCustomer || auth.isDeniedCustomer) {
+            await router.push('/pending-approval');
+            return;
+        }
+
+        // 3. Approved Customers go to the main home/accounts page
+        await router.push('/');
+        
+    } catch {
+        // `auth.login` sets `auth.error` when the backend rejects the request (e.g. denied registration).
+    }
 }
 </script>
 
