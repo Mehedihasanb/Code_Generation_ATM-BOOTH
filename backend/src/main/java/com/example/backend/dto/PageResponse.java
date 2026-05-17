@@ -1,4 +1,4 @@
-package com.example.backend.web.dto;
+package com.example.backend.dto;
 
 import org.springframework.data.domain.Page;
 
@@ -8,11 +8,10 @@ public record PageResponse<T>(List<T> content, long totalElements, int totalPage
 
 	public static <T> PageResponse<T> fromPage(Page<?> page, List<T> mappedContent) {
 		return new PageResponse<>(
-			mappedContent,
-			page.getTotalElements(),
-			page.getTotalPages(),
-			page.getNumber(),
-			page.getSize()
-		);
+				mappedContent,
+				page.getTotalElements(),
+				page.getTotalPages(),
+				page.getNumber(),
+				page.getSize());
 	}
 }

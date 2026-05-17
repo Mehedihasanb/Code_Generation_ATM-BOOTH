@@ -5,9 +5,9 @@ import com.example.backend.domain.CustomerApprovalStatus;
 import com.example.backend.domain.UserRegistration;
 import com.example.backend.repository.BankAccountRepository;
 import com.example.backend.repository.UserRegistrationRepository;
-import com.example.backend.web.dto.CustomerAccountRow;
-import com.example.backend.web.dto.CustomerDirectoryRow;
-import com.example.backend.web.dto.PageResponse;
+import com.example.backend.dto.CustomerAccountRow;
+import com.example.backend.dto.CustomerDirectoryRow;
+import com.example.backend.dto.PageResponse;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -24,9 +24,8 @@ public class CustomerDirectoryService {
 	private final BankAccountRepository bankAccountRepository;
 
 	public CustomerDirectoryService(
-		UserRegistrationRepository userRegistrationRepository,
-		BankAccountRepository bankAccountRepository
-	) {
+			UserRegistrationRepository userRegistrationRepository,
+			BankAccountRepository bankAccountRepository) {
 		this.userRegistrationRepository = userRegistrationRepository;
 		this.bankAccountRepository = bankAccountRepository;
 	}
@@ -34,49 +33,46 @@ public class CustomerDirectoryService {
 	@Transactional(readOnly = true)
 	public PageResponse<CustomerDirectoryRow> listCustomerDirectory(Pageable pageable, Boolean hasAccountFilter) {
 		Page<UserRegistration> customerPage = Boolean.FALSE.equals(hasAccountFilter)
-			? userRegistrationRepository.findCustomersWhoHaveNoBankAccounts(pageable)
-			: userRegistrationRepository.findAllCustomers(pageable);
+				? userRegistrationRepository.findCustomersWhoHaveNoBankAccounts(pageable)
+				: userRegistrationRepository.findAllCustomers(pageable);
 
 		List<Long> ownerIdsOnPage = customerPage.getContent().stream().map(UserRegistration::getId).toList();
 		List<BankAccount> bankAccountsForOwnersOnPage = ownerIdsOnPage.isEmpty()
-			? List.of()
-			: bankAccountRepository.findByOwner_IdIn(ownerIdsOnPage);
+				? List.of()
+				: bankAccountRepository.findByOwner_IdIn(ownerIdsOnPage);
 
 		Map<Long, List<BankAccount>> bankAccountsGroupedByOwnerId = bankAccountsForOwnersOnPage.stream()
-			.collect(Collectors.groupingBy(bankAccount -> bankAccount.getOwner().getId()));
+				.collect(Collectors.groupingBy(bankAccount -> bankAccount.getOwner().getId()));
 
 		List<CustomerDirectoryRow> directoryRows = customerPage.getContent().stream()
-			.map(customerRegistration -> toDirectoryRow(
-				customerRegistration,
-				bankAccountsGroupedByOwnerId.getOrDefault(customerRegistration.getId(), List.of())
-			))
-			.toList();
+				.map(customerRegistration -> toDirectoryRow(
+						customerRegistration,
+						bankAccountsGroupedByOwnerId.getOrDefault(customerRegistration.getId(), List.of())))
+				.toList();
 
 		return PageResponse.fromPage(customerPage, directoryRows);
 	}
 
 	private CustomerDirectoryRow toDirectoryRow(UserRegistration customerRegistration, List<BankAccount> bankAccounts) {
 		List<CustomerAccountRow> accountRows = bankAccounts.stream()
-			.map(bankAccount -> new CustomerAccountRow(
-				bankAccount.getIban(),
-				bankAccount.getAccountType().name(),
-				bankAccount.isActive(),
-				bankAccount.getBalance(),
-				bankAccount.getMinimumAllowedBalance(),
-				bankAccount.getDailyOutgoingTransferLimit()
-			))
-			.toList();
+				.map(bankAccount -> new CustomerAccountRow(
+						bankAccount.getIban(),
+						bankAccount.getAccountType().name(),
+						bankAccount.isActive(),
+						bankAccount.getBalance(),
+						bankAccount.getMinimumAllowedBalance(),
+						bankAccount.getDailyOutgoingTransferLimit()))
+				.toList();
 
 		CustomerApprovalStatus approvalStatus = customerRegistration.getCustomerApprovalStatus();
 		String approvalStatusName = approvalStatus != null ? approvalStatus.name() : null;
 
 		return new CustomerDirectoryRow(
-			customerRegistration.getId(),
-			customerRegistration.getFirstName(),
-			customerRegistration.getLastName(),
-			customerRegistration.getEmail(),
-			approvalStatusName,
-			accountRows
-		);
+				customerRegistration.getId(),
+				customerRegistration.getFirstName(),
+				customerRegistration.getLastName(),
+				customerRegistration.getEmail(),
+				approvalStatusName,
+				accountRows);
 	}
 }

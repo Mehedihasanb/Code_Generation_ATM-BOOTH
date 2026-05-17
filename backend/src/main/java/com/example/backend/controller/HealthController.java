@@ -1,4 +1,4 @@
-package com.example.backend.web;
+package com.example.backend.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -9,8 +9,10 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.Map;
 
 /**
- * Lightweight endpoint so load balancers or monitoring can verify the process is up without touching the database.
- * Public in {@link com.example.backend.config.SecurityConfig}; safe to call frequently.
+ * Lightweight endpoint so load balancers or monitoring can verify the process
+ * is up without touching the database.
+ * Public in {@link com.example.backend.config.SecurityConfig}; safe to call
+ * frequently.
  */
 @RestController
 @RequestMapping("/api")

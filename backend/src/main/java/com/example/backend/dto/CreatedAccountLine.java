@@ -1,4 +1,4 @@
-package com.example.backend.web.dto;
+package com.example.backend.dto;
 
 public record CreatedAccountLine(String iban, String accountType) {
 }

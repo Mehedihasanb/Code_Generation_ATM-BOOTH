@@ -1,8 +1,10 @@
-package com.example.backend.web.dto;
+package com.example.backend.dto;
 
 /**
- * JSON body returned by {@code POST /auth/login}. This is a DTO: it is not a JPA entity and maps what the client needs
- * (token + profile fields) without exposing the internal {@code UserRegistration} entity shape.
+ * JSON body returned by {@code POST /auth/login}. This is a DTO: it is not a
+ * JPA entity and maps what the client needs
+ * (token + profile fields) without exposing the internal
+ * {@code UserRegistration} entity shape.
  */
 public class LoginResponse {
 	private String token;

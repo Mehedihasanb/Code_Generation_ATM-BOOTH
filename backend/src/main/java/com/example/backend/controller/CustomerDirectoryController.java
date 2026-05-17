@@ -1,8 +1,8 @@
-package com.example.backend.web;
+package com.example.backend.controller;
 
 import com.example.backend.service.CustomerDirectoryService;
-import com.example.backend.web.dto.CustomerDirectoryRow;
-import com.example.backend.web.dto.PageResponse;
+import com.example.backend.dto.CustomerDirectoryRow;
+import com.example.backend.dto.PageResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -28,10 +28,8 @@ public class CustomerDirectoryController {
 	@Operation(summary = "Paginated customers; use hasAccount=false for customers without any bank account (employee only)")
 	@SecurityRequirement(name = "bearerAuth")
 	public PageResponse<CustomerDirectoryRow> listCustomers(
-		@Parameter(description = "When false, only customers with no bank accounts yet")
-		@RequestParam(required = false) Boolean hasAccount,
-		@ParameterObject @PageableDefault(size = 20) Pageable pageable
-	) {
+			@Parameter(description = "When false, only customers with no bank accounts yet") @RequestParam(required = false) Boolean hasAccount,
+			@ParameterObject @PageableDefault(size = 20) Pageable pageable) {
 		return customerDirectoryService.listCustomerDirectory(pageable, hasAccount);
 	}
 }

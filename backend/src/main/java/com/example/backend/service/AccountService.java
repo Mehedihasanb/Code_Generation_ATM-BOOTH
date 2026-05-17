@@ -6,9 +6,9 @@ import com.example.backend.domain.CustomerApprovalStatus;
 import com.example.backend.domain.UserRegistration;
 import com.example.backend.repository.BankAccountRepository;
 import com.example.backend.repository.UserRegistrationRepository;
-import com.example.backend.web.dto.CreateAccountsRequest;
-import com.example.backend.web.dto.CreatedAccountLine;
-import com.example.backend.web.dto.CreatedAccountsResponse;
+import com.example.backend.dto.CreateAccountsRequest;
+import com.example.backend.dto.CreatedAccountLine;
+import com.example.backend.dto.CreatedAccountsResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -27,9 +27,8 @@ public class AccountService {
 	private final SecureRandom secureRandom = new SecureRandom();
 
 	public AccountService(
-		BankAccountRepository bankAccountRepository,
-		UserRegistrationRepository userRegistrationRepository
-	) {
+			BankAccountRepository bankAccountRepository,
+			UserRegistrationRepository userRegistrationRepository) {
 		this.bankAccountRepository = bankAccountRepository;
 		this.userRegistrationRepository = userRegistrationRepository;
 	}
@@ -37,14 +36,15 @@ public class AccountService {
 	@Transactional
 	public CreatedAccountsResponse createCheckingAndSavingsAccounts(CreateAccountsRequest createAccountsRequest) {
 		UserRegistration customer = userRegistrationRepository.findById(createAccountsRequest.customerRegistrationId())
-			.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Customer not found"));
+				.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Customer not found"));
 
 		if (!"CUSTOMER".equals(customer.getRole())) {
 			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Only customers can receive bank accounts");
 		}
 
 		if (customer.getCustomerApprovalStatus() != CustomerApprovalStatus.PENDING) {
-			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Customer registration must be pending before opening accounts");
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+					"Customer registration must be pending before opening accounts");
 		}
 
 		if (bankAccountRepository.existsByOwner_Id(customer.getId())) {
@@ -52,30 +52,30 @@ public class AccountService {
 		}
 
 		BigDecimal zeroBalance = BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP);
-		BigDecimal minimumAllowedBalance = createAccountsRequest.minimumAllowedBalance().setScale(2, RoundingMode.HALF_UP);
-		BigDecimal dailyOutgoingTransferLimit = createAccountsRequest.dailyOutgoingTransferLimit().setScale(2, RoundingMode.HALF_UP);
+		BigDecimal minimumAllowedBalance = createAccountsRequest.minimumAllowedBalance().setScale(2,
+				RoundingMode.HALF_UP);
+		BigDecimal dailyOutgoingTransferLimit = createAccountsRequest.dailyOutgoingTransferLimit().setScale(2,
+				RoundingMode.HALF_UP);
 
 		String checkingIban = generateUniqueDemoIban();
 		String savingsIban = generateUniqueDemoIban();
 
 		BankAccount checkingAccount = new BankAccount(
-			customer,
-			checkingIban,
-			AccountType.CHECKING,
-			true,
-			zeroBalance,
-			minimumAllowedBalance,
-			dailyOutgoingTransferLimit
-		);
+				customer,
+				checkingIban,
+				AccountType.CHECKING,
+				true,
+				zeroBalance,
+				minimumAllowedBalance,
+				dailyOutgoingTransferLimit);
 		BankAccount savingsAccount = new BankAccount(
-			customer,
-			savingsIban,
-			AccountType.SAVINGS,
-			true,
-			zeroBalance,
-			minimumAllowedBalance,
-			dailyOutgoingTransferLimit
-		);
+				customer,
+				savingsIban,
+				AccountType.SAVINGS,
+				true,
+				zeroBalance,
+				minimumAllowedBalance,
+				dailyOutgoingTransferLimit);
 
 		bankAccountRepository.saveAll(List.of(checkingAccount, savingsAccount));
 
@@ -83,20 +83,18 @@ public class AccountService {
 		userRegistrationRepository.save(customer);
 
 		return new CreatedAccountsResponse(
-			customer.getId(),
-			CustomerApprovalStatus.APPROVED.name(),
-			List.of(
-				new CreatedAccountLine(checkingIban, AccountType.CHECKING.name()),
-				new CreatedAccountLine(savingsIban, AccountType.SAVINGS.name())
-			)
-		);
+				customer.getId(),
+				CustomerApprovalStatus.APPROVED.name(),
+				List.of(
+						new CreatedAccountLine(checkingIban, AccountType.CHECKING.name()),
+						new CreatedAccountLine(savingsIban, AccountType.SAVINGS.name())));
 	}
 
 	@Transactional
 	public void closeAccountByIban(String ibanFromPath) {
 		String normalizedIban = ibanFromPath.trim().toUpperCase();
 		BankAccount bankAccount = bankAccountRepository.findByIban(normalizedIban)
-			.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Unknown IBAN"));
+				.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Unknown IBAN"));
 
 		if (!bankAccount.isActive()) {
 			return;
@@ -109,7 +107,8 @@ public class AccountService {
 		for (int attempt = 0; attempt < 100; attempt++) {
 			int checkDigits = secureRandom.nextInt(100);
 			int accountDigits = secureRandom.nextInt(1_000_000_000);
-			String candidateIban = "NL" + String.format("%02d", checkDigits) + "INHO0" + String.format("%09d", accountDigits);
+			String candidateIban = "NL" + String.format("%02d", checkDigits) + "INHO0"
+					+ String.format("%09d", accountDigits);
 			if (bankAccountRepository.findByIban(candidateIban).isEmpty()) {
 				return candidateIban;
 			}
