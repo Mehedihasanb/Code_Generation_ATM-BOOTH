@@ -9,19 +9,13 @@ import org.springframework.data.jpa.repository.Query;
 import java.util.Optional;
 
 public interface UserRegistrationRepository extends JpaRepository<UserRegistration, Long> {
+
 	Optional<UserRegistration> findByEmail(String email);
 
-	@Query(
-		"""
-		select registration from UserRegistration registration
-		where registration.role = 'CUSTOMER'
-		and not exists (
-			select 1 from BankAccount account where account.owner.id = registration.id
-		)
-		"""
-	)
-	Page<UserRegistration> findCustomersWhoHaveNoBankAccounts(Pageable pageable);
+	// US-12: all customers (Spring builds the query from the method name)
+	Page<UserRegistration> findByRole(String role, Pageable pageable);
 
-	@Query("select registration from UserRegistration registration where registration.role = 'CUSTOMER'")
-	Page<UserRegistration> findAllCustomers(Pageable pageable);
+	// US-09: pending customers waiting for employee approval (no accounts yet)
+	@Query("SELECT u FROM UserRegistration u WHERE u.role = 'CUSTOMER' AND u.customerApprovalStatus = 'PENDING' AND NOT EXISTS (SELECT 1 FROM BankAccount a WHERE a.owner.id = u.id)")
+	Page<UserRegistration> findCustomersWithoutAccounts(Pageable pageable);
 }

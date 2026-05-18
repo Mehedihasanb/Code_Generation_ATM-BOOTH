@@ -19,11 +19,11 @@ const handleLogout = () => {
             <RouterLink to="/">Home</RouterLink>
 
             <RouterLink 
-                v-if="auth.role === 'EMPLOYEE' && auth.employeeType === 'SERVICE_DESK'" 
+                v-if="auth.role === 'EMPLOYEE'" 
                 to="/service-desk" 
                 class="special-nav-link"
             >
-                Service Desk Dashboard
+                Service Desk
             </RouterLink>
 
             <template v-if="auth.isAuthenticated">
@@ -40,7 +40,7 @@ const handleLogout = () => {
 </template>
 
 <style scoped>
-/* Optional: Give the employee link a slightly different color or weight so it stands out */
+//Optional: Give the employee link a slightly different color or weight so it stands out
 .special-nav-link {
     font-weight: 600;
     color: #d35400; /* A nice subtle orange/brand color */

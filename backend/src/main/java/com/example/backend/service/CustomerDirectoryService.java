@@ -1,7 +1,6 @@
 package com.example.backend.service;
 
 import com.example.backend.domain.BankAccount;
-import com.example.backend.domain.CustomerApprovalStatus;
 import com.example.backend.domain.UserRegistration;
 import com.example.backend.repository.BankAccountRepository;
 import com.example.backend.repository.UserRegistrationRepository;
@@ -13,9 +12,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 
 @Service
 public class CustomerDirectoryService {
@@ -23,8 +21,7 @@ public class CustomerDirectoryService {
 	private final UserRegistrationRepository userRegistrationRepository;
 	private final BankAccountRepository bankAccountRepository;
 
-	public CustomerDirectoryService(
-			UserRegistrationRepository userRegistrationRepository,
+	public CustomerDirectoryService(UserRegistrationRepository userRegistrationRepository,
 			BankAccountRepository bankAccountRepository) {
 		this.userRegistrationRepository = userRegistrationRepository;
 		this.bankAccountRepository = bankAccountRepository;
@@ -32,47 +29,61 @@ public class CustomerDirectoryService {
 
 	@Transactional(readOnly = true)
 	public PageResponse<CustomerDirectoryRow> listCustomerDirectory(Pageable pageable, Boolean hasAccountFilter) {
-		Page<UserRegistration> customerPage = Boolean.FALSE.equals(hasAccountFilter)
-				? userRegistrationRepository.findCustomersWhoHaveNoBankAccounts(pageable)
-				: userRegistrationRepository.findAllCustomers(pageable);
+		// Load customers from database
+		Page<UserRegistration> customerPage;
+		if (Boolean.FALSE.equals(hasAccountFilter)) {
+			// US-09: employee sees pending customers with no bank account yet
+			customerPage = userRegistrationRepository.findCustomersWithoutAccounts(pageable);
+		} else {
+			// US-12: employee sees all customers
+			customerPage = userRegistrationRepository.findByRole("CUSTOMER", pageable);
+		}
 
-		List<Long> ownerIdsOnPage = customerPage.getContent().stream().map(UserRegistration::getId).toList();
-		List<BankAccount> bankAccountsForOwnersOnPage = ownerIdsOnPage.isEmpty()
-				? List.of()
-				: bankAccountRepository.findByOwner_IdIn(ownerIdsOnPage);
+		List<UserRegistration> customers = customerPage.getContent();
 
-		Map<Long, List<BankAccount>> bankAccountsGroupedByOwnerId = bankAccountsForOwnersOnPage.stream()
-				.collect(Collectors.groupingBy(bankAccount -> bankAccount.getOwner().getId()));
+		// Get customer ids on this page so we can load their accounts in one query
+		List<Long> ids = new ArrayList<>();
+		for (UserRegistration customer : customers) {
+			ids.add(customer.getId());
+		}
 
-		List<CustomerDirectoryRow> directoryRows = customerPage.getContent().stream()
-				.map(customerRegistration -> toDirectoryRow(
-						customerRegistration,
-						bankAccountsGroupedByOwnerId.getOrDefault(customerRegistration.getId(), List.of())))
-				.toList();
+		List<BankAccount> accounts = new ArrayList<>();
+		if (!ids.isEmpty()) {
+			accounts = bankAccountRepository.findByOwner_IdIn(ids);
+		}
 
-		return PageResponse.fromPage(customerPage, directoryRows);
-	}
+		// Build response: one row per customer with their accounts
+		List<CustomerDirectoryRow> rows = new ArrayList<>();
+		for (UserRegistration customer : customers) {
+			List<CustomerAccountRow> accountRows = new ArrayList<>();
+			for (BankAccount account : accounts) {
+				if (account.getOwner().getId().equals(customer.getId())) {
+					accountRows.add(new CustomerAccountRow(
+							account.getIban(),
+							account.getAccountType().name(),
+							account.isActive(),
+							account.getBalance(),
+							account.getMinimumAllowedBalance(),
+							account.getDailyOutgoingTransferLimit()));
+				}
+			}
 
-	private CustomerDirectoryRow toDirectoryRow(UserRegistration customerRegistration, List<BankAccount> bankAccounts) {
-		List<CustomerAccountRow> accountRows = bankAccounts.stream()
-				.map(bankAccount -> new CustomerAccountRow(
-						bankAccount.getIban(),
-						bankAccount.getAccountType().name(),
-						bankAccount.isActive(),
-						bankAccount.getBalance(),
-						bankAccount.getMinimumAllowedBalance(),
-						bankAccount.getDailyOutgoingTransferLimit()))
-				.toList();
+			String approvalStatus = null;
+			if (customer.getCustomerApprovalStatus() != null) {
+				approvalStatus = customer.getCustomerApprovalStatus().name();
+			}
 
-		CustomerApprovalStatus approvalStatus = customerRegistration.getCustomerApprovalStatus();
-		String approvalStatusName = approvalStatus != null ? approvalStatus.name() : null;
+			// Add customer + accounts to the page result
+			rows.add(new CustomerDirectoryRow(
+					customer.getId(),
+					customer.getFirstName(),
+					customer.getLastName(),
+					customer.getEmail(),
+					approvalStatus,
+					accountRows));
+		}
 
-		return new CustomerDirectoryRow(
-				customerRegistration.getId(),
-				customerRegistration.getFirstName(),
-				customerRegistration.getLastName(),
-				customerRegistration.getEmail(),
-				approvalStatusName,
-				accountRows);
+		// Wrap rows with pagination info (total pages, page number, etc.)
+		return PageResponse.fromPage(customerPage, rows);
 	}
 }
