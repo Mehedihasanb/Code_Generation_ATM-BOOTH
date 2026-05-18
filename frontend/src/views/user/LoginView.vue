@@ -80,6 +80,10 @@ async function submit() {
         }
 
         // 3. Approved Customers go to the main home/accounts page
+		if (auth.role === 'CUSTOMER') {
+			await router.push('/accounts');
+			return;
+		}
         await router.push('/');
         
     } catch {

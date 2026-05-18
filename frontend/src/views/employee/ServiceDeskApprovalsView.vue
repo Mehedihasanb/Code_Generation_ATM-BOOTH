@@ -6,23 +6,19 @@ import { useAuthStore } from '@/stores/auth';
 const router = useRouter();
 const auth = useAuthStore();
 
-// --- STATE ---
 const pendingCustomers = ref<any[]>([]);
 const loading = ref(true);
 const error = ref<string | null>(null);
 
-// Modal State
 const selectedCustomer = ref<any | null>(null);
 const showModal = ref(false);
 const dailyLimit = ref<number>(1000);
 const absoluteLimit = ref<number>(0);
 
-// --- METHODS ---
 const fetchPendingCustomers = async () => {
     loading.value = true;
     error.value = null;
     try {
-        // UPDATED: Now hitting your classmate's specific endpoint
         const response = await fetch('/users?hasAccount=false', {
             headers: { 'Authorization': `Bearer ${auth.token}` }
         });
@@ -30,8 +26,6 @@ const fetchPendingCustomers = async () => {
         if (!response.ok) throw new Error("Failed to fetch pending customers.");
         
         const pageData = await response.json();
-        // Because your backend returns a PageResponse, the actual array of users 
-        // is usually tucked inside a 'content' or 'items' property.
         pendingCustomers.value = pageData.content || pageData.items || pageData;
         
     } catch (err) {
@@ -57,27 +51,30 @@ const submitApproval = async () => {
     if (!selectedCustomer.value) return;
     
     try {
-        // NOTE: We still need to verify where this endpoint lives in your backend!
-        const response = await fetch(`/api/customers/${selectedCustomer.value.id}/approve`, {
+        const response = await fetch('/accounts', {
             method: 'POST',
             headers: { 
                 'Authorization': `Bearer ${auth.token}`,
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-                dailyTransferLimit: dailyLimit.value,
-                absoluteTransferLimit: absoluteLimit.value
+                customerRegistrationId: selectedCustomer.value.id,
+                minimumAllowedBalance: absoluteLimit.value, 
+                dailyOutgoingTransferLimit: dailyLimit.value
             })
         });
 
-        if (!response.ok) throw new Error("Approval failed.");
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(errorText || "Approval failed.");
+        }
         
         alert(`Customer ${selectedCustomer.value.firstName} approved! Accounts generated.`);
         closeReviewModal();
-        await fetchPendingCustomers(); // Refresh the list
+        await fetchPendingCustomers(); 
     } catch (err) {
         console.error(err);
-        alert("Failed to approve customer.");
+        alert(`Failed to approve customer: ${err instanceof Error ? err.message : String(err)}`);
     }
 };
 

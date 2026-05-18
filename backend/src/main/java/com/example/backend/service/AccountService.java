@@ -6,6 +6,8 @@ import com.example.backend.domain.CustomerApprovalStatus;
 import com.example.backend.domain.UserRegistration;
 import com.example.backend.repository.BankAccountRepository;
 import com.example.backend.repository.UserRegistrationRepository;
+import com.example.backend.dto.AccountDetail;
+import com.example.backend.dto.AccountSummaryResponse;
 import com.example.backend.dto.CreateAccountsRequest;
 import com.example.backend.dto.CreatedAccountLine;
 import com.example.backend.dto.CreatedAccountsResponse;
@@ -114,5 +116,30 @@ public class AccountService {
 			}
 		}
 		throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Could not allocate a unique demo IBAN");
+	}
+
+	@Transactional(readOnly = true)
+	public AccountSummaryResponse getMyAccounts(String email) {
+		UserRegistration customer = userRegistrationRepository.findByEmail(email)
+				.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Customer not found"));
+
+		List<BankAccount> accounts = bankAccountRepository.findAllByOwner_Id(customer.getId());
+
+		BigDecimal combinedBalance = accounts.stream()
+				.map(BankAccount::getBalance)
+				.reduce(BigDecimal.ZERO, BigDecimal::add);
+
+		List<AccountDetail> accountDetails = accounts.stream()
+				.map(acc -> new AccountDetail(
+						acc.getIban(),
+						acc.getAccountType().name(),
+						acc.getBalance(),
+						acc.getMinimumAllowedBalance()))
+				.toList();
+
+		return new AccountSummaryResponse(
+				customer.getFirstName() + " " + customer.getLastName(),
+				combinedBalance,
+				accountDetails);
 	}
 }
