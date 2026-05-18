@@ -13,16 +13,15 @@ public class OpenApiConfig {
 	@Bean
 	public OpenAPI openAPI() {
 		return new OpenAPI()
-			// Name "bearerAuth" must match @SecurityRequirement on protected controllers.
-			.components(new Components()
-				.addSecuritySchemes("bearerAuth", new SecurityScheme()
-					.name("Authorization")
-					.type(SecurityScheme.Type.HTTP)
-					.scheme("bearer")
-					.bearerFormat("JWT")))
-			.info(new Info()
-				.title("Backend API")
-				.version("v1")
-				.description("REST API with Spring Security, JPA, and H2"));
+				.components(new Components()
+						.addSecuritySchemes("bearerAuth", new SecurityScheme()
+								.name("Authorization")
+								.type(SecurityScheme.Type.HTTP)
+								.scheme("bearer")
+								.bearerFormat("JWT")))
+				.info(new Info()
+						.title("Backend API")
+						.version("v1")
+						.description("REST API with Spring Security, JPA, and H2"));
 	}
 }

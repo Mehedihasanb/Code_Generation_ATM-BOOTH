@@ -16,9 +16,6 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 
-/**
- * Reads JWT from the Authorization header and fills Spring Security context so authorizeHttpRequests can pass or block.
- */
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
@@ -34,13 +31,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
 	@Override
 	protected void doFilterInternal(
-		HttpServletRequest request,
-		HttpServletResponse response,
-		FilterChain filterChain
-	) throws ServletException, IOException {
+			HttpServletRequest request,
+			HttpServletResponse response,
+			FilterChain filterChain) throws ServletException, IOException {
 		String authHeader = request.getHeader("Authorization");
 
-		// Public routes still hit this filter; no header means "not logged in via JWT yet".
 		if (authHeader == null || !authHeader.startsWith("Bearer ")) {
 			filterChain.doFilter(request, response);
 			return;
@@ -53,19 +48,16 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 			if (emailFromTokenSubject != null && SecurityContextHolder.getContext().getAuthentication() == null) {
 				UserDetails userDetails = userDetailsService.loadUserByUsername(emailFromTokenSubject);
 
-				// Signature and expiry checked against jwt.secret in application.yml.
 				if (jwtService.isTokenValid(jwtToken, userDetails)) {
 					UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(
-						userDetails,
-						null,
-						userDetails.getAuthorities()
-					);
+							userDetails,
+							null,
+							userDetails.getAuthorities());
 					authenticationToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
 					SecurityContextHolder.getContext().setAuthentication(authenticationToken);
 				}
 			}
 		} catch (Exception invalidJwtException) {
-			// Bad signature, wrong secret, malformed token: behave like "no user".
 			logger.debug("JWT rejected for request {}", request.getRequestURI(), invalidJwtException);
 			SecurityContextHolder.clearContext();
 		}

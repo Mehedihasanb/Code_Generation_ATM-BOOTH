@@ -4,11 +4,10 @@ import RegistrationView from '../views/user/RegistrationView.vue';
 import LoginView from '../views/user/LoginView.vue';
 import PendingApprovalView from '../views/user/PendingApprovalView.vue';
 import ServiceDeskApprovalsView from '../views/employee/ServiceDeskApprovalsView.vue';
-import {
-	customerApprovalStatusStorageKey,
-	roleStorageKey,
-	tokenStorageKey,
-} from '../stores/auth';
+import CustomerAccountsView from '@/views/user/CustomerAccountsView.vue';
+
+const roleStorageKey = 'code-generation-role';
+const customerApprovalStatusStorageKey = 'code-generation-customer-approval-status';
 
 const router = createRouter({
 	history: createWebHistory(import.meta.env.BASE_URL),
@@ -38,28 +37,27 @@ const router = createRouter({
 			path: '/service-desk',
 			name: 'service-desk',
 			component: ServiceDeskApprovalsView,
-			meta: { requiresEmployee: true },
 		},
 		{
 			path: '/service-desk/approvals',
 			name: 'service-desk-approvals',
 			component: ServiceDeskApprovalsView,
-			meta: { requiresEmployee: true },
 		},
+		{
+        path: '/accounts',
+        name: 'accounts',
+        component: CustomerAccountsView
+    },
+		
 	],
 });
 
 router.beforeEach((to) => {
-	const role = localStorage.getItem(roleStorageKey);
-	const token = localStorage.getItem(tokenStorageKey);
-	const customerApprovalStatus = localStorage.getItem(customerApprovalStatusStorageKey);
+	// `auth` store uses `sessionStorage`; keep router consistent so pending
+	// customers are detected after login without a full reload.
+	const role = sessionStorage.getItem(roleStorageKey);
+	const customerApprovalStatus = sessionStorage.getItem(customerApprovalStatusStorageKey);
 	const isPendingCustomer = role === 'CUSTOMER' && customerApprovalStatus === 'PENDING';
-
-	if (to.meta.requiresEmployee) {
-		if (!token || role !== 'EMPLOYEE') {
-			return { path: '/login', query: { redirect: to.fullPath } };
-		}
-	}
 
 	if (isPendingCustomer && to.path !== '/pending-approval' && to.meta.requiresApproved) {
 		return '/pending-approval';

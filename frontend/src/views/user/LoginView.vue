@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { reactive, computed } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
+import { useRouter } from 'vue-router';
 import { useAuthStore } from '../../stores/auth';
 
 type LoginForm = {
@@ -10,7 +10,6 @@ type LoginForm = {
 
 const auth = useAuthStore();
 const router = useRouter();
-const route = useRoute();
 
 const form = reactive<LoginForm>({
 	email: '',
@@ -60,28 +59,27 @@ async function submit() {
             password: form.password,
         });
 
-        const redirect = typeof route.query.redirect === 'string' ? route.query.redirect : null;
-        if (redirect) {
-            await router.push(redirect);
-            return;
-        }
-
         if (auth.role === 'EMPLOYEE') {
-            await router.push('/service-desk');
+            if (auth.employeeType === 'SERVICE_DESK') {
+                await router.push('/service-desk');
+                return;
+            }
+            await router.push('/employee-home'); 
             return;
         }
 
-        // 2. Check for Unapproved Customers
         if (auth.isPendingCustomer || auth.isDeniedCustomer) {
             await router.push('/pending-approval');
             return;
         }
 
-        // 3. Approved Customers go to the main home/accounts page
+		if (auth.role === 'CUSTOMER') {
+			await router.push('/accounts');
+			return;
+		}
         await router.push('/');
         
     } catch {
-        // `auth.login` sets `auth.error` when the backend rejects the request (e.g. denied registration).
     }
 }
 </script>

@@ -32,50 +32,57 @@ import java.util.List;
 public class SecurityConfig {
 
 	@Bean
-	public SecurityFilterChain securityFilterChain(HttpSecurity httpSecurity, JwtAuthenticationFilter jwtAuthenticationFilter) throws Exception {
+	public SecurityFilterChain securityFilterChain(HttpSecurity httpSecurity,
+			JwtAuthenticationFilter jwtAuthenticationFilter) throws Exception {
 		httpSecurity
-			// Vue dev server calls this API from another origin; Spring applies corsConfigurationSource below.
-			.cors(Customizer.withDefaults())
-			// REST API + JWT: no browser session cookie CSRF flow.
-			.csrf(crossSiteRequestForgeryConfig -> crossSiteRequestForgeryConfig.disable())
-			// We issue JWT ourselves from /auth/login, not Spring's built-in login forms.
-			.formLogin(formLoginConfig -> formLoginConfig.disable())
-			.httpBasic(httpBasicAuthConfig -> httpBasicAuthConfig.disable())
-			// No server-side session: each request must carry Authorization Bearer token.
-			.sessionManagement(sessionManagementConfig -> sessionManagementConfig.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-			// If request hits a protected route without a valid login context, answer 401 (not a redirect).
-			.exceptionHandling(exceptionHandlingConfig -> exceptionHandlingConfig.authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)))
-			.authorizeHttpRequests(authorizeRequestsConfig -> authorizeRequestsConfig
-				.requestMatchers(HttpMethod.POST, "/auth/register", "/auth/login").permitAll()
-				.requestMatchers(HttpMethod.POST, "/auth/customers/*/deny").hasRole("EMPLOYEE")
-				.requestMatchers(HttpMethod.GET, "/users").hasRole("EMPLOYEE")
-				.requestMatchers(HttpMethod.POST, "/accounts").hasRole("EMPLOYEE")
-				.requestMatchers(HttpMethod.PUT, "/accounts/*/close").hasRole("EMPLOYEE")
-				.requestMatchers(
-					"/api/health",
-					"/v3/api-docs/**",
-					"/swagger-ui/**",
-					"/swagger-ui.html",
-					"/swagger-ui/index.html",
-					"/h2-console/**"
-				).permitAll()
-				.anyRequest().hasAnyRole("CUSTOMER", "EMPLOYEE", "PENDING_CUSTOMER")
-			)
-			// Turn Authorization header into Spring Security authentication before controllers run.
-			.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
-			// Lets H2 console load inside an iframe while developing.
-			.headers(headerConfig -> headerConfig.frameOptions(frameOptionsConfig -> frameOptionsConfig.sameOrigin()));
+				// Vue dev server calls this API from another origin; Spring applies
+				// corsConfigurationSource below.
+				.cors(Customizer.withDefaults())
+				// REST API + JWT: no browser session cookie CSRF flow.
+				.csrf(crossSiteRequestForgeryConfig -> crossSiteRequestForgeryConfig.disable())
+				// We issue JWT ourselves from /auth/login, not Spring's built-in login forms.
+				.formLogin(formLoginConfig -> formLoginConfig.disable())
+				.httpBasic(httpBasicAuthConfig -> httpBasicAuthConfig.disable())
+				// No server-side session: each request must carry Authorization Bearer token.
+				.sessionManagement(sessionManagementConfig -> sessionManagementConfig
+						.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+				// If request hits a protected route without a valid login context, answer 401
+				// (not a redirect).
+				.exceptionHandling(exceptionHandlingConfig -> exceptionHandlingConfig
+						.authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)))
+				.authorizeHttpRequests(authorizeRequestsConfig -> authorizeRequestsConfig
+						.requestMatchers(HttpMethod.POST, "/auth/register", "/auth/login").permitAll()
+						.requestMatchers(HttpMethod.POST, "/auth/customers/*/deny").hasRole("EMPLOYEE")
+						.requestMatchers(HttpMethod.GET, "/users").hasRole("EMPLOYEE")
+						.requestMatchers(HttpMethod.GET, "/accounts/mine").hasRole("CUSTOMER")
+						.requestMatchers(HttpMethod.POST, "/accounts").hasRole("EMPLOYEE")
+						.requestMatchers(HttpMethod.PUT, "/accounts/*/close").hasRole("EMPLOYEE")
+						.requestMatchers(
+								"/api/health",
+								"/v3/api-docs/**",
+								"/swagger-ui/**",
+								"/swagger-ui.html",
+								"/swagger-ui/index.html",
+								"/h2-console/**")
+						.permitAll()
+						.anyRequest().hasAnyRole("CUSTOMER", "EMPLOYEE", "PENDING_CUSTOMER"))
+				// Turn Authorization header into Spring Security authentication before
+				// controllers run.
+				.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+				// Lets H2 console load inside an iframe while developing.
+				.headers(headerConfig -> headerConfig
+						.frameOptions(frameOptionsConfig -> frameOptionsConfig.sameOrigin()));
 		return httpSecurity.build();
 	}
 
 	@Bean
 	public PasswordEncoder passwordEncoder() {
-		// Stores passwords hashed; AuthenticationManager compares raw password from login to this hash.
 		return new BCryptPasswordEncoder();
 	}
 
 	@Bean
-	public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration) throws Exception {
+	public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration)
+			throws Exception {
 		// Used by AuthController to check email + password in one line.
 		return authenticationConfiguration.getAuthenticationManager();
 	}
@@ -83,17 +90,13 @@ public class SecurityConfig {
 	@Bean
 	public UserDetailsService userDetailsService(UserRegistrationRepository userRegistrationRepository) {
 		return loginEmail -> userRegistrationRepository.findByEmail(loginEmail.trim().toLowerCase())
-			.map(userRegistration -> User.withUsername(userRegistration.getEmail())
-				.password(userRegistration.getPassword())
-				.roles(resolveSpringSecurityRole(userRegistration))
-				.build())
-			.orElseThrow(() -> new UsernameNotFoundException("User not found"));
+				.map(userRegistration -> User.withUsername(userRegistration.getEmail())
+						.password(userRegistration.getPassword())
+						.roles(resolveSpringSecurityRole(userRegistration))
+						.build())
+				.orElseThrow(() -> new UsernameNotFoundException("User not found"));
 	}
 
-	/**
-	 * Maps stored users to Spring authorities. Pending customers get {@code ROLE_PENDING_CUSTOMER} so you can
-	 * restrict routes until an employee approves (opens accounts) or denies.
-	 */
 	private String resolveSpringSecurityRole(UserRegistration userRegistration) {
 		if (!"CUSTOMER".equals(userRegistration.getRole())) {
 			return userRegistration.getRole();
@@ -107,7 +110,8 @@ public class SecurityConfig {
 	@Bean
 	public CorsConfigurationSource corsConfigurationSource() {
 		CorsConfiguration corsConfiguration = new CorsConfiguration();
-		// Vite dev URL; browser blocks cross-origin calls unless these headers are allowed.
+		// Vite dev URL; browser blocks cross-origin calls unless these headers are
+		// allowed.
 		corsConfiguration.setAllowedOrigins(List.of("http://localhost:5173", "http://127.0.0.1:5173"));
 		corsConfiguration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
 		corsConfiguration.setAllowedHeaders(List.of("*"));
