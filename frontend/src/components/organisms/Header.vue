@@ -33,6 +33,10 @@ const handleLogout = () => {
                 My Accounts
             </RouterLink>
 
+            <RouterLink v-if="auth.isApprovedCustomer" to="/transfer">
+                Transfer Funds
+            </RouterLink>
+
             <template v-if="auth.isAuthenticated">
                 <span class="greeting">Hello, {{ auth.firstName || 'User' }}</span>
                 <button @click="handleLogout" class="btn-link">Logout</button>

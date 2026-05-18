@@ -5,6 +5,7 @@ import LoginView from '../views/user/LoginView.vue';
 import PendingApprovalView from '../views/user/PendingApprovalView.vue';
 import ServiceDeskApprovalsView from '../views/employee/ServiceDeskApprovalsView.vue';
 import CustomerAccountsView from '@/views/user/CustomerAccountsView.vue';
+import CustomerTransferView from '@/views/user/CustomerTransferView.vue';
 
 const roleStorageKey = 'code-generation-role';
 const customerApprovalStatusStorageKey = 'code-generation-customer-approval-status';
@@ -47,7 +48,12 @@ const router = createRouter({
         path: '/accounts',
         name: 'accounts',
         component: CustomerAccountsView
-    },
+		},
+		{
+		path: '/transfer',
+		name: 'transfer',
+		component: CustomerTransferView
+		},
 		
 	],
 });

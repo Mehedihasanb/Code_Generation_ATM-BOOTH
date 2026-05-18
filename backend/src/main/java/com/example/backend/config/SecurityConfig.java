@@ -55,6 +55,7 @@ public class SecurityConfig {
 						.requestMatchers(HttpMethod.POST, "/auth/customers/*/deny").hasRole("EMPLOYEE")
 						.requestMatchers(HttpMethod.GET, "/users").hasRole("EMPLOYEE")
 						.requestMatchers(HttpMethod.GET, "/accounts/mine").hasRole("CUSTOMER")
+						.requestMatchers(HttpMethod.POST, "/transactions").hasRole("CUSTOMER")
 						.requestMatchers(HttpMethod.POST, "/accounts").hasRole("EMPLOYEE")
 						.requestMatchers(HttpMethod.PUT, "/accounts/*/close").hasRole("EMPLOYEE")
 						.requestMatchers(
