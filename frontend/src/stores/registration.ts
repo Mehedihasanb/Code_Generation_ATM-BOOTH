@@ -6,11 +6,11 @@ export type RegisterPayload = {
 	lastName: string;
 	email: string;
 	password: string;
-    bsnNumber: string;
-    phoneNumber: string;
+	bsnNumber: string;
+	phoneNumber: string;
 };
 
-export type RegisterResponse = {
+type RegisterResponse = {
 	id: number;
 	firstName: string;
 	lastName: string;
@@ -23,29 +23,31 @@ export const useRegistrationStore = defineStore('registration', () => {
 	const error = ref<string | null>(null);
 	const success = ref<string | null>(null);
 
-	async function submitRegistration(registrationPayload: RegisterPayload) {
+	async function submitRegistration(registerRequest: RegisterPayload) {
 		loading.value = true;
 		error.value = null;
 		success.value = null;
+
 		try {
-			const registrationHttpResponse = await fetch('/auth/register', {
+			// Call backend (same as AuthController -> RegistrationService.register)
+			const registerHttpResponse = await fetch('/auth/register', {
 				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json',
-				},
-				body: JSON.stringify(registrationPayload),
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify(registerRequest),
 			});
 
-			if (!registrationHttpResponse.ok) {
-				const errorResponseText = await registrationHttpResponse.text();
-				throw new Error(errorResponseText || `Registration failed (${registrationHttpResponse.status})`);
+			if (!registerHttpResponse.ok) {
+				const errorText = await registerHttpResponse.text();
+				throw new Error(errorText || `Registration failed (${registerHttpResponse.status})`);
 			}
 
-			const registrationResponseBody = (await registrationHttpResponse.json()) as RegisterResponse;
-			success.value = registrationResponseBody.message;
-			return registrationResponseBody;
+			const registerResponseBody = (await registerHttpResponse.json()) as RegisterResponse;
+			success.value = registerResponseBody.message;
+			return registerResponseBody;
 		} catch (registrationFailure) {
-			error.value = registrationFailure instanceof Error ? registrationFailure.message : String(registrationFailure);
+			error.value = registrationFailure instanceof Error
+				? registrationFailure.message
+				: String(registrationFailure);
 			throw registrationFailure;
 		} finally {
 			loading.value = false;

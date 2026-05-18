@@ -19,11 +19,11 @@ const handleLogout = () => {
             <RouterLink to="/">Home</RouterLink>
 
             <RouterLink 
-                v-if="auth.role === 'EMPLOYEE' && auth.employeeType === 'SERVICE_DESK'" 
+                v-if="auth.role === 'EMPLOYEE'" 
                 to="/service-desk" 
                 class="special-nav-link"
             >
-                Service Desk Dashboard
+                Service Desk
             </RouterLink>
 
             <RouterLink 

@@ -9,11 +9,12 @@ import java.util.Optional;
 
 public interface BankAccountRepository extends JpaRepository<BankAccount, Long> {
 
-	boolean existsByOwner_Id(Long ownerId);
-
 	Optional<BankAccount> findByIban(String iban);
 
 	List<BankAccount> findByOwner_IdIn(Collection<Long> ownerIds);
 
 	List<BankAccount> findAllByOwner_Id(Long ownerId);
+
+	boolean existsByOwner_Id(Long ownerId);
+
 }
