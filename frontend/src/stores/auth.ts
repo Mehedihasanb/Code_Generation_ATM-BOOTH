@@ -9,7 +9,6 @@ export type LoginPayload = {
 export type LoginResponse = {
     token: string;
     role: 'CUSTOMER' | 'EMPLOYEE';
-    /** PENDING, APPROVED, or DENIED for customers; omitted or null for employees. */
     customerApprovalStatus?: string | null;
     employeeType?: 'REGULAR' | 'SERVICE_DESK'; //Added by Fernando
     firstName: string;
@@ -22,7 +21,6 @@ const nameStorageKey = 'code-generation-firstname';
 const employeeTypeStorageKey = 'code-generation-employee-type'; // Added by Fernando
 
 function migrateLegacyApprovedFlag() {
-    // Upgraded to sessionStorage to enforce the logout-on-close requirement
     if (sessionStorage.getItem(customerApprovalStatusStorageKey) != null) {
         return;
     }

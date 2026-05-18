@@ -52,11 +52,6 @@ public class SecurityConfig {
 				.exceptionHandling(exceptionHandlingConfig -> exceptionHandlingConfig
 						.authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)))
 				.authorizeHttpRequests(authorizeRequestsConfig -> authorizeRequestsConfig
-						// 🕵️‍♂️ THIS LINE UNMASKS THE GHOST 401:
-						.dispatcherTypeMatchers(DispatcherType.ERROR).permitAll()
-
-						.requestMatchers(HttpMethod.POST, "/auth/register", "/auth/login").permitAll()
-						// ... the rest of your rules ...
 						.requestMatchers(HttpMethod.POST, "/auth/register", "/auth/login").permitAll()
 						.requestMatchers(HttpMethod.POST, "/auth/customers/*/deny").hasRole("EMPLOYEE")
 						.requestMatchers(HttpMethod.GET, "/users").hasRole("EMPLOYEE")
@@ -105,11 +100,6 @@ public class SecurityConfig {
 				.orElseThrow(() -> new UsernameNotFoundException("User not found"));
 	}
 
-	/**
-	 * Maps stored users to Spring authorities. Pending customers get
-	 * {@code ROLE_PENDING_CUSTOMER} so you can
-	 * restrict routes until an employee approves (opens accounts) or denies.
-	 */
 	private String resolveSpringSecurityRole(UserRegistration userRegistration) {
 		if (!"CUSTOMER".equals(userRegistration.getRole())) {
 			return userRegistration.getRole();

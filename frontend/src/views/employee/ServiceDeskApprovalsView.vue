@@ -82,7 +82,6 @@ const denyCustomer = async (id: number) => {
     if (!confirm("Are you sure you want to DENY this application?")) return;
 
     try {
-        // Matches the AuthController endpoint from earlier
         const response = await fetch(`/auth/customers/${id}/deny`, {
             method: 'POST',
             headers: { 'Authorization': `Bearer ${auth.token}` }
