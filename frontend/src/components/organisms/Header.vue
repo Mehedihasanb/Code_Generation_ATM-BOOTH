@@ -40,7 +40,7 @@ const handleLogout = () => {
 </template>
 
 <style scoped>
-//Optional: Give the employee link a slightly different color or weight so it stands out
+/* Optional: Give the employee link a slightly different color or weight so it stands out */
 .special-nav-link {
     font-weight: 600;
     color: #d35400; /* A nice subtle orange/brand color */
