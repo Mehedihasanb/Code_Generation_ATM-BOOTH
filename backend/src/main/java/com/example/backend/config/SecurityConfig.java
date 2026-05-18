@@ -1,6 +1,5 @@
 package com.example.backend.config;
 
-import jakarta.servlet.DispatcherType; // Add this at the top
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -78,8 +77,6 @@ public class SecurityConfig {
 
 	@Bean
 	public PasswordEncoder passwordEncoder() {
-		// Stores passwords hashed; AuthenticationManager compares raw password from
-		// login to this hash.
 		return new BCryptPasswordEncoder();
 	}
 
