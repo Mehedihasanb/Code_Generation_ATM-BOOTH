@@ -1,8 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue';
-import { useAuthStore } from '@/stores/auth';
-
-const auth = useAuthStore();
+import { authorizedFetch } from '@/composables/useAuthorizedFetch';
 
 const myAccounts = ref<any[]>([]);
 const loadingAccounts = ref(true);
@@ -17,10 +15,7 @@ const description = ref('');
 
 const fetchMyAccounts = async () => {
     try {
-        const currentToken = auth.token || sessionStorage.getItem('code-generation-token');
-        const response = await fetch('/accounts/mine', {
-            headers: { 'Authorization': `Bearer ${currentToken}` }
-        });
+        const response = await authorizedFetch('/accounts/mine');
         
         if (!response.ok) throw new Error("Could not load your accounts.");
         
@@ -57,14 +52,8 @@ const submitTransfer = async () => {
     submitting.value = true;
 
     try {
-        const currentToken = auth.token || sessionStorage.getItem('code-generation-token');
-        
-        const response = await fetch('/transactions', {
+        const response = await authorizedFetch('/transactions', {
             method: 'POST',
-            headers: { 
-                'Authorization': `Bearer ${currentToken}`,
-                'Content-Type': 'application/json'
-            },
             body: JSON.stringify({
                 fromIban: fromIban.value,
                 toIban: toIban.value,

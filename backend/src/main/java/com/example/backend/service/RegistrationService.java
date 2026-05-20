@@ -3,6 +3,7 @@ package com.example.backend.service;
 import com.example.backend.config.JwtService;
 import com.example.backend.domain.CustomerApprovalStatus;
 import com.example.backend.domain.UserRegistration;
+import com.example.backend.policy.CustomerRegistrationPolicy;
 import com.example.backend.repository.UserRegistrationRepository;
 import com.example.backend.dto.LoginRequest;
 import com.example.backend.dto.LoginResponse;
@@ -24,17 +25,21 @@ public class RegistrationService {
 	private final UserRegistrationRepository userRegistrationRepository;
 	private final PasswordEncoder passwordEncoder;
 	private final JwtService jwtService;
-	private final AuthenticationManager authenticationManager; // ADDED
+	private final AuthenticationManager authenticationManager;
+	private final CustomerRegistrationPolicy customerRegistrationPolicy;
 
-	// ADDED AuthenticationManager to the constructor
-	public RegistrationService(UserRegistrationRepository userRegistrationRepository,
-			PasswordEncoder passwordEncoder,
-			JwtService jwtService,
-			AuthenticationManager authenticationManager) {
+	public RegistrationService(
+		UserRegistrationRepository userRegistrationRepository,
+		PasswordEncoder passwordEncoder,
+		JwtService jwtService,
+		AuthenticationManager authenticationManager,
+		CustomerRegistrationPolicy customerRegistrationPolicy
+	) {
 		this.userRegistrationRepository = userRegistrationRepository;
 		this.passwordEncoder = passwordEncoder;
 		this.jwtService = jwtService;
-		this.authenticationManager = authenticationManager; // ADDED
+		this.authenticationManager = authenticationManager;
+		this.customerRegistrationPolicy = customerRegistrationPolicy;
 	}
 
 	public RegisterResponse register(RegisterRequest registerRequest) {
@@ -51,8 +56,7 @@ public class RegistrationService {
 						"CUSTOMER",
 						CustomerApprovalStatus.PENDING,
 						registerRequest.bsnNumber().trim(),
-						registerRequest.phoneNumber().trim(),
-						null));
+						registerRequest.phoneNumber().trim()));
 
 		return new RegisterResponse(
 				newlyRegisteredUser.getId(),
@@ -67,13 +71,7 @@ public class RegistrationService {
 		UserRegistration customer = userRegistrationRepository.findById(customerRegistrationId)
 				.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Customer not found"));
 
-		if (!"CUSTOMER".equals(customer.getRole())) {
-			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Only customer registrations can be denied");
-		}
-
-		if (customer.getCustomerApprovalStatus() != CustomerApprovalStatus.PENDING) {
-			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Only pending registrations can be denied");
-		}
+		customerRegistrationPolicy.requirePendingForDeny(customer);
 
 		customer.setCustomerApprovalStatus(CustomerApprovalStatus.DENIED);
 		userRegistrationRepository.save(customer);
@@ -90,11 +88,7 @@ public class RegistrationService {
 				.findByEmail(loginRequest.email().trim().toLowerCase())
 				.orElseThrow(() -> new RuntimeException("User not found after authentication"));
 
-		// Business Logic: Check if denied
-		if ("CUSTOMER".equals(authenticatedUser.getRole())
-				&& authenticatedUser.getCustomerApprovalStatus() == CustomerApprovalStatus.DENIED) {
-			throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Registration was denied");
-		}
+		customerRegistrationPolicy.requireNotDeniedForLogin(authenticatedUser);
 
 		// Generate Token
 		UserDetails authenticatedUserDetails = (UserDetails) authentication.getPrincipal();
@@ -111,7 +105,6 @@ public class RegistrationService {
 			loginResponse.setCustomerApprovalStatus(null);
 		}
 
-		loginResponse.setEmployeeType(authenticatedUser.getEmployeeType());
 		loginResponse.setFirstName(authenticatedUser.getFirstName());
 
 		return loginResponse;

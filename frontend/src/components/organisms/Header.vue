@@ -19,7 +19,7 @@ const handleLogout = () => {
             <RouterLink to="/">Home</RouterLink>
 
             <RouterLink 
-                v-if="auth.role === 'EMPLOYEE'" 
+                v-if="auth.isEmployee" 
                 to="/service-desk" 
                 class="special-nav-link"
             >

@@ -1,10 +1,9 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
-import { useAuthStore } from '@/stores/auth';
+import { authorizedFetch } from '@/composables/useAuthorizedFetch';
 
 const router = useRouter();
-const auth = useAuthStore();
 
 const pendingCustomers = ref<any[]>([]);
 const loading = ref(true);
@@ -19,9 +18,7 @@ const fetchPendingCustomers = async () => {
     loading.value = true;
     error.value = null;
     try {
-        const response = await fetch('/users?hasAccount=false', {
-            headers: { 'Authorization': `Bearer ${auth.token}` }
-        });
+        const response = await authorizedFetch('/users?hasAccount=false');
         
         if (!response.ok) throw new Error("Failed to fetch pending customers.");
         
@@ -51,12 +48,8 @@ const submitApproval = async () => {
     if (!selectedCustomer.value) return;
     
     try {
-        const response = await fetch('/accounts', {
+        const response = await authorizedFetch('/accounts', {
             method: 'POST',
-            headers: { 
-                'Authorization': `Bearer ${auth.token}`,
-                'Content-Type': 'application/json'
-            },
             body: JSON.stringify({
                 customerRegistrationId: selectedCustomer.value.id,
                 minimumAllowedBalance: absoluteLimit.value, 
@@ -82,9 +75,8 @@ const denyCustomer = async (id: number) => {
     if (!confirm("Are you sure you want to DENY this application?")) return;
 
     try {
-        const response = await fetch(`/auth/customers/${id}/deny`, {
+        const response = await authorizedFetch(`/auth/customers/${id}/deny`, {
             method: 'POST',
-            headers: { 'Authorization': `Bearer ${auth.token}` }
         });
 
         if (!response.ok) throw new Error("Denial failed.");

@@ -58,13 +58,7 @@ public class CustomerDirectoryService {
 			List<CustomerAccountRow> accountRows = new ArrayList<>();
 			for (BankAccount account : accounts) {
 				if (account.getOwner().getId().equals(customer.getId())) {
-					accountRows.add(new CustomerAccountRow(
-							account.getIban(),
-							account.getAccountType().name(),
-							account.isActive(),
-							account.getBalance(),
-							account.getMinimumAllowedBalance(),
-							account.getDailyOutgoingTransferLimit()));
+					accountRows.add(CustomerAccountRow.fromBankAccount(account));
 				}
 			}
 

@@ -3,6 +3,7 @@ package com.example.backend.service;
 import com.example.backend.domain.BankAccount;
 import com.example.backend.domain.Transaction;
 import com.example.backend.domain.UserRegistration;
+import com.example.backend.policy.TransferAuthorizationPolicy;
 import com.example.backend.dto.TransferRequest;
 import com.example.backend.repository.BankAccountRepository;
 import com.example.backend.repository.TransactionRepository;
@@ -20,14 +21,17 @@ public class TransactionService {
     private final BankAccountRepository bankAccountRepository;
     private final TransactionRepository transactionRepository;
     private final UserRegistrationRepository userRegistrationRepository;
+    private final TransferAuthorizationPolicy transferAuthorizationPolicy;
 
     public TransactionService(
             BankAccountRepository bankAccountRepository,
             TransactionRepository transactionRepository,
-            UserRegistrationRepository userRegistrationRepository) {
+            UserRegistrationRepository userRegistrationRepository,
+            TransferAuthorizationPolicy transferAuthorizationPolicy) {
         this.bankAccountRepository = bankAccountRepository;
         this.transactionRepository = transactionRepository;
         this.userRegistrationRepository = userRegistrationRepository;
+        this.transferAuthorizationPolicy = transferAuthorizationPolicy;
     }
 
     @Transactional
@@ -41,14 +45,8 @@ public class TransactionService {
         BankAccount toAccount = bankAccountRepository.findByIban(request.toIban())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Receiver account not found"));
 
-        if (!fromAccount.getOwner().getId().equals(initiator.getId()) && !"EMPLOYEE".equals(initiator.getRole())) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN,
-                    "You do not have permission to transfer from this account.");
-        }
-
-        if (!fromAccount.isActive() || !toAccount.isActive()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "One or both accounts are inactive.");
-        }
+        transferAuthorizationPolicy.requireCanInitiateFromAccount(initiator, fromAccount);
+        transferAuthorizationPolicy.requireActiveAccounts(fromAccount, toAccount);
 
         BigDecimal newBalance = fromAccount.getBalance().subtract(request.amount());
         if (newBalance.compareTo(fromAccount.getMinimumAllowedBalance()) < 0) {

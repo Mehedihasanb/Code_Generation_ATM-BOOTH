@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { reactive, computed } from 'vue';
-import { useRouter } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import { useAuthStore } from '../../stores/auth';
 
 type LoginForm = {
@@ -10,6 +10,7 @@ type LoginForm = {
 
 const auth = useAuthStore();
 const router = useRouter();
+const route = useRoute();
 
 const form = reactive<LoginForm>({
 	email: '',
@@ -59,12 +60,14 @@ async function submit() {
             password: form.password,
         });
 
+        const redirect = typeof route.query.redirect === 'string' ? route.query.redirect : null;
+        if (redirect) {
+            await router.push(redirect);
+            return;
+        }
+
         if (auth.role === 'EMPLOYEE') {
-            if (auth.employeeType === 'SERVICE_DESK') {
-                await router.push('/service-desk');
-                return;
-            }
-            await router.push('/employee-home'); 
+            await router.push('/service-desk');
             return;
         }
 

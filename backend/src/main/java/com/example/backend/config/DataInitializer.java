@@ -23,8 +23,7 @@ public class DataInitializer {
 					"CUSTOMER",
 					CustomerApprovalStatus.APPROVED,
 					"123456789",
-					"+31 6 12345678",
-					null
+					"+31 6 12345678"
 				));
 			}
 
@@ -37,22 +36,7 @@ public class DataInitializer {
 					"EMPLOYEE",
 					null,
 					null,
-					null,
-					"REGULAR"
-				));
-			}
-
-			if (userRegistrationRepository.findByEmail("servicedesk@inholland.nl").isEmpty()) {
-				userRegistrationRepository.save(new UserRegistration(
-					"ServiceDesk",
-					"User",
-					"servicedesk@inholland.nl",
-					passwordEncoder.encode("Password123!"),
-					"EMPLOYEE",
-					null,
-					null,
-					null,
-					"SERVICE_DESK"
+					null
 				));
 			}
 		};

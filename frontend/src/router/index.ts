@@ -6,9 +6,11 @@ import PendingApprovalView from '../views/user/PendingApprovalView.vue';
 import ServiceDeskApprovalsView from '../views/employee/ServiceDeskApprovalsView.vue';
 import CustomerAccountsView from '@/views/user/CustomerAccountsView.vue';
 import CustomerTransferView from '@/views/user/CustomerTransferView.vue';
-
-const roleStorageKey = 'code-generation-role';
-const customerApprovalStatusStorageKey = 'code-generation-customer-approval-status';
+import {
+	customerApprovalStatusStorageKey,
+	roleStorageKey,
+	tokenStorageKey,
+} from '../stores/auth';
 
 const router = createRouter({
 	history: createWebHistory(import.meta.env.BASE_URL),
@@ -38,32 +40,47 @@ const router = createRouter({
 			path: '/service-desk',
 			name: 'service-desk',
 			component: ServiceDeskApprovalsView,
+			meta: { requiresEmployee: true },
 		},
 		{
 			path: '/service-desk/approvals',
 			name: 'service-desk-approvals',
 			component: ServiceDeskApprovalsView,
+			meta: { requiresEmployee: true },
 		},
 		{
-        path: '/accounts',
-        name: 'accounts',
-        component: CustomerAccountsView
+			path: '/accounts',
+			name: 'accounts',
+			component: CustomerAccountsView,
+			meta: { requiresApprovedCustomer: true },
 		},
 		{
-		path: '/transfer',
-		name: 'transfer',
-		component: CustomerTransferView
+			path: '/transfer',
+			name: 'transfer',
+			component: CustomerTransferView,
+			meta: { requiresApprovedCustomer: true },
 		},
-		
 	],
 });
 
 router.beforeEach((to) => {
-	// `auth` store uses `sessionStorage`; keep router consistent so pending
-	// customers are detected after login without a full reload.
+	const token = sessionStorage.getItem(tokenStorageKey);
 	const role = sessionStorage.getItem(roleStorageKey);
 	const customerApprovalStatus = sessionStorage.getItem(customerApprovalStatusStorageKey);
 	const isPendingCustomer = role === 'CUSTOMER' && customerApprovalStatus === 'PENDING';
+	const isApprovedCustomer = role === 'CUSTOMER' && customerApprovalStatus === 'APPROVED';
+
+	if (to.meta.requiresEmployee) {
+		if (!token || role !== 'EMPLOYEE') {
+			return { path: '/login', query: { redirect: to.fullPath } };
+		}
+	}
+
+	if (to.meta.requiresApprovedCustomer) {
+		if (!token || !isApprovedCustomer) {
+			return { path: '/login', query: { redirect: to.fullPath } };
+		}
+	}
 
 	if (isPendingCustomer && to.path !== '/pending-approval' && to.meta.requiresApproved) {
 		return '/pending-approval';

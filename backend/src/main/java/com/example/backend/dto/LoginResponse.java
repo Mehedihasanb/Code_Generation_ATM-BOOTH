@@ -11,7 +11,6 @@ public class LoginResponse {
 	private String role;
 	/** For customers: PENDING, APPROVED, or DENIED. Null for employees. */
 	private String customerApprovalStatus;
-	private String employeeType;
 	private String firstName;
 
 	public LoginResponse() {
@@ -39,14 +38,6 @@ public class LoginResponse {
 
 	public void setCustomerApprovalStatus(String customerApprovalStatus) {
 		this.customerApprovalStatus = customerApprovalStatus;
-	}
-
-	public String getEmployeeType() {
-		return employeeType;
-	}
-
-	public void setEmployeeType(String employeeType) {
-		this.employeeType = employeeType;
 	}
 
 	public String getFirstName() {

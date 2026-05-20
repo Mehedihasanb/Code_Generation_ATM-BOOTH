@@ -4,9 +4,9 @@ import com.example.backend.domain.AccountType;
 import com.example.backend.domain.BankAccount;
 import com.example.backend.domain.CustomerApprovalStatus;
 import com.example.backend.domain.UserRegistration;
+import com.example.backend.policy.AccountOpeningPolicy;
 import com.example.backend.repository.BankAccountRepository;
 import com.example.backend.repository.UserRegistrationRepository;
-import com.example.backend.dto.AccountDetail;
 import com.example.backend.dto.AccountSummaryResponse;
 import com.example.backend.dto.CreateAccountsRequest;
 import com.example.backend.dto.CreatedAccountLine;
@@ -18,7 +18,6 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -27,34 +26,27 @@ public class AccountService {
 
 	private final BankAccountRepository bankAccountRepository;
 	private final UserRegistrationRepository userRegistrationRepository;
-	private final SecureRandom secureRandom = new SecureRandom();
+	private final AccountOpeningPolicy accountOpeningPolicy;
+	private final IbanAllocationService ibanAllocationService;
 
 	public AccountService(
 		BankAccountRepository bankAccountRepository,
-		UserRegistrationRepository userRegistrationRepository
+		UserRegistrationRepository userRegistrationRepository,
+		AccountOpeningPolicy accountOpeningPolicy,
+		IbanAllocationService ibanAllocationService
 	) {
 		this.bankAccountRepository = bankAccountRepository;
 		this.userRegistrationRepository = userRegistrationRepository;
+		this.accountOpeningPolicy = accountOpeningPolicy;
+		this.ibanAllocationService = ibanAllocationService;
 	}
 
 	@Transactional
 	public CreatedAccountsResponse createCheckingAndSavingsAccounts(CreateAccountsRequest createAccountsRequest) {
-		// Load pending customer
 		UserRegistration customer = userRegistrationRepository.findById(createAccountsRequest.customerRegistrationId())
 			.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Customer not found"));
 
-		if (!"CUSTOMER".equals(customer.getRole())) {
-			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Only customers can receive bank accounts");
-		}
-
-		if (customer.getCustomerApprovalStatus() != CustomerApprovalStatus.PENDING) {
-			throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-				"Customer registration must be pending before opening accounts");
-		}
-
-		if (bankAccountRepository.existsByOwner_Id(customer.getId())) {
-			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Customer already has bank accounts");
-		}
+		accountOpeningPolicy.requireEligibleForNewAccounts(customer);
 
 		BigDecimal zeroBalance = BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP);
 		BigDecimal minimumAllowedBalance = createAccountsRequest.minimumAllowedBalance()
@@ -62,9 +54,8 @@ public class AccountService {
 		BigDecimal dailyOutgoingTransferLimit = createAccountsRequest.dailyOutgoingTransferLimit()
 			.setScale(2, RoundingMode.HALF_UP);
 
-		// US-10: create checking + savings with demo IBANs
-		String checkingIban = generateUniqueDemoIban();
-		String savingsIban = generateUniqueDemoIban();
+		String checkingIban = ibanAllocationService.allocateUniqueDutchIban();
+		String savingsIban = ibanAllocationService.allocateUniqueDutchIban();
 
 		BankAccount checkingAccount = new BankAccount(
 			customer,
@@ -109,7 +100,6 @@ public class AccountService {
 		BankAccount bankAccount = bankAccountRepository.findByIban(normalizedIban)
 			.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Unknown IBAN"));
 
-		// US-11: already closed is fine, nothing to do
 		if (!bankAccount.isActive()) {
 			return;
 		}
@@ -118,43 +108,12 @@ public class AccountService {
 		bankAccountRepository.save(bankAccount);
 	}
 
-	private String generateUniqueDemoIban() {
-		for (int attempt = 0; attempt < 100; attempt++) {
-			int checkDigits = secureRandom.nextInt(100);
-			int accountDigits = secureRandom.nextInt(1_000_000_000);
-			String candidateIban = "NL" + String.format("%02d", checkDigits) + "INHO0"
-				+ String.format("%09d", accountDigits);
-
-			if (bankAccountRepository.findByIban(candidateIban).isEmpty()) {
-				return candidateIban;
-			}
-		}
-
-		throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Could not allocate a unique demo IBAN");
-	}
-
 	@Transactional(readOnly = true)
 	public AccountSummaryResponse getMyAccounts(String email) {
 		UserRegistration customer = userRegistrationRepository.findByEmail(email)
-				.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Customer not found"));
+			.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Customer not found"));
 
 		List<BankAccount> accounts = bankAccountRepository.findAllByOwner_Id(customer.getId());
-
-		BigDecimal combinedBalance = accounts.stream()
-				.map(BankAccount::getBalance)
-				.reduce(BigDecimal.ZERO, BigDecimal::add);
-
-		List<AccountDetail> accountDetails = accounts.stream()
-				.map(acc -> new AccountDetail(
-						acc.getIban(),
-						acc.getAccountType().name(),
-						acc.getBalance(),
-						acc.getMinimumAllowedBalance()))
-				.toList();
-
-		return new AccountSummaryResponse(
-				customer.getFirstName() + " " + customer.getLastName(),
-				combinedBalance,
-				accountDetails);
+		return AccountSummaryResponse.fromCustomerAndAccounts(customer, accounts);
 	}
 }

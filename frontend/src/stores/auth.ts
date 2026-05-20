@@ -10,15 +10,13 @@ export type LoginResponse = {
     token: string;
     role: 'CUSTOMER' | 'EMPLOYEE';
     customerApprovalStatus?: string | null;
-    employeeType?: 'REGULAR' | 'SERVICE_DESK'; //Added by Fernando
     firstName: string;
 };
 
-const tokenStorageKey = 'code-generation-token';
-const roleStorageKey = 'code-generation-role';
-const customerApprovalStatusStorageKey = 'code-generation-customer-approval-status';
-const nameStorageKey = 'code-generation-firstname';
-const employeeTypeStorageKey = 'code-generation-employee-type'; // Added by Fernando
+export const tokenStorageKey = 'code-generation-token';
+export const roleStorageKey = 'code-generation-role';
+export const customerApprovalStatusStorageKey = 'code-generation-customer-approval-status';
+export const nameStorageKey = 'code-generation-firstname';
 
 function migrateLegacyApprovedFlag() {
     if (sessionStorage.getItem(customerApprovalStatusStorageKey) != null) {
@@ -36,12 +34,10 @@ function migrateLegacyApprovedFlag() {
 migrateLegacyApprovedFlag();
 
 export const useAuthStore = defineStore('auth', () => {
-    // Upgraded to sessionStorage
     const token = ref<string | null>(sessionStorage.getItem(tokenStorageKey));
     const role = ref<string | null>(sessionStorage.getItem(roleStorageKey));
     const customerApprovalStatus = ref<string | null>(sessionStorage.getItem(customerApprovalStatusStorageKey));
     const firstName = ref<string | null>(sessionStorage.getItem(nameStorageKey));
-    const employeeType = ref<string | null>(sessionStorage.getItem(employeeTypeStorageKey)); // Added by Fernando
 
     const loading = ref(false);
     const error = ref<string | null>(null);
@@ -56,6 +52,7 @@ export const useAuthStore = defineStore('auth', () => {
     const isDeniedCustomer = computed(
         () => role.value === 'CUSTOMER' && customerApprovalStatus.value === 'DENIED'
     );
+    const isEmployee = computed(() => role.value === 'EMPLOYEE');
 
     function setToken(newTokenValue: string | null) {
         token.value = newTokenValue;
@@ -69,18 +66,11 @@ export const useAuthStore = defineStore('auth', () => {
     function setProfile(
         loginRole: string | null,
         status: string | null,
-        userFirstName: string | null,
-        type: string | null // Added by Fernando
+        userFirstName: string | null
     ) {
         role.value = loginRole;
         customerApprovalStatus.value = status;
         firstName.value = userFirstName;
-        employeeType.value = type; // Added by Fernando -->
-        if (type) {
-            sessionStorage.setItem(employeeTypeStorageKey, type);
-        } else {
-            sessionStorage.removeItem(employeeTypeStorageKey);
-        } // Added by Fernando <--
 
         if (loginRole) {
             sessionStorage.setItem(roleStorageKey, loginRole);
@@ -108,9 +98,7 @@ export const useAuthStore = defineStore('auth', () => {
         try {
             const loginHttpResponse = await fetch('/auth/login', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(loginPayload),
             });
 
@@ -128,7 +116,7 @@ export const useAuthStore = defineStore('auth', () => {
                 loginResponseBody.customerApprovalStatus !== ''
                     ? loginResponseBody.customerApprovalStatus
                     : null;
-            setProfile(loginResponseBody.role, status, loginResponseBody.firstName, loginResponseBody.employeeType ?? null);
+            setProfile(loginResponseBody.role, status, loginResponseBody.firstName);
             return loginResponseBody;
         } catch (loginFailure) {
             error.value = loginFailure instanceof Error ? loginFailure.message : String(loginFailure);
@@ -140,12 +128,11 @@ export const useAuthStore = defineStore('auth', () => {
 
     function logout() {
         setToken(null);
-        setProfile(null, null, null, null);
+        setProfile(null, null, null);
     }
 
     return {
         token,
-        employeeType, // Added by Fernando
         role,
         customerApprovalStatus,
         firstName,
@@ -155,6 +142,7 @@ export const useAuthStore = defineStore('auth', () => {
         isApprovedCustomer,
         isPendingCustomer,
         isDeniedCustomer,
+        isEmployee,
         login,
         logout,
     };

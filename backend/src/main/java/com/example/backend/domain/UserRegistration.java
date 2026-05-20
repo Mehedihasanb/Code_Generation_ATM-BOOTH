@@ -32,9 +32,6 @@ public class UserRegistration {
 	@Column(nullable = false)
 	private String role;
 
-	@Column(nullable = true)
-	private String employeeType;
-
 	/**
 	 * {@code null} for employees. For customers: pending until an employee opens accounts or denies.
 	 */
@@ -59,8 +56,7 @@ public class UserRegistration {
 		String role,
 		CustomerApprovalStatus customerApprovalStatus,
 		String bsnNumber,
-		String phoneNumber,
-		String employeeType
+		String phoneNumber
 	) {
 		this.firstName = firstName;
 		this.lastName = lastName;
@@ -70,7 +66,6 @@ public class UserRegistration {
 		this.customerApprovalStatus = customerApprovalStatus;
 		this.bsnNumber = bsnNumber;
 		this.phoneNumber = phoneNumber;
-		this.employeeType = employeeType;
 	}
 
 	public Long getId() {
@@ -95,10 +90,6 @@ public class UserRegistration {
 
 	public String getRole() {
 		return role;
-	}
-
-	public String getEmployeeType() {
-		return employeeType;
 	}
 
 	public CustomerApprovalStatus getCustomerApprovalStatus() {
@@ -131,10 +122,6 @@ public class UserRegistration {
 
 	public void setRole(String role) {
 		this.role = role;
-	}
-
-	public void setEmployeeType(String employeeType) {
-		this.employeeType = employeeType;
 	}
 
 	public void setCustomerApprovalStatus(CustomerApprovalStatus customerApprovalStatus) {

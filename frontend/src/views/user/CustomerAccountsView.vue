@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
 import { useAuthStore } from '@/stores/auth';
+import { authorizedFetch } from '@/composables/useAuthorizedFetch';
 
 const auth = useAuthStore();
 
@@ -27,19 +28,7 @@ const fetchMyAccounts = async () => {
     error.value = null;
     
     try {
-        // Grab token from Pinia or directly from sessionStorage
-        const currentToken = auth.token || sessionStorage.getItem('code-generation-token');
-        
-        if (!currentToken) {
-            throw new Error("No authorization token found. Please log in again.");
-        }
-
-        const response = await fetch('/accounts/mine', {
-            headers: { 
-                'Authorization': `Bearer ${currentToken}`,
-                'Content-Type': 'application/json'
-            }
-        });
+        const response = await authorizedFetch('/accounts/mine');
         
         if (!response.ok) {
             const errText = await response.text();
