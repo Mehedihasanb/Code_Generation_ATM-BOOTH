@@ -5,6 +5,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import java.util.List;
 
 import java.util.Optional;
 
@@ -18,4 +19,6 @@ public interface UserRegistrationRepository extends JpaRepository<UserRegistrati
 	// US-09: pending customers waiting for employee approval (no accounts yet)
 	@Query("SELECT u FROM UserRegistration u WHERE u.role = 'CUSTOMER' AND u.customerApprovalStatus = 'PENDING' AND NOT EXISTS (SELECT 1 FROM BankAccount a WHERE a.owner.id = u.id)")
 	Page<UserRegistration> findCustomersWithoutAccounts(Pageable pageable);
+
+	List<UserRegistration> findByFirstNameIgnoreCaseAndLastNameIgnoreCase(String firstName, String lastName);
 }

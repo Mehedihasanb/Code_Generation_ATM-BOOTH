@@ -53,7 +53,8 @@ public class SecurityConfig {
 				.authorizeHttpRequests(authorizeRequestsConfig -> authorizeRequestsConfig
 						.requestMatchers(HttpMethod.POST, "/auth/register", "/auth/login").permitAll()
 						.requestMatchers(HttpMethod.POST, "/auth/customers/*/deny").hasRole("EMPLOYEE")
-						.requestMatchers(HttpMethod.GET, "/users").hasRole("EMPLOYEE")
+						.requestMatchers(HttpMethod.GET, "/users/search").hasRole("EMPLOYEE")
+						.requestMatchers(HttpMethod.GET, "/users").hasAnyRole("EMPLOYEE", "CUSTOMER")
 						.requestMatchers(HttpMethod.GET, "/accounts/mine").hasRole("CUSTOMER")
 						.requestMatchers(HttpMethod.POST, "/transactions").hasRole("CUSTOMER")
 						.requestMatchers(HttpMethod.POST, "/accounts").hasRole("EMPLOYEE")

@@ -17,4 +17,7 @@ public interface BankAccountRepository extends JpaRepository<BankAccount, Long> 
 
 	boolean existsByOwner_Id(Long ownerId);
 
+	List<BankAccount> findByOwner_FirstNameIgnoreCaseAndOwner_LastNameIgnoreCaseAndActiveTrue(
+			String firstName,
+			String lastName);
 }
