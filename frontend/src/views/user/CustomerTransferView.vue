@@ -1,18 +1,30 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted } from 'vue';
 import { authorizedFetch } from '@/composables/useAuthorizedFetch';
 
+//  STATE 
 const myAccounts = ref<any[]>([]);
 const loadingAccounts = ref(true);
 const submitting = ref(false);
 const error = ref<string | null>(null);
 const successMessage = ref<string | null>(null);
 
+// Transfer Types
+const transferType = ref<'INTERNAL' | 'EXTERNAL'>('INTERNAL');
+
+// Form Fields
 const fromIban = ref('');
 const toIban = ref('');
 const amount = ref<number | ''>('');
 const description = ref('');
 
+// External Search State
+const searchFirstName = ref('');
+const searchLastName = ref('');
+const searchResults = ref<any[]>([]);
+const searching = ref(false);
+
+// METHODS
 const fetchMyAccounts = async () => {
     try {
         const response = await authorizedFetch('/accounts/mine');
@@ -30,6 +42,41 @@ const fetchMyAccounts = async () => {
     } finally {
         loadingAccounts.value = false;
     }
+};
+
+const searchDirectory = async () => {
+    if (!searchFirstName.value || !searchLastName.value) return;
+    searching.value = true;
+    searchResults.value = [];
+    error.value = null;
+    successMessage.value = null;
+
+    try {
+        const response = await authorizedFetch(`/users?firstName=${encodeURIComponent(searchFirstName.value)}&lastName=${encodeURIComponent(searchLastName.value)}`);
+        if (!response.ok) throw new Error("Failed to search directory.");
+        const data = await response.json();
+
+        let foundUsers = data.content ? data.content : data;
+
+        searchResults.value = foundUsers.filter((user: any) => 
+            user.firstName.toLowerCase() === searchFirstName.value.toLowerCase() &&
+            user.lastName.toLowerCase() === searchLastName.value.toLowerCase()
+        );
+        if (searchResults.value.length === 0) {
+            error.value = "No active accounts found for that name.";
+        }
+    } catch (err) {
+        error.value = err instanceof Error ? err.message : String(err);
+    } finally {
+        searching.value = false;
+    }
+};
+
+// Select an account from the search results
+const selectExternalAccount = (iban: string) => {
+    toIban.value = iban;
+    successMessage.value = `Selected Recipient IBAN: ${iban}`;
+    error.value = null;
 };
 
 const submitTransfer = async () => {
@@ -58,7 +105,7 @@ const submitTransfer = async () => {
                 fromIban: fromIban.value,
                 toIban: toIban.value,
                 amount: amount.value,
-                description: description.value || "Internal Transfer"
+                description: description.value || "Transfer"
             })
         });
 
@@ -70,9 +117,15 @@ const submitTransfer = async () => {
         successMessage.value = `Successfully transferred €${amount.value} to ${toIban.value}!`;
         
         // Reset the form
-        toIban.value = '';
         amount.value = '';
         description.value = '';
+
+        if (transferType.value === 'EXTERNAL') {
+            toIban.value = '';
+            searchResults.value = [];
+        } else {
+            toIban.value = '';
+        }
 
     } catch (err) {
         error.value = err instanceof Error ? err.message : String(err);
@@ -94,10 +147,30 @@ onMounted(() => {
     <main class="home-wrapper">
         <section class="panel hero-section">
             <h1 class="headline">Transfer Funds</h1>
-            <p class="muted subtitle">Move money between your accounts securely.</p>
+            <p class="muted subtitle">Move money securely.</p>
         </section>
 
         <section class="panel auth-panel" style="max-width: 600px; margin: 0 auto;">
+            
+            <div class="toggle-group" style="display: flex; gap: 1rem; margin-bottom: 2rem; justify-content: center;">
+                <button 
+                    type="button"
+                    class="btn" 
+                    :class="transferType === 'INTERNAL' ? 'primary-btn' : 'secondary-btn'"
+                    @click="transferType = 'INTERNAL'; toIban = ''; error = null; successMessage = null"
+                >
+                    My Accounts
+                </button>
+                <button 
+                    type="button"
+                    class="btn" 
+                    :class="transferType === 'EXTERNAL' ? 'primary-btn' : 'secondary-btn'"
+                    @click="transferType = 'EXTERNAL'; toIban = ''; error = null; successMessage = null"
+                >
+                    Another Customer
+                </button>
+            </div>
+
             <p v-if="loadingAccounts" class="muted">Loading your accounts...</p>
             
             <form v-else class="auth-form" @submit.prevent="submitTransfer">
@@ -112,7 +185,7 @@ onMounted(() => {
                     </select>
                 </label>
 
-                <label>
+                <label v-if="transferType === 'INTERNAL'">
                     <span>To Account (Internal)</span>
                     <select v-model="toIban" required>
                         <option disabled value="">Select destination</option>
@@ -122,6 +195,39 @@ onMounted(() => {
                     </select>
                 </label>
 
+                <div v-if="transferType === 'EXTERNAL'" class="external-search-box" style="background: #f8f9fa; padding: 1rem; border-radius: 8px; margin: 1rem 0;">
+                    <p style="margin-bottom: 0.5rem; font-weight: bold;">Find Recipient</p>
+                    <div style="display: flex; gap: 0.5rem; margin-bottom: 0.5rem;">
+                        <input type="text" v-model="searchFirstName" placeholder="First Name" />
+                        <input type="text" v-model="searchLastName" placeholder="Last Name" />
+                        <button type="button" class="btn secondary-btn" @click="searchDirectory" :disabled="searching">
+                            {{ searching ? '...' : 'Search' }}
+                        </button>
+                    </div>
+
+                    <div v-if="searchResults.length > 0" class="results-list">
+                        <p class="muted" style="font-size: 0.9rem; margin-bottom: 0.5rem;">Select an account:</p>
+                        
+                        <div v-for="user in searchResults" :key="user.id" style="margin-bottom: 1rem;">
+                            <strong style="display: block; margin-bottom: 0.5rem;">{{ user.firstName }} {{ user.lastName }}</strong>
+                            
+                            <button 
+                                v-for="acc in user.accounts" 
+                                :key="acc.iban"
+                                type="button"
+                                class="btn"
+                                style="display: block; width: 100%; text-align: left; margin-bottom: 0.5rem; background: white; border: 1px solid #ccc; color: black;"
+                                @click="selectExternalAccount(acc.iban)"
+                            >
+                                <span style="font-weight: bold; color: var(--primary-color);">{{ acc.accountType }}</span><br>
+                                <span class="muted" style="font-family: monospace;">{{ acc.iban }}</span>
+                            </button>
+                            
+                            <p v-if="user.accounts.length === 0" class="muted" style="font-size: 0.85rem;">No active accounts available.</p>
+                        </div>
+                    </div>
+                </div>
+
                 <label>
                     <span>Amount (€)</span>
                     <input type="number" v-model="amount" min="0.01" step="0.01" required placeholder="0.00" />
@@ -129,13 +235,13 @@ onMounted(() => {
 
                 <label>
                     <span>Description (Optional)</span>
-                    <input type="text" v-model="description" placeholder="e.g., Savings for vacation" maxlength="50" />
+                    <input type="text" v-model="description" placeholder="e.g., Dinner last night" maxlength="50" />
                 </label>
 
-                <p v-if="error" class="error" style="color: #dc3545; font-weight: bold;">{{ error }}</p>
-                <p v-if="successMessage" class="success" style="color: #28a745; font-weight: bold;">{{ successMessage }}</p>
+                <p v-if="error" class="error" style="color: #dc3545; font-weight: bold; margin-top: 1rem;">{{ error }}</p>
+                <p v-if="successMessage" class="success" style="color: #28a745; font-weight: bold; margin-top: 1rem;">{{ successMessage }}</p>
 
-                <button class="btn primary-btn" type="submit" :disabled="submitting" style="margin-top: 1rem;">
+                <button class="btn primary-btn" type="submit" :disabled="submitting || !toIban" style="margin-top: 1rem;">
                     {{ submitting ? 'Processing...' : 'Confirm Transfer' }}
                 </button>
             </form>
@@ -144,7 +250,7 @@ onMounted(() => {
 </template>
 
 <style scoped>
-select {
+select, input[type="text"], input[type="number"] {
     width: 100%;
     padding: 0.8rem;
     margin-top: 0.5rem;
@@ -152,5 +258,9 @@ select {
     border-radius: 4px;
     font-size: 1rem;
     background-color: white;
+}
+.secondary-btn {
+    background-color: #6c757d;
+    color: white;
 }
 </style>

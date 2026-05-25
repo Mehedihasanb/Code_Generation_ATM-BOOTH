@@ -11,6 +11,9 @@ import com.example.backend.dto.AccountSummaryResponse;
 import com.example.backend.dto.CreateAccountsRequest;
 import com.example.backend.dto.CreatedAccountLine;
 import com.example.backend.dto.CreatedAccountsResponse;
+import com.example.backend.dto.CustomerAccountRow;
+import com.example.backend.dto.CustomerDirectoryRow;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -30,11 +33,10 @@ public class AccountService {
 	private final IbanAllocationService ibanAllocationService;
 
 	public AccountService(
-		BankAccountRepository bankAccountRepository,
-		UserRegistrationRepository userRegistrationRepository,
-		AccountOpeningPolicy accountOpeningPolicy,
-		IbanAllocationService ibanAllocationService
-	) {
+			BankAccountRepository bankAccountRepository,
+			UserRegistrationRepository userRegistrationRepository,
+			AccountOpeningPolicy accountOpeningPolicy,
+			IbanAllocationService ibanAllocationService) {
 		this.bankAccountRepository = bankAccountRepository;
 		this.userRegistrationRepository = userRegistrationRepository;
 		this.accountOpeningPolicy = accountOpeningPolicy;
@@ -44,37 +46,41 @@ public class AccountService {
 	@Transactional
 	public CreatedAccountsResponse createCheckingAndSavingsAccounts(CreateAccountsRequest createAccountsRequest) {
 		UserRegistration customer = userRegistrationRepository.findById(createAccountsRequest.customerRegistrationId())
-			.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Customer not found"));
+				.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Customer not found"));
 
 		accountOpeningPolicy.requireEligibleForNewAccounts(customer);
 
-		BigDecimal zeroBalance = BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP);
+		// BigDecimal zeroBalance = BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP);
+		// Previous line is original and next 1 line is troubleshooting
+		BigDecimal startingBalance = new BigDecimal("1000.00").setScale(2, RoundingMode.HALF_UP);
 		BigDecimal minimumAllowedBalance = createAccountsRequest.minimumAllowedBalance()
-			.setScale(2, RoundingMode.HALF_UP);
+				.setScale(2, RoundingMode.HALF_UP);
 		BigDecimal dailyOutgoingTransferLimit = createAccountsRequest.dailyOutgoingTransferLimit()
-			.setScale(2, RoundingMode.HALF_UP);
+				.setScale(2, RoundingMode.HALF_UP);
 
 		String checkingIban = ibanAllocationService.allocateUniqueDutchIban();
 		String savingsIban = ibanAllocationService.allocateUniqueDutchIban();
 
 		BankAccount checkingAccount = new BankAccount(
-			customer,
-			checkingIban,
-			AccountType.CHECKING,
-			true,
-			zeroBalance,
-			minimumAllowedBalance,
-			dailyOutgoingTransferLimit
-		);
+				customer,
+				checkingIban,
+				AccountType.CHECKING,
+				true,
+				// zeroBalance,
+				// Previous line is original and next 1 line is troubleshooting
+				startingBalance,
+				minimumAllowedBalance,
+				dailyOutgoingTransferLimit);
 		BankAccount savingsAccount = new BankAccount(
-			customer,
-			savingsIban,
-			AccountType.SAVINGS,
-			true,
-			zeroBalance,
-			minimumAllowedBalance,
-			dailyOutgoingTransferLimit
-		);
+				customer,
+				savingsIban,
+				AccountType.SAVINGS,
+				true,
+				// zeroBalance,
+				// Previous line is original and next 1 line is troubleshooting
+				startingBalance,
+				minimumAllowedBalance,
+				dailyOutgoingTransferLimit);
 
 		bankAccountRepository.save(checkingAccount);
 		bankAccountRepository.save(savingsAccount);
@@ -87,10 +93,9 @@ public class AccountService {
 		createdAccounts.add(new CreatedAccountLine(savingsIban, AccountType.SAVINGS.name()));
 
 		return new CreatedAccountsResponse(
-			customer.getId(),
-			CustomerApprovalStatus.APPROVED.name(),
-			createdAccounts
-		);
+				customer.getId(),
+				CustomerApprovalStatus.APPROVED.name(),
+				createdAccounts);
 	}
 
 	@Transactional
@@ -98,7 +103,7 @@ public class AccountService {
 		String normalizedIban = ibanFromPath.trim().toUpperCase();
 
 		BankAccount bankAccount = bankAccountRepository.findByIban(normalizedIban)
-			.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Unknown IBAN"));
+				.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Unknown IBAN"));
 
 		if (!bankAccount.isActive()) {
 			return;
@@ -111,9 +116,35 @@ public class AccountService {
 	@Transactional(readOnly = true)
 	public AccountSummaryResponse getMyAccounts(String email) {
 		UserRegistration customer = userRegistrationRepository.findByEmail(email)
-			.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Customer not found"));
+				.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Customer not found"));
 
 		List<BankAccount> accounts = bankAccountRepository.findAllByOwner_Id(customer.getId());
 		return AccountSummaryResponse.fromCustomerAndAccounts(customer, accounts);
+	}
+
+	@Transactional(readOnly = true)
+	public List<CustomerDirectoryRow> searchCustomersByName(String firstName, String lastName) {
+		// Find users by exact name match ignoring case
+		List<UserRegistration> users = userRegistrationRepository
+				.findByFirstNameIgnoreCaseAndLastNameIgnoreCase(firstName.trim(), lastName.trim());
+
+		// Map the users and their active accounts into the Directory DTO
+		return users.stream().map(user -> {
+			List<BankAccount> userAccounts = bankAccountRepository.findAllByOwner_Id(user.getId());
+
+			// People transfer money only to active accounts
+			List<CustomerAccountRow> activeAccountRows = userAccounts.stream()
+					.filter(BankAccount::isActive)
+					.map(CustomerAccountRow::fromBankAccount)
+					.toList();
+
+			return new CustomerDirectoryRow(
+					user.getId(),
+					user.getFirstName(),
+					user.getLastName(),
+					user.getEmail(),
+					user.getCustomerApprovalStatus().name(),
+					activeAccountRows);
+		}).toList();
 	}
 }

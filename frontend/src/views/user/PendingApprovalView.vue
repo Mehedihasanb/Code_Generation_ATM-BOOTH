@@ -7,5 +7,6 @@
 		<p class="status">
 			You can log in, but banking functionality is disabled until approval is complete.
 		</p>
+		<p>Logout and come back later to see the changes in your account</p>
 	</section>
 </template>

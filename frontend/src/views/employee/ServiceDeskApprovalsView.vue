@@ -48,18 +48,21 @@ const submitApproval = async () => {
     if (!selectedCustomer.value) return;
     
     try {
+        const minimumAllowedBalance = Number(absoluteLimit.value);
+        const dailyOutgoingTransferLimit = Number(dailyLimit.value);
+
         const response = await authorizedFetch('/accounts', {
             method: 'POST',
             body: JSON.stringify({
                 customerRegistrationId: selectedCustomer.value.id,
-                minimumAllowedBalance: absoluteLimit.value, 
-                dailyOutgoingTransferLimit: dailyLimit.value
+                minimumAllowedBalance,
+                dailyOutgoingTransferLimit
             })
         });
 
         if (!response.ok) {
             const errorText = await response.text();
-            throw new Error(errorText || "Approval failed.");
+            throw new Error(errorText || `Approval failed (${response.status})`);
         }
         
         alert(`Customer ${selectedCustomer.value.firstName} approved! Accounts generated.`);
@@ -140,13 +143,13 @@ onMounted(() => {
                 <form class="auth-form" @submit.prevent="submitApproval">
                     <label>
                         <span>Daily Transfer Limit (€)</span>
-                        <input type="number" v-model="dailyLimit" required min="1" />
+                        <input type="number" v-model.number="dailyLimit" required min="1" />
                         <small class="muted">Maximum amount they can transfer per day.</small>
                     </label>
 
                     <label>
                         <span>Absolute Transfer Limit (€)</span>
-                        <input type="number" v-model="absoluteLimit" required />
+                        <input type="number" v-model.number="absoluteLimit" required />
                         <small class="muted">Account balance cannot drop below this amount (can be negative for overdraft).</small>
                     </label>
 
