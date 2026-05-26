@@ -109,14 +109,22 @@ const submitTransfer = async () => {
             })
         });
 
-        if (!response.ok) {
-            const errText = await response.text();
-            throw new Error(errText || "Transfer failed. Please check your balance and limits.");
+       if (!response.ok) {
+            let errorMessage = "Transfer failed. Please check your details.";
+            try {
+                const errorData = await response.json();
+                if (errorData.message) {
+                    errorMessage = errorData.message;
+                }
+            } catch (parseError) {
+                console.warn("Could not parse backend error response.");
+            }
+            throw new Error(errorMessage);
         }
 
         successMessage.value = `Successfully transferred €${amount.value} to ${toIban.value}!`;
         
-        // Reset the form
+        // Reset form
         amount.value = '';
         description.value = '';
 

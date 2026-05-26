@@ -144,13 +144,13 @@ onMounted(() => {
                     <label>
                         <span>Daily Transfer Limit (€)</span>
                         <input type="number" v-model.number="dailyLimit" required min="1" />
-                        <small class="muted">Maximum amount they can transfer per day.</small>
+                        <small class="muted">Maximum amount that customer can transfer per day.</small>
                     </label>
 
                     <label>
-                        <span>Absolute Transfer Limit (€)</span>
+                        <span>Absolute Account Limit (€)</span>
                         <input type="number" v-model.number="absoluteLimit" required />
-                        <small class="muted">Account balance cannot drop below this amount (can be negative for overdraft).</small>
+                        <small class="muted">Account balance cannot exceed this amount.</small>
                     </label>
 
                     <div class="button-group" style="margin-top: 20px;">

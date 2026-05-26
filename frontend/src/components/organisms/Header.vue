@@ -32,6 +32,9 @@ const handleLogout = () => {
             >
                 My Accounts
             </RouterLink>
+            <RouterLink v-if="auth.isApprovedCustomer" to="/transactions" class="nav-link">
+                History
+            </RouterLink>
 
             <RouterLink v-if="auth.isApprovedCustomer" to="/transfer">
                 Transfer Funds
