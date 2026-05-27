@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { reactive } from 'vue';
+import { reactive, onUnmounted } from 'vue';
 import { useRegistrationStore } from '../../stores/registration';
+import { useRouter } from 'vue-router';
 
 type RegistrationForm = {
     firstName: string;
@@ -11,6 +12,7 @@ type RegistrationForm = {
     phoneNumber: string;
 };
 
+const router = useRouter();
 const registration = useRegistrationStore();
 
 const form = reactive<RegistrationForm>({
@@ -83,21 +85,44 @@ async function submit() {
         return;
     }
 
-    await registration.submitRegistration({
-        firstName: form.firstName.trim(),
-        lastName: form.lastName.trim(),
-        email: form.email.trim(),
-        password: form.password,
-        bsnNumber: form.bsnNumber.trim(),
-        phoneNumber: form.phoneNumber.trim(),
-    });
+    try {
+        // Send the data to the backend via your store
+        await registration.submitRegistration({
+            firstName: form.firstName.trim(),
+            lastName: form.lastName.trim(),
+            email: form.email.trim(),
+            password: form.password,
+            bsnNumber: form.bsnNumber.trim(),
+            phoneNumber: form.phoneNumber.trim(),
+        });
 
-    form.firstName = '';
-    form.lastName = '';
-    form.email = '';
-    form.password = '';
-    clearFieldErrors();
+        // If the backend didn't return an error, we redirect!
+        if (!registration.error) {
+            
+            // Clear the form fields completely
+            form.firstName = '';
+            form.lastName = '';
+            form.email = '';
+            form.password = '';
+            form.bsnNumber = '';
+            form.phoneNumber = '';
+            clearFieldErrors();
+
+            // Give the user 1.5 seconds to read the success message from the store, then redirect to login
+            setTimeout(() => {
+                router.push('/login');
+            }, 1500);
+        }
+    } catch (error) {
+        // Friendly fallback error just in case the server completely crashes or goes offline
+        registration.error = "Oops! Something went wrong while connecting to the server. Please try again later.";
+    }
 }
+onUnmounted(() => {
+    registration.success = ''; // or null, depending on how your store is set up
+    registration.error = '';
+});
+
 </script>
 
 <template>

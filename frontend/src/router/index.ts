@@ -60,6 +60,11 @@ const router = createRouter({
 			component: CustomerTransferView,
 			meta: { requiresApprovedCustomer: true },
 		},
+		{
+		path: '/transactions',
+		name: 'transactions',
+		component: () => import('../views/user/CustomerTransactionsView.vue')
+		},
 	],
 });
 

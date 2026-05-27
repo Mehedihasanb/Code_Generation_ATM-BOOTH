@@ -57,8 +57,11 @@ public class SecurityConfig {
 						.requestMatchers(HttpMethod.GET, "/users").hasAnyRole("EMPLOYEE", "CUSTOMER")
 						.requestMatchers(HttpMethod.GET, "/accounts/mine").hasRole("CUSTOMER")
 						.requestMatchers(HttpMethod.POST, "/transactions").hasRole("CUSTOMER")
+						.requestMatchers(HttpMethod.GET, "/transactions").hasRole("CUSTOMER")
 						.requestMatchers(HttpMethod.POST, "/accounts").hasRole("EMPLOYEE")
 						.requestMatchers(HttpMethod.PUT, "/accounts/*/close").hasRole("EMPLOYEE")
+						// Add this line so Spring Security stops hiding our custom error messages!
+						.requestMatchers("/error").permitAll()
 						.requestMatchers(
 								"/api/health",
 								"/v3/api-docs/**",
