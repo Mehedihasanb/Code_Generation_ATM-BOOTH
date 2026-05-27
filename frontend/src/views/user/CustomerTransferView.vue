@@ -1,30 +1,28 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
 import { authorizedFetch } from '@/composables/useAuthorizedFetch';
+import { useRouter } from 'vue-router';
 
-//  STATE 
+const router = useRouter();
 const myAccounts = ref<any[]>([]);
 const loadingAccounts = ref(true);
 const submitting = ref(false);
 const error = ref<string | null>(null);
 const successMessage = ref<string | null>(null);
 
-// Transfer Types
 const transferType = ref<'INTERNAL' | 'EXTERNAL'>('INTERNAL');
 
-// Form Fields
 const fromIban = ref('');
 const toIban = ref('');
 const amount = ref<number | ''>('');
 const description = ref('');
 
-// External Search State
 const searchFirstName = ref('');
 const searchLastName = ref('');
 const searchResults = ref<any[]>([]);
 const searching = ref(false);
 
-// METHODS
+
 const fetchMyAccounts = async () => {
     try {
         const response = await authorizedFetch('/accounts/mine');
@@ -113,8 +111,16 @@ const submitTransfer = async () => {
             let errorMessage = "Transfer failed. Please check your details.";
             try {
                 const errorData = await response.json();
-                if (errorData.message) {
-                    errorMessage = errorData.message;
+                
+                // 🕵️‍♂️ Print the exact error to your browser console (F12) so we can see it!
+                console.log("Spring Boot Error Data:", errorData);
+
+                // Check all the common places Spring Boot hides the message
+                if (errorData.message && errorData.message !== "No message available") {
+                    // Sometimes Spring prefixes the message with the status code, let's clean it up:
+                    errorMessage = errorData.message.replace(/^400 BAD_REQUEST "/, '').replace(/"$/, '');
+                } else if (errorData.error) {
+                    errorMessage = errorData.error;
                 }
             } catch (parseError) {
                 console.warn("Could not parse backend error response.");
@@ -124,16 +130,9 @@ const submitTransfer = async () => {
 
         successMessage.value = `Successfully transferred €${amount.value} to ${toIban.value}!`;
         
-        // Reset form
-        amount.value = '';
-        description.value = '';
-
-        if (transferType.value === 'EXTERNAL') {
-            toIban.value = '';
-            searchResults.value = [];
-        } else {
-            toIban.value = '';
-        }
+        setTimeout(() => {
+            router.push('/transactions'); // Make sure this matches the route path in your router/index.ts!
+        }, 1500);
 
     } catch (err) {
         error.value = err instanceof Error ? err.message : String(err);
