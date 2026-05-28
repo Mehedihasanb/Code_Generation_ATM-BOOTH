@@ -17,7 +17,8 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import com.example.backend.dto.TransactionHistoryRow;
-
+import java.time.LocalDate;
+import java.math.BigDecimal;
 import java.security.Principal;
 
 @RestController
@@ -40,13 +41,20 @@ public class TransactionController {
     }
 
     @GetMapping
-    @Operation(summary = "Get paginated transaction history for a specific account")
+    @Operation(summary = "Get paginated transaction history with optional filters")
     @SecurityRequirement(name = "bearerAuth")
     public Page<TransactionHistoryRow> getTransactions(
             @RequestParam String accountIban,
+            @RequestParam(required = false) LocalDate startDate,
+            @RequestParam(required = false) LocalDate endDate,
+            @RequestParam(required = false) BigDecimal amount,
+            @RequestParam(required = false, defaultValue = "eq") String amountOperator,
+            @RequestParam(required = false) String counterpartIban,
             Pageable pageable,
             Principal principal) {
 
-        return transactionService.getTransactionHistory(accountIban, principal.getName(), pageable);
+        return transactionService.getTransactionHistory(
+                accountIban, startDate, endDate, amount, amountOperator, counterpartIban, principal.getName(),
+                pageable);
     }
 }

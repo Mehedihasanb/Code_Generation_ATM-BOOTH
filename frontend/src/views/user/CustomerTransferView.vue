@@ -131,7 +131,7 @@ const submitTransfer = async () => {
         successMessage.value = `Successfully transferred €${amount.value} to ${toIban.value}!`;
         
         setTimeout(() => {
-            router.push('/transactions'); // Make sure this matches the route path in your router/index.ts!
+            router.push('/transactions');
         }, 1500);
 
     } catch (err) {
@@ -233,7 +233,10 @@ onMounted(() => {
                             <p v-if="user.accounts.length === 0" class="muted" style="font-size: 0.85rem;">No active accounts available.</p>
                         </div>
                     </div>
+                    <p v-if="error" class="error" style="color: #dc3545; font-weight: bold; margin-top: 1rem;">{{ error }}</p>
+                    <p v-if="successMessage" class="success" style="color: #28a745; font-weight: bold; margin-top: 1rem;">{{ successMessage }}</p>
                 </div>
+                
 
                 <label>
                     <span>Amount (€)</span>
@@ -245,9 +248,7 @@ onMounted(() => {
                     <input type="text" v-model="description" placeholder="e.g., Dinner last night" maxlength="50" />
                 </label>
 
-                <p v-if="error" class="error" style="color: #dc3545; font-weight: bold; margin-top: 1rem;">{{ error }}</p>
-                <p v-if="successMessage" class="success" style="color: #28a745; font-weight: bold; margin-top: 1rem;">{{ successMessage }}</p>
-
+                
                 <button class="btn primary-btn" type="submit" :disabled="submitting || !toIban" style="margin-top: 1rem;">
                     {{ submitting ? 'Processing...' : 'Confirm Transfer' }}
                 </button>
