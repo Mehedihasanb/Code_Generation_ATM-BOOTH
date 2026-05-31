@@ -36,6 +36,13 @@ const handleLogout = () => {
                 History
             </RouterLink>
 
+            <RouterLink v-if="auth.isEmployee" to="/employee/transactions" style="color: #ffc107; font-weight: bold;">
+                Transaction Control
+            </RouterLink>
+            <RouterLink v-if="auth.isEmployee" to="/employee/directory" style="color: #ffc107; font-weight: bold; margin-right: 1rem;">
+                Customer Directory
+            </RouterLink>
+
             <RouterLink v-if="auth.isApprovedCustomer" to="/transfer">
                 Transfer Funds
             </RouterLink>

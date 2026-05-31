@@ -6,6 +6,9 @@ import PendingApprovalView from '../views/user/PendingApprovalView.vue';
 import ServiceDeskApprovalsView from '../views/employee/ServiceDeskApprovalsView.vue';
 import CustomerAccountsView from '@/views/user/CustomerAccountsView.vue';
 import CustomerTransferView from '@/views/user/CustomerTransferView.vue';
+import EmployeeTransactionsView from '../views/employee/EmployeeTransactionsView.vue';
+import EmployeeCustomerDirectoryView from '../views/employee/EmployeeCustomerDirectoryView.vue';
+
 import {
 	customerApprovalStatusStorageKey,
 	roleStorageKey,
@@ -65,6 +68,18 @@ const router = createRouter({
 		name: 'transactions',
 		component: () => import('../views/user/CustomerTransactionsView.vue')
 		},
+		{
+			path: '/employee/transactions',
+			name: 'system-transactions',
+            component: EmployeeTransactionsView,
+            meta: { requiresEmployee: true } 
+        },
+		{
+            path: '/employee/directory',
+            name: 'employee-directory',
+            component: EmployeeCustomerDirectoryView,
+            meta: { requiresEmployee: true }
+        },
 	],
 });
 
