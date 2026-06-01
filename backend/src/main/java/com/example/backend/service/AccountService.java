@@ -8,6 +8,7 @@ import com.example.backend.policy.AccountOpeningPolicy;
 import com.example.backend.repository.BankAccountRepository;
 import com.example.backend.repository.UserRegistrationRepository;
 import com.example.backend.dto.AccountSummaryResponse;
+import com.example.backend.dto.CheckingAccountOptionRow;
 import com.example.backend.dto.CreateAccountsRequest;
 import com.example.backend.dto.CreatedAccountLine;
 import com.example.backend.dto.CreatedAccountsResponse;
@@ -23,6 +24,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class AccountService {
@@ -146,5 +148,14 @@ public class AccountService {
 					user.getCustomerApprovalStatus().name(),
 					activeAccountRows);
 		}).toList();
+	}
+
+	public List<CheckingAccountOptionRow> getAllCheckingAccountsForDropdown() {
+		return bankAccountRepository.findAll().stream()
+				.filter(acc -> "CHECKING".equalsIgnoreCase(acc.getAccountType().name()))
+				.map(acc -> new CheckingAccountOptionRow(
+						acc.getIban(),
+						acc.getOwner().getFirstName() + " " + acc.getOwner().getLastName()))
+				.collect(Collectors.toList());
 	}
 }

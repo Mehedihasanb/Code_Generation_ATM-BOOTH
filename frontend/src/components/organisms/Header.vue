@@ -47,6 +47,10 @@ const handleLogout = () => {
                 Transfer Funds
             </RouterLink>
 
+            <RouterLink v-if="auth.isEmployee" to="/employee/transfer" style="color: #ffc107; font-weight: bold; margin-right: 1rem;">
+                Force Transfer
+            </RouterLink>
+
             <template v-if="auth.isAuthenticated">
                 <span class="greeting">Hello, {{ auth.firstName || 'User' }}</span>
                 <button @click="handleLogout" class="btn-link">Logout</button>

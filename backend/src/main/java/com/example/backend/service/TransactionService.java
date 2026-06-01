@@ -42,7 +42,8 @@ public class TransactionService {
         }
 
         @Transactional
-        public void processTransfer(TransferRequest request, String userEmail) {
+        // 👇 Added 'boolean isEmployee' here
+        public void processTransfer(TransferRequest request, String userEmail, boolean isEmployee) {
                 UserRegistration initiator = userRegistrationRepository.findByEmail(userEmail)
                                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
 
@@ -54,7 +55,20 @@ public class TransactionService {
                                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
                                                 "Receiver account not found"));
 
-                transferAuthorizationPolicy.requireCanInitiateFromAccount(initiator, fromAccount);
+                // 👇 NEW: Smart Authorization Check
+                if (isEmployee) {
+                        // Requirement: Employees can only transfer between checking accounts
+                        if (!"CHECKING".equalsIgnoreCase(fromAccount.getAccountType().name()) ||
+                                        !"CHECKING".equalsIgnoreCase(toAccount.getAccountType().name())) {
+                                throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                                                "Employees can only transfer funds between CHECKING accounts.");
+                        }
+                } else {
+                        // Requirement: Customers must own the account they are sending from
+                        transferAuthorizationPolicy.requireCanInitiateFromAccount(initiator, fromAccount);
+                }
+
+                // Verify accounts are active
                 transferAuthorizationPolicy.requireActiveAccounts(fromAccount, toAccount);
 
                 // Enforcement: Sender cannot go below zero
@@ -75,8 +89,9 @@ public class TransactionService {
                         BigDecimal remainingDailyLimit = fromAccount.getDailyOutgoingTransferLimit()
                                         .subtract(totalTransferredToday);
                         throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                                        "Transfer exceeds your daily limit. You can only transfer €"
-                                                        + formatAmount(remainingDailyLimit) + " more today.");
+                                        "Transfer exceeds the daily limit. Only €"
+                                                        + formatAmount(remainingDailyLimit)
+                                                        + " more can be transferred today.");
                 }
 
                 // Enforcement: Receiver cannot exceed their AML cap
@@ -100,7 +115,7 @@ public class TransactionService {
                                 toAccount,
                                 request.amount(),
                                 request.description(),
-                                initiator);
+                                initiator); // Records the exact employee who forced the transfer!
                 transactionRepository.save(transaction);
         }
 
@@ -167,11 +182,12 @@ public class TransactionService {
                 String toIban = tx.getToAccount() != null ? tx.getToAccount().getIban() : "SYSTEM/ATM";
                 String initiatingUser = tx.getInitiatingUser() != null ? tx.getInitiatingUser().getEmail() : "System";
 
+                // 👇 Updated to explicitly output ATM, EMPLOYEE, or TRANSFER
                 String type;
-                if (tx.getFromAccount() == null && tx.getToAccount() != null) {
-                        type = "DEPOSIT";
-                } else if (tx.getFromAccount() != null && tx.getToAccount() == null) {
-                        type = "WITHDRAWAL";
+                if (tx.getFromAccount() == null || tx.getToAccount() == null) {
+                        type = "ATM";
+                } else if (tx.getInitiatingUser() != null && tx.getInitiatingUser().getRole().contains("EMPLOYEE")) {
+                        type = "EMPLOYEE";
                 } else {
                         type = "TRANSFER";
                 }
