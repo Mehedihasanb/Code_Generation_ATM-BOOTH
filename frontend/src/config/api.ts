@@ -1,7 +1,12 @@
 /**
- * API base URL for production (GitHub Pages → Render). Empty in dev → Vite proxy handles paths.
+ * API base URL.
+ * - Dev (`npm run dev`): empty → Vite proxy forwards /auth, /accounts, etc. to localhost:8080.
+ * - Production build: VITE_API_BASE_URL if set, otherwise the deployed Render backend.
  */
-const configuredBase = (import.meta.env.VITE_API_BASE_URL as string | undefined)?.replace(/\/$/, '') ?? '';
+const PRODUCTION_BACKEND_URL = 'https://code-generation-atm-booth.onrender.com';
+
+const envBase = (import.meta.env.VITE_API_BASE_URL as string | undefined)?.replace(/\/$/, '');
+const configuredBase = envBase || (import.meta.env.PROD ? PRODUCTION_BACKEND_URL : '');
 
 export function apiUrl(path: string): string {
 	if (path.startsWith('http://') || path.startsWith('https://')) {
