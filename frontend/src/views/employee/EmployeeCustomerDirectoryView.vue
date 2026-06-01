@@ -15,6 +15,12 @@ const totalPages = ref(0);
 const loadingTx = ref(false);
 const txError = ref<string | null>(null);
 
+const absoluteLimitInput = ref<number>(0);
+const dailyLimitInput = ref<number>(0);
+const limitsError = ref<string | null>(null);
+const limitsSuccess = ref<string | null>(null);
+const savingLimits = ref(false);
+
 const searchCustomers = async () => {
     if (!searchFirst.value || !searchLast.value) {
         searchError.value = "Please enter both first and last name.";
@@ -40,8 +46,24 @@ const searchCustomers = async () => {
     }
 };
 
+const currentAbsoluteLimit = (user: { accounts?: { minimumAllowedBalance?: number }[] }) => {
+    const accounts = user.accounts ?? [];
+    if (accounts.length === 0) return 0;
+    return Number(accounts[0].minimumAllowedBalance ?? 0);
+};
+
+const currentDailyLimit = (user: { accounts?: { dailyOutgoingTransferLimit?: number }[] }) => {
+    const accounts = user.accounts ?? [];
+    if (accounts.length === 0) return 0;
+    return Number(accounts[0].dailyOutgoingTransferLimit ?? 0);
+};
+
 const viewUserHistory = async (user: any, pageIndex: number = 0) => {
     selectedUser.value = user;
+    absoluteLimitInput.value = currentAbsoluteLimit(user);
+    dailyLimitInput.value = currentDailyLimit(user);
+    limitsError.value = null;
+    limitsSuccess.value = null;
     loadingTx.value = true;
     txError.value = null;
 
@@ -63,6 +85,50 @@ const viewUserHistory = async (user: any, pageIndex: number = 0) => {
 const backToSearch = () => {
     selectedUser.value = null;
     transactions.value = [];
+    limitsError.value = null;
+    limitsSuccess.value = null;
+};
+
+const updateCustomerLimits = async () => {
+    if (!selectedUser.value) return;
+
+    savingLimits.value = true;
+    limitsError.value = null;
+    limitsSuccess.value = null;
+
+    try {
+        const response = await authorizedFetch(`/users/${selectedUser.value.id}/limits`, {
+            method: 'PUT',
+            body: JSON.stringify({
+                absoluteLimit: Number(absoluteLimitInput.value),
+                dailyOutgoingTransferLimit: Number(dailyLimitInput.value),
+            }),
+        });
+
+        if (!response.ok) {
+            const message = await response.text();
+            throw new Error(message || `Update failed (${response.status})`);
+        }
+
+        const updated = await response.json();
+        absoluteLimitInput.value = Number(updated.absoluteLimit);
+        dailyLimitInput.value = Number(updated.dailyOutgoingTransferLimit);
+        limitsSuccess.value = `Limits updated on ${updated.accountsUpdated} account(s).`;
+
+        if (selectedUser.value.accounts?.length) {
+            selectedUser.value.accounts.forEach((account: {
+                minimumAllowedBalance?: number;
+                dailyOutgoingTransferLimit?: number;
+            }) => {
+                account.minimumAllowedBalance = updated.absoluteLimit;
+                account.dailyOutgoingTransferLimit = updated.dailyOutgoingTransferLimit;
+            });
+        }
+    } catch (err) {
+        limitsError.value = err instanceof Error ? err.message : String(err);
+    } finally {
+        savingLimits.value = false;
+    }
 };
 
 const formatCurrency = (amt: number) => {
@@ -140,14 +206,56 @@ const getTypeBadgeClass = (type: string) => {
 
             <div v-else>
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-                    <h2 style="margin: 0;">History: {{ selectedUser.firstName }} {{ selectedUser.lastName }}</h2>
-            </div>
+                    <h2 style="margin: 0;">{{ selectedUser.firstName }} {{ selectedUser.lastName }}</h2>
+                    <button class="btn secondary-btn" @click="backToSearch">&larr; Back to Search</button>
+                </div>
+
+                <section
+                    v-if="selectedUser.accounts?.length"
+                    class="limits-panel"
+                    style="background: #f8f9fa; padding: 1.25rem; border-radius: 8px; margin-bottom: 1.5rem;">
+                    <h3 style="margin: 0 0 0.75rem 0; font-size: 1rem;">Transfer limits</h3>
+                    <p class="muted" style="margin: 0 0 1rem 0; font-size: 0.9rem;">
+                        Applied to all of this customer's accounts (checking and savings). Changes take effect immediately.
+                    </p>
+                    <div style="display: flex; gap: 1rem; align-items: flex-end; flex-wrap: wrap;">
+                        <label style="font-weight: bold; font-size: 0.9rem;">
+                            Absolute limit (€)
+                            <input
+                                type="number"
+                                v-model.number="absoluteLimitInput"
+                                min="0"
+                                step="0.01"
+                                required
+                                style="display: block; width: 200px; padding: 0.5rem; margin-top: 0.3rem;" />
+                        </label>
+                        <label style="font-weight: bold; font-size: 0.9rem;">
+                            Daily limit (€)
+                            <input
+                                type="number"
+                                v-model.number="dailyLimitInput"
+                                min="0.01"
+                                step="0.01"
+                                required
+                                style="display: block; width: 200px; padding: 0.5rem; margin-top: 0.3rem;" />
+                        </label>
+                        <button class="btn" @click="updateCustomerLimits" :disabled="savingLimits" style="height: 38px;">
+                            {{ savingLimits ? 'Saving...' : 'Update limits' }}
+                        </button>
+                    </div>
+                    <p v-if="limitsError" class="error" style="color: #dc3545; font-weight: bold; margin-top: 0.75rem;">{{ limitsError }}</p>
+                    <p v-if="limitsSuccess" style="color: #155724; font-weight: bold; margin-top: 0.75rem;">{{ limitsSuccess }}</p>
+                </section>
+                <p v-else class="muted" style="margin-bottom: 1.5rem;">
+                    This customer has no accounts yet; limits can be set when accounts are opened at the service desk.
+                </p>
+
+                <h3 style="margin: 0 0 1rem 0; font-size: 1rem;">Transaction history</h3>
                 <p v-if="txError" class="error" style="color: #dc3545; font-weight: bold;">{{ txError }}</p>
                 <p v-if="loadingTx" class="muted">Loading ledger...</p>
 
                 <div v-else-if="transactions.length === 0" class="empty-state" style="text-align: center; padding: 2rem;">
                     <p class="muted">This customer has no transactions on record.</p>
-                    <button class="btn secondary-btn" @click="backToSearch">&larr; Back to Search</button>
                 </div>
 
                 <div v-else class="table-container">
