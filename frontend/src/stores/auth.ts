@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia';
 import { computed, ref } from 'vue';
+import { apiUrl } from '@/config/api';
 
 export type LoginPayload = {
     email: string;
@@ -96,7 +97,7 @@ export const useAuthStore = defineStore('auth', () => {
         error.value = null;
 
         try {
-            const loginHttpResponse = await fetch('/auth/login', {
+            const loginHttpResponse = await fetch(apiUrl('/auth/login'), {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(loginPayload),

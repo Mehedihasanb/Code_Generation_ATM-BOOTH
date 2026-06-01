@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
+import { apiUrl } from '@/config/api';
 
 export type HealthResponse = { status: string };
 
@@ -12,7 +13,7 @@ export const useApiStore = defineStore('api', () => {
 		loading.value = true;
 		error.value = null;
 		try {
-			const healthCheckResponse = await fetch('/api/health');
+			const healthCheckResponse = await fetch(apiUrl('/api/health'));
 			if (!healthCheckResponse.ok) {
 				throw new Error(`Health: ${healthCheckResponse.status}`);
 			}

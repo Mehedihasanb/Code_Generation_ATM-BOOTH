@@ -1,0 +1,8 @@
+frontend/
+.git/
+.github/
+**/.idea/
+**/node_modules/
+**/target/
+**/*.md
+**/.DS_Store

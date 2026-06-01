@@ -1,9 +1,2 @@
-FROM ubuntu:latest AS build
-RUN apt-get update
-RUN apt-get install openjdk-25-jdk -y
-COPY . .
-RUN chmod +x ./mvnw
-RUN ./mvnw clean install -U
-
-EXPOSE 8080
-ENTRYPOINT ["./mvnw","spring-boot:run"]
+# Use the Dockerfile in the repository root (US-29 / Render).
+# This file is kept for reference; Render should use /Dockerfile at repo root.

@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
+import { apiUrl } from '@/config/api';
 
 export type RegisterPayload = {
 	firstName: string;
@@ -30,7 +31,7 @@ export const useRegistrationStore = defineStore('registration', () => {
 
 		try {
 			// Call backend (same as AuthController -> RegistrationService.register)
-			const registerHttpResponse = await fetch('/auth/register', {
+			const registerHttpResponse = await fetch(apiUrl('/auth/register'), {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify(registerRequest),

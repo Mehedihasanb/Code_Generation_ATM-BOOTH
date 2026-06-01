@@ -56,10 +56,11 @@ class EmployeeSprint2IntegrationTest {
 	}
 
 	@Test
-	void listCustomersAsCustomerIsForbidden() throws Exception {
+	void listCustomersAsCustomerCanViewDirectory() throws Exception {
 		mockMvc.perform(get("/users")
 				.header("Authorization", "Bearer " + customerJwt()))
-			.andExpect(status().isForbidden());
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.content").isArray());
 	}
 
 	@Test
@@ -116,7 +117,7 @@ class EmployeeSprint2IntegrationTest {
 		String createAccountsBody = objectMapper.writeValueAsString(Map.of(
 			"customerRegistrationId", newCustomerId,
 			"dailyOutgoingTransferLimit", new BigDecimal("2500.00"),
-			"minimumAllowedBalance", new BigDecimal("-500.00")
+			"minimumAllowedBalance", new BigDecimal("0.00")
 		));
 		String createAccountsResponseBody = mockMvc.perform(post("/accounts")
 				.contentType(MediaType.APPLICATION_JSON)

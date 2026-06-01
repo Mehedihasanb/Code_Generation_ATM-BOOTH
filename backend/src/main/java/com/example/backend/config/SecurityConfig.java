@@ -1,5 +1,6 @@
 package com.example.backend.config;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -26,12 +27,16 @@ import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.http.HttpStatus;
 
+import java.util.Arrays;
 import java.util.List;
 
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
 public class SecurityConfig {
+
+	@Value("${app.cors.allowed-origins}")
+	private String allowedOrigins;
 
 	@Bean
 	public SecurityFilterChain securityFilterChain(HttpSecurity httpSecurity,
@@ -118,9 +123,11 @@ public class SecurityConfig {
 	@Bean
 	public CorsConfigurationSource corsConfigurationSource() {
 		CorsConfiguration corsConfiguration = new CorsConfiguration();
-		// Vite dev URL; browser blocks cross-origin calls unless these headers are
-		// allowed.
-		corsConfiguration.setAllowedOrigins(List.of("http://localhost:5173", "http://127.0.0.1:5173"));
+		List<String> origins = Arrays.stream(allowedOrigins.split(","))
+			.map(String::trim)
+			.filter(origin -> !origin.isEmpty())
+			.toList();
+		corsConfiguration.setAllowedOrigins(origins);
 		corsConfiguration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
 		corsConfiguration.setAllowedHeaders(List.of("*"));
 		corsConfiguration.setAllowCredentials(true);

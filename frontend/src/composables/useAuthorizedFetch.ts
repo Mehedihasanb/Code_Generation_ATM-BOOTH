@@ -1,3 +1,5 @@
+import { apiUrl } from '@/config/api';
+
 const tokenStorageKey = 'code-generation-token';
 
 export async function authorizedFetch(input: string, init: RequestInit = {}): Promise<Response> {
@@ -12,5 +14,5 @@ export async function authorizedFetch(input: string, init: RequestInit = {}): Pr
 		headers.set('Content-Type', 'application/json');
 	}
 
-	return fetch(input, { ...init, headers });
+	return fetch(apiUrl(input), { ...init, headers });
 }

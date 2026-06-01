@@ -2,7 +2,11 @@ import { fileURLToPath, URL } from 'node:url';
 import { defineConfig } from 'vite';
 import vue from '@vitejs/plugin-vue';
 
+// GitHub Pages project site; keep "/" for local `npm run dev`
+const pagesBase = process.env.GITHUB_ACTIONS === 'true' ? '/Code_Generation_ATM-BOOTH/' : '/';
+
 export default defineConfig({
+	base: pagesBase,
 	plugins: [vue()],
 	resolve: {
 		alias: {
