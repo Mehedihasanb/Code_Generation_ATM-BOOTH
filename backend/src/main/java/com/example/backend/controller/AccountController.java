@@ -2,6 +2,7 @@ package com.example.backend.controller;
 
 import com.example.backend.service.AccountService;
 import com.example.backend.dto.AccountSummaryResponse;
+import com.example.backend.dto.CheckingAccountOptionRow;
 import com.example.backend.dto.CreateAccountsRequest;
 import com.example.backend.dto.CreatedAccountsResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -9,6 +10,7 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -18,6 +20,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import java.security.Principal;
+import java.util.List;
 
 @RestController
 @RequestMapping("/accounts")
@@ -51,5 +54,13 @@ public class AccountController {
 	@SecurityRequirement(name = "bearerAuth")
 	public AccountSummaryResponse getMyAccounts(Principal principal) {
 		return accountService.getMyAccounts(principal.getName());
+	}
+
+	@GetMapping("/checking-options")
+	@PreAuthorize("hasRole('EMPLOYEE')")
+	@Operation(summary = "Get all checking accounts for employee dropdowns")
+	@SecurityRequirement(name = "bearerAuth")
+	public List<CheckingAccountOptionRow> getCheckingOptions() {
+		return accountService.getAllCheckingAccountsForDropdown();
 	}
 }

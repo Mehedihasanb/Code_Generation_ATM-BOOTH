@@ -25,7 +25,6 @@ import com.example.backend.dto.SystemTransactionRow;
 import com.example.backend.dto.TransactionHistoryRow;
 import java.time.LocalDate;
 import java.math.BigDecimal;
-import java.security.Principal;
 
 @RestController
 @RequestMapping("/transactions")
@@ -39,11 +38,18 @@ public class TransactionController {
     }
 
     @PostMapping
-    @ResponseStatus(HttpStatus.OK)
-    @Operation(summary = "Transfer money between accounts (Customer only)")
+    @ResponseStatus(HttpStatus.CREATED)
+    @Operation(summary = "Initiate a transfer (Customer or Employee)")
     @SecurityRequirement(name = "bearerAuth")
-    public void executeTransfer(@Valid @RequestBody TransferRequest request, Principal principal) {
-        transactionService.processTransfer(request, principal.getName());
+    public void createTransaction(
+            @Valid @RequestBody TransferRequest request,
+            Authentication authentication) {
+
+        boolean isEmployee = authentication.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .anyMatch(role -> role.equals("ROLE_EMPLOYEE"));
+
+        transactionService.processTransfer(request, authentication.getName(), isEmployee);
     }
 
     @GetMapping
@@ -63,23 +69,16 @@ public class TransactionController {
                 .map(GrantedAuthority::getAuthority)
                 .anyMatch(role -> role.equals("ROLE_EMPLOYEE"));
 
-        // If it's an employee and they didn't specify an IBAN, return the whole system
-        // ledger
         if (isEmployee && accountIban == null) {
             Page<SystemTransactionRow> allTransactions = transactionService.getAllSystemTransactions(pageable);
             return ResponseEntity.ok(allTransactions);
         }
-
-        // Else, it must be a customer request, so accountIban is mandatory
         if (accountIban == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "accountIban is required for customer queries.");
         }
-
-        // Return the customer's specific history
         Page<TransactionHistoryRow> customerTransactions = transactionService.getTransactionHistory(
                 accountIban, startDate, endDate, amount, amountOperator, counterpartIban, authentication.getName(),
                 pageable);
-
         return ResponseEntity.ok(customerTransactions);
     }
 }

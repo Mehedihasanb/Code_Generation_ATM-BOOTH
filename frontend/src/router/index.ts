@@ -8,6 +8,7 @@ import CustomerAccountsView from '@/views/user/CustomerAccountsView.vue';
 import CustomerTransferView from '@/views/user/CustomerTransferView.vue';
 import EmployeeTransactionsView from '../views/employee/EmployeeTransactionsView.vue';
 import EmployeeCustomerDirectoryView from '../views/employee/EmployeeCustomerDirectoryView.vue';
+import EmployeeTransferView from '../views/employee/EmployeeTransferView.vue';
 
 import {
 	customerApprovalStatusStorageKey,
@@ -78,6 +79,12 @@ const router = createRouter({
             path: '/employee/directory',
             name: 'employee-directory',
             component: EmployeeCustomerDirectoryView,
+            meta: { requiresEmployee: true }
+        },
+		{
+            path: '/employee/transfer',
+            name: 'employee-transfer',
+            component: EmployeeTransferView,
             meta: { requiresEmployee: true }
         },
 	],

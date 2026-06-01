@@ -8,6 +8,7 @@ import org.springframework.security.config.annotation.authentication.configurati
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import com.example.backend.domain.CustomerApprovalStatus;
@@ -29,6 +30,7 @@ import java.util.List;
 
 @Configuration
 @EnableWebSecurity
+@EnableMethodSecurity
 public class SecurityConfig {
 
 	@Bean
@@ -51,14 +53,14 @@ public class SecurityConfig {
 				.exceptionHandling(exceptionHandlingConfig -> exceptionHandlingConfig
 						.authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)))
 				.authorizeHttpRequests(authorizeRequestsConfig -> authorizeRequestsConfig
+						.requestMatchers(HttpMethod.GET, "/accounts/checking-options").hasRole("EMPLOYEE")
 						.requestMatchers(HttpMethod.POST, "/auth/register", "/auth/login").permitAll()
 						.requestMatchers(HttpMethod.POST, "/auth/customers/*/deny").hasRole("EMPLOYEE")
 						.requestMatchers(HttpMethod.GET, "/users/search").hasRole("EMPLOYEE")
 						.requestMatchers(HttpMethod.GET, "/users").hasAnyRole("EMPLOYEE", "CUSTOMER")
 						.requestMatchers(HttpMethod.GET, "/accounts/mine").hasRole("CUSTOMER")
 						.requestMatchers(HttpMethod.GET, "/transactions").authenticated()
-						.requestMatchers(HttpMethod.POST, "/transactions").hasRole("CUSTOMER")
-						.requestMatchers(HttpMethod.GET, "/transactions").hasRole("CUSTOMER")
+						.requestMatchers(HttpMethod.POST, "/transactions").hasAnyRole("CUSTOMER", "EMPLOYEE")
 						.requestMatchers(HttpMethod.POST, "/accounts").hasRole("EMPLOYEE")
 						.requestMatchers(HttpMethod.PUT, "/accounts/*/close").hasRole("EMPLOYEE")
 						// Add this line so Spring Security stops hiding our custom error messages!
