@@ -15,6 +15,7 @@ import org.springframework.web.server.ResponseStatusException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import com.example.backend.dto.TransactionHistoryRow;
+import com.example.backend.dto.SystemTransactionRow;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
@@ -146,5 +147,42 @@ public class TransactionService {
                                         type,
                                         tx.getDescription());
                 });
+        }
+
+        @Transactional(readOnly = true)
+        public Page<SystemTransactionRow> getAllSystemTransactions(Pageable pageable) {
+                Page<Transaction> transactions = transactionRepository.findAll(pageable);
+
+                return transactions.map(this::mapToSystemTransactionRow);
+        }
+
+        @Transactional(readOnly = true)
+        public Page<SystemTransactionRow> getTransactionsByUserId(Long userId, Pageable pageable) {
+                Page<Transaction> transactions = transactionRepository.findAllByUserId(userId, pageable);
+                return transactions.map(this::mapToSystemTransactionRow);
+        }
+
+        private SystemTransactionRow mapToSystemTransactionRow(Transaction tx) {
+                String fromIban = tx.getFromAccount() != null ? tx.getFromAccount().getIban() : "SYSTEM/ATM";
+                String toIban = tx.getToAccount() != null ? tx.getToAccount().getIban() : "SYSTEM/ATM";
+                String initiatingUser = tx.getInitiatingUser() != null ? tx.getInitiatingUser().getEmail() : "System";
+
+                String type;
+                if (tx.getFromAccount() == null && tx.getToAccount() != null) {
+                        type = "DEPOSIT";
+                } else if (tx.getFromAccount() != null && tx.getToAccount() == null) {
+                        type = "WITHDRAWAL";
+                } else {
+                        type = "TRANSFER";
+                }
+
+                return new SystemTransactionRow(
+                                tx.getId(),
+                                tx.getTimestamp(),
+                                fromIban,
+                                toIban,
+                                tx.getAmount(),
+                                initiatingUser,
+                                type);
         }
 }

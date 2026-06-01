@@ -47,7 +47,7 @@ public class SecurityConfig {
 				.sessionManagement(sessionManagementConfig -> sessionManagementConfig
 						.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 				// If request hits a protected route without a valid login context, answer 401
-				// (not a redirect).
+				// not a redirect
 				.exceptionHandling(exceptionHandlingConfig -> exceptionHandlingConfig
 						.authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)))
 				.authorizeHttpRequests(authorizeRequestsConfig -> authorizeRequestsConfig
@@ -56,6 +56,7 @@ public class SecurityConfig {
 						.requestMatchers(HttpMethod.GET, "/users/search").hasRole("EMPLOYEE")
 						.requestMatchers(HttpMethod.GET, "/users").hasAnyRole("EMPLOYEE", "CUSTOMER")
 						.requestMatchers(HttpMethod.GET, "/accounts/mine").hasRole("CUSTOMER")
+						.requestMatchers(HttpMethod.GET, "/transactions").authenticated()
 						.requestMatchers(HttpMethod.POST, "/transactions").hasRole("CUSTOMER")
 						.requestMatchers(HttpMethod.GET, "/transactions").hasRole("CUSTOMER")
 						.requestMatchers(HttpMethod.POST, "/accounts").hasRole("EMPLOYEE")

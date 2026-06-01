@@ -47,4 +47,12 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
                         @Param("minAmount") BigDecimal minAmount,
                         @Param("maxAmount") BigDecimal maxAmount,
                         Pageable pageable);
+
+        // Transactions where the user is the owner of sender or
+        // receiver account
+        @Query("SELECT t FROM Transaction t WHERE " +
+                        "(t.fromAccount IS NOT NULL AND t.fromAccount.owner.id = :userId) OR " +
+                        "(t.toAccount IS NOT NULL AND t.toAccount.owner.id = :userId) " +
+                        "ORDER BY t.timestamp DESC")
+        Page<Transaction> findAllByUserId(@Param("userId") Long userId, Pageable pageable);
 }
