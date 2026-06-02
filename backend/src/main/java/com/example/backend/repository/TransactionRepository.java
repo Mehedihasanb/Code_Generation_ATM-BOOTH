@@ -23,6 +23,11 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
                         @Param("account") com.example.backend.domain.BankAccount account,
                         @Param("startOfDay") java.time.LocalDateTime startOfDay);
 
+        @Query("SELECT COALESCE(SUM(t.amount), 0) FROM Transaction t WHERE t.toAccount = :account AND t.timestamp >= :startOfDay")
+        BigDecimal sumIncomingTransactionsToday(
+                        @Param("account") com.example.backend.domain.BankAccount account,
+                        @Param("startOfDay") java.time.LocalDateTime startOfDay);
+
         Page<Transaction> findByFromAccount_IbanOrToAccount_IbanOrderByTimestampDesc(
                         String fromIban,
                         String toIban,

@@ -4,6 +4,7 @@ import com.example.backend.domain.BankAccount;
 import com.example.backend.domain.Transaction;
 import com.example.backend.domain.UserRegistration;
 import com.example.backend.policy.TransferAuthorizationPolicy;
+import com.example.backend.support.AtmConstants;
 import com.example.backend.dto.TransferRequest;
 import com.example.backend.repository.BankAccountRepository;
 import com.example.backend.repository.TransactionRepository;
@@ -184,7 +185,8 @@ public class TransactionService {
 
                 // 👇 Updated to explicitly output ATM, EMPLOYEE, or TRANSFER
                 String type;
-                if (tx.getFromAccount() == null || tx.getToAccount() == null) {
+                if (tx.getFromAccount() == null || tx.getToAccount() == null
+                                || isAtmTransaction(tx)) {
                         type = "ATM";
                 } else if (tx.getInitiatingUser() != null && tx.getInitiatingUser().getRole().contains("EMPLOYEE")) {
                         type = "EMPLOYEE";
@@ -200,5 +202,14 @@ public class TransactionService {
                                 tx.getAmount(),
                                 initiatingUser,
                                 type);
+        }
+
+        private boolean isAtmTransaction(Transaction tx) {
+                return AtmConstants.WITHDRAWAL_DESCRIPTION.equals(tx.getDescription())
+                                || AtmConstants.DEPOSIT_DESCRIPTION.equals(tx.getDescription())
+                                || (tx.getToAccount() != null
+                                                && AtmConstants.SYSTEM_ATM_IBAN.equals(tx.getToAccount().getIban()))
+                                || (tx.getFromAccount() != null
+                                                && AtmConstants.SYSTEM_ATM_IBAN.equals(tx.getFromAccount().getIban()));
         }
 }
