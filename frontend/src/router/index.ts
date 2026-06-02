@@ -9,6 +9,10 @@ import CustomerTransferView from '@/views/user/CustomerTransferView.vue';
 import EmployeeTransactionsView from '../views/employee/EmployeeTransactionsView.vue';
 import EmployeeCustomerDirectoryView from '../views/employee/EmployeeCustomerDirectoryView.vue';
 import EmployeeTransferView from '../views/employee/EmployeeTransferView.vue';
+import AtmLoginView from '../views/atm/AtmLoginView.vue';
+import AtmHomeView from '../views/atm/AtmHomeView.vue';
+import AtmWithdrawView from '../views/atm/AtmWithdrawView.vue';
+import AtmDepositView from '../views/atm/AtmDepositView.vue';
 
 import {
 	customerApprovalStatusStorageKey,
@@ -87,6 +91,35 @@ const router = createRouter({
             component: EmployeeTransferView,
             meta: { requiresEmployee: true }
         },
+		{
+			path: '/atm',
+			name: 'atm',
+			redirect: '/atm/login',
+		},
+		{
+			path: '/atm/login',
+			name: 'atm-login',
+			component: AtmLoginView,
+			meta: { atmLayout: true },
+		},
+		{
+			path: '/atm/home',
+			name: 'atm-home',
+			component: AtmHomeView,
+			meta: { atmLayout: true, requiresAtmApprovedCustomer: true },
+		},
+		{
+			path: '/atm/withdraw',
+			name: 'atm-withdraw',
+			component: AtmWithdrawView,
+			meta: { atmLayout: true, requiresAtmApprovedCustomer: true },
+		},
+		{
+			path: '/atm/deposit',
+			name: 'atm-deposit',
+			component: AtmDepositView,
+			meta: { atmLayout: true, requiresAtmApprovedCustomer: true },
+		},
 	],
 });
 
@@ -107,6 +140,16 @@ router.beforeEach((to) => {
 		if (!token || !isApprovedCustomer) {
 			return { path: '/login', query: { redirect: to.fullPath } };
 		}
+	}
+
+	if (to.meta.requiresAtmApprovedCustomer) {
+		if (!token || !isApprovedCustomer) {
+			return { path: '/atm/login', query: { redirect: to.fullPath } };
+		}
+	}
+
+	if (to.path === '/atm/login' && token && isApprovedCustomer) {
+		return '/atm/home';
 	}
 
 	if (isPendingCustomer && to.path !== '/pending-approval' && to.meta.requiresApproved) {

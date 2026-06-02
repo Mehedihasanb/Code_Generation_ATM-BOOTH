@@ -34,6 +34,7 @@ export default defineConfig({
 				changeOrigin: true,
 			},
 			'/transactions': { target: 'http://localhost:8080', changeOrigin: true },
+			'/atm': { target: 'http://localhost:8080', changeOrigin: true },
 		},
 	},
 });

@@ -1,11 +1,18 @@
 <script setup lang="ts">
-import { RouterView } from 'vue-router';
+import { computed } from 'vue';
+import { RouterView, useRoute } from 'vue-router';
 import Header from './components/organisms/Header.vue';
 import Footer from './components/organisms/Footer.vue';
+
+const route = useRoute();
+const isAtmLayout = computed(() => Boolean(route.meta.atmLayout));
 </script>
 
 <template>
-	<div class="layout">
+	<div v-if="isAtmLayout" class="atm-layout">
+		<RouterView />
+	</div>
+	<div v-else class="layout">
 		<Header />
 		<main class="main">
 			<RouterView />
@@ -13,3 +20,9 @@ import Footer from './components/organisms/Footer.vue';
 		<Footer />
 	</div>
 </template>
+
+<style scoped>
+.atm-layout {
+	min-height: 100vh;
+}
+</style>
