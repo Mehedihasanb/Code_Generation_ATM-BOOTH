@@ -14,11 +14,10 @@ import com.example.backend.dto.CreatedAccountLine;
 import com.example.backend.dto.CreatedAccountsResponse;
 import com.example.backend.dto.CustomerAccountRow;
 import com.example.backend.dto.CustomerDirectoryRow;
+import com.example.backend.exception.ResourceNotFoundException;
 
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -48,7 +47,7 @@ public class AccountService {
 	@Transactional
 	public CreatedAccountsResponse createCheckingAndSavingsAccounts(CreateAccountsRequest createAccountsRequest) {
 		UserRegistration customer = userRegistrationRepository.findById(createAccountsRequest.customerRegistrationId())
-				.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Customer not found"));
+				.orElseThrow(() -> new ResourceNotFoundException("Customer not found"));
 
 		accountOpeningPolicy.requireEligibleForNewAccounts(customer);
 
@@ -105,7 +104,7 @@ public class AccountService {
 		String normalizedIban = ibanFromPath.trim().toUpperCase();
 
 		BankAccount bankAccount = bankAccountRepository.findByIban(normalizedIban)
-				.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Unknown IBAN"));
+				.orElseThrow(() -> new ResourceNotFoundException("Unknown IBAN"));
 
 		if (!bankAccount.isActive()) {
 			return;
@@ -118,7 +117,7 @@ public class AccountService {
 	@Transactional(readOnly = true)
 	public AccountSummaryResponse getMyAccounts(String email) {
 		UserRegistration customer = userRegistrationRepository.findByEmail(email)
-				.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Customer not found"));
+				.orElseThrow(() -> new ResourceNotFoundException("Customer not found"));
 
 		List<BankAccount> accounts = bankAccountRepository.findAllByOwner_Id(customer.getId());
 		return AccountSummaryResponse.fromCustomerAndAccounts(customer, accounts);

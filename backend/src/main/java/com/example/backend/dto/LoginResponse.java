@@ -1,15 +1,10 @@
 package com.example.backend.dto;
 
-/**
- * JSON body returned by {@code POST /auth/login}. This is a DTO: it is not a
- * JPA entity and maps what the client needs
- * (token + profile fields) without exposing the internal
- * {@code UserRegistration} entity shape.
- */
+// login response sent back to the client (token + basic profile), not the entity
 public class LoginResponse {
 	private String token;
 	private String role;
-	/** For customers: PENDING, APPROVED, or DENIED. Null for employees. */
+	// for customers: PENDING, APPROVED or DENIED. null for employees
 	private String customerApprovalStatus;
 	private String firstName;
 

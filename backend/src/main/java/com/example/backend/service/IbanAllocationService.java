@@ -9,6 +9,8 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.security.SecureRandom;
 
+// uses the external iban4j library (see pom.xml) to build a valid Dutch IBAN with
+// correct check digits, instead of writing the IBAN algorithm by hand
 @Service
 public class IbanAllocationService {
 
@@ -23,6 +25,7 @@ public class IbanAllocationService {
 
 	public String allocateUniqueDutchIban() {
 		for (int attempt = 0; attempt < 100; attempt++) {
+			// Math.floorMod keeps the random number positive and within 10 digits (0..9999999999)
 			long accountDigits = Math.floorMod(secureRandom.nextLong(), 10_000_000_000L);
 			String accountNumber = String.format("%010d", accountDigits);
 			Iban iban = new Iban.Builder()

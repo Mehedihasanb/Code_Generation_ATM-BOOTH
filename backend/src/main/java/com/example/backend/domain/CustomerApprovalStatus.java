@@ -1,9 +1,6 @@
 package com.example.backend.domain;
 
-/**
- * Customer lifecycle after self-registration. Employees approve (open accounts) or deny.
- * Not used for {@code EMPLOYEE} rows (column is null in the database).
- */
+// status of a customer after they register. employees approve or deny. null for employees
 public enum CustomerApprovalStatus {
 	PENDING,
 	APPROVED,

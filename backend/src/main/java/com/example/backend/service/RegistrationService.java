@@ -9,13 +9,13 @@ import com.example.backend.dto.LoginRequest;
 import com.example.backend.dto.LoginResponse;
 import com.example.backend.dto.RegisterRequest;
 import com.example.backend.dto.RegisterResponse;
-import org.springframework.http.HttpStatus;
+import com.example.backend.exception.BadRequestException;
+import com.example.backend.exception.ResourceNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.server.ResponseStatusException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.authentication.AuthenticationManager;
 
@@ -44,7 +44,7 @@ public class RegistrationService {
 
 	public RegisterResponse register(RegisterRequest registerRequest) {
 		if (userRegistrationRepository.findByEmail(registerRequest.email()).isPresent()) {
-			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Email is already registered");
+			throw new BadRequestException("Email is already registered");
 		}
 
 		UserRegistration newlyRegisteredUser = userRegistrationRepository.save(
@@ -69,7 +69,7 @@ public class RegistrationService {
 	@Transactional
 	public void denyCustomerRegistration(Long customerRegistrationId) {
 		UserRegistration customer = userRegistrationRepository.findById(customerRegistrationId)
-				.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Customer not found"));
+				.orElseThrow(() -> new ResourceNotFoundException("Customer not found"));
 
 		customerRegistrationPolicy.requirePendingForDeny(customer);
 
@@ -86,7 +86,7 @@ public class RegistrationService {
 		// Fetch User
 		UserRegistration authenticatedUser = userRegistrationRepository
 				.findByEmail(loginRequest.email().trim().toLowerCase())
-				.orElseThrow(() -> new RuntimeException("User not found after authentication"));
+				.orElseThrow(() -> new ResourceNotFoundException("User not found after authentication"));
 
 		customerRegistrationPolicy.requireNotDeniedForLogin(authenticatedUser);
 

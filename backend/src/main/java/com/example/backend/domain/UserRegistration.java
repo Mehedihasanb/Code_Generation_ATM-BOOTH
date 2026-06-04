@@ -32,9 +32,7 @@ public class UserRegistration {
 	@Column(nullable = false)
 	private String role;
 
-	/**
-	 * {@code null} for employees. For customers: pending until an employee opens accounts or denies.
-	 */
+	// null for employees. for customers: pending until an employee opens accounts or denies
 	@Enumerated(EnumType.STRING)
 	@Column(name = "customer_approval_status", length = 20, nullable = true)
 	private CustomerApprovalStatus customerApprovalStatus;

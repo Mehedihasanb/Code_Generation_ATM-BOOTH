@@ -1,10 +1,9 @@
 package com.example.backend.policy;
 
 import com.example.backend.domain.UserRegistration;
+import com.example.backend.exception.BadRequestException;
 import com.example.backend.repository.BankAccountRepository;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
-import org.springframework.web.server.ResponseStatusException;
 
 @Component
 public class AccountOpeningPolicy {
@@ -23,7 +22,7 @@ public class AccountOpeningPolicy {
 	public void requireEligibleForNewAccounts(UserRegistration customer) {
 		customerRegistrationPolicy.requirePendingApproval(customer);
 		if (bankAccountRepository.existsByOwner_Id(customer.getId())) {
-			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Customer already has bank accounts");
+			throw new BadRequestException("Customer already has bank accounts");
 		}
 	}
 }
