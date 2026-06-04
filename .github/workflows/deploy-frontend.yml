@@ -35,6 +35,9 @@ jobs:
         run: |
           npm ci
           npm run build
+          # SPA fallback: GitHub Pages serves 404.html for unknown paths,
+          # so a direct load/refresh of a Vue route (e.g. /register) still loads the app
+          cp dist/index.html dist/404.html
 
       - uses: actions/upload-pages-artifact@v3
         with:
