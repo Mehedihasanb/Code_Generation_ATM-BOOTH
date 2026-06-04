@@ -86,7 +86,7 @@ async function submit() {
     }
 
     try {
-        // Send the data to the backend via your store
+        // send the form to the backend through the registration store
         await registration.submitRegistration({
             firstName: form.firstName.trim(),
             lastName: form.lastName.trim(),
@@ -96,7 +96,7 @@ async function submit() {
             phoneNumber: form.phoneNumber.trim(),
         });
 
-        // If the backend didn't return an error, we redirect!
+        // if there was no error, redirect
         if (!registration.error) {
             
             // Clear the form fields completely
@@ -128,7 +128,7 @@ onUnmounted(() => {
 <template>
     <section class="panel register-panel">
         <h1>Create Account</h1>
-        <p class="hint">Register through the backend REST API.</p>
+        <p class="hint">Create your account to get started.</p>
 
         <form class="register-form" @submit.prevent="submit">
             <label>

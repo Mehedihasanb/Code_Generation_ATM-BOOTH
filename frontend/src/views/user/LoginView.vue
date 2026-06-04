@@ -90,7 +90,7 @@ async function submit() {
 <template>
 	<section class="panel auth-panel">
 		<h1>Login</h1>
-		<p class="hint">Authenticate through the backend REST API and receive a JWT.</p>
+		<p class="hint">Sign in to your account.</p>
 
 		<form class="auth-form" @submit.prevent="submit">
 			<label>
@@ -106,7 +106,7 @@ async function submit() {
 			</label>
 
 			<p v-if="auth.error" class="error">{{ auth.error }}</p>
-			<p v-else-if="isLoggedIn" class="success">You are logged in.</p>
+			<p v-else-if="isLoggedIn" class="success">Welcome back!</p>
 
 			<button class="btn" type="submit" :disabled="auth.loading">
 				{{ auth.loading ? 'Signing in...' : 'Login' }}
