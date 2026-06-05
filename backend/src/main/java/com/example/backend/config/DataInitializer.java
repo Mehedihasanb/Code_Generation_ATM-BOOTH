@@ -15,13 +15,16 @@ import org.springframework.core.annotation.Order;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
 @Configuration
 public class DataInitializer {
 
-	private static final BigDecimal MIN_BALANCE = new BigDecimal("0.00");
+	// the transfer/ATM logic treats minimumAllowedBalance as the account's MAX balance cap,
+	// so seed it high enough that demo accounts can receive transfers and deposits
+	private static final BigDecimal BALANCE_CAP = new BigDecimal("1000000.00");
 	private static final BigDecimal DAILY_LIMIT = new BigDecimal("2000.00");
 
 	// runs first so the employee + customers exist before other seeders (e.g. ATM system account)
@@ -82,9 +85,24 @@ public class DataInitializer {
 				BankAccount to = checkings.get((i + 1) % checkings.size());
 				BigDecimal amount = new BigDecimal(15 + (i * 5)).setScale(2);
 				String description = descriptions[i % descriptions.length];
-				transactionRepository.save(new Transaction(from, to, amount, description, from.getOwner()));
+				Transaction transaction = new Transaction(from, to, amount, description, from.getOwner());
+				// spread the seeded transactions over the last ~2 weeks so date filtering is visible
+				backdateTransaction(transaction, LocalDateTime.now().minusDays(i % 14).minusHours(i % 6));
+				transactionRepository.save(transaction);
 			}
 		};
+	}
+
+	// Transaction stamps "now" in its constructor and has no setter, so we set the
+	// seed date by reflection (demo data only, keeps the entity untouched)
+	private void backdateTransaction(Transaction transaction, LocalDateTime when) {
+		try {
+			java.lang.reflect.Field timestampField = Transaction.class.getDeclaredField("timestamp");
+			timestampField.setAccessible(true);
+			timestampField.set(transaction, when);
+		} catch (ReflectiveOperationException exception) {
+			throw new IllegalStateException("Could not backdate seed transaction", exception);
+		}
 	}
 
 	private UserRegistration approvedCustomer(UserRegistrationRepository repository, PasswordEncoder passwordEncoder,
@@ -104,6 +122,6 @@ public class DataInitializer {
 	private BankAccount account(BankAccountRepository repository, UserRegistration owner, String iban,
 			AccountType type, String balance) {
 		return repository.save(new BankAccount(
-			owner, iban, type, true, new BigDecimal(balance).setScale(2), MIN_BALANCE, DAILY_LIMIT));
+			owner, iban, type, true, new BigDecimal(balance).setScale(2), BALANCE_CAP, DAILY_LIMIT));
 	}
 }
