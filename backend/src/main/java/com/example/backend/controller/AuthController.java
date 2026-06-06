@@ -36,7 +36,6 @@ public class AuthController {
 	@PostMapping("/login")
 	@Operation(summary = "Login and receive a JWT")
 	public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest loginRequest) {
-		// Pure routing. The service handles the heavy lifting.
 		return ResponseEntity.ok(registrationService.login(loginRequest));
 	}
 

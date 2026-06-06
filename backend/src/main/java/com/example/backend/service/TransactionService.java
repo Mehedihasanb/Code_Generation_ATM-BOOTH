@@ -9,6 +9,8 @@ import com.example.backend.dto.TransferRequest;
 import com.example.backend.repository.BankAccountRepository;
 import com.example.backend.repository.TransactionRepository;
 import com.example.backend.repository.UserRegistrationRepository;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.Authentication;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -43,8 +45,10 @@ public class TransactionService {
         }
 
         @Transactional
-        // 👇 Added 'boolean isEmployee' here
-        public void processTransfer(TransferRequest request, String userEmail, boolean isEmployee) {
+        public void processTransfer(TransferRequest request, Authentication authentication) {
+                String userEmail = authentication.getName();
+                boolean isEmployee = isEmployee(authentication);
+
                 UserRegistration initiator = userRegistrationRepository.findByEmail(userEmail)
                                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
 
@@ -56,7 +60,7 @@ public class TransactionService {
                                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
                                                 "Receiver account not found"));
 
-                // 👇 NEW: Smart Authorization Check
+                // Authorization Check
                 if (isEmployee) {
                         // Requirement: Employees can only transfer between checking accounts
                         if (!"CHECKING".equalsIgnoreCase(fromAccount.getAccountType().name()) ||
@@ -116,8 +120,29 @@ public class TransactionService {
                                 toAccount,
                                 request.amount(),
                                 request.description(),
-                                initiator); // Records the exact employee who forced the transfer!
+                                initiator); // Records the exact employee who forced the transfer
                 transactionRepository.save(transaction);
+        }
+
+        @Transactional(readOnly = true)
+        public Page<?> getTransactions(
+                        String accountIban, LocalDate startDate, LocalDate endDate,
+                        BigDecimal amount, String amountOperator, String counterpartIban,
+                        Authentication authentication, Pageable pageable) {
+
+                boolean isEmployee = isEmployee(authentication);
+
+                if (isEmployee && accountIban == null) {
+                        return getAllSystemTransactions(pageable);
+                }
+                if (accountIban == null) {
+                        throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                                        "accountIban is required for customer queries.");
+                }
+
+                return getTransactionHistory(
+                                accountIban, startDate, endDate, amount, amountOperator, counterpartIban,
+                                authentication.getName(), pageable);
         }
 
         private String formatAmount(BigDecimal amount) {
@@ -183,7 +208,6 @@ public class TransactionService {
                 String toIban = tx.getToAccount() != null ? tx.getToAccount().getIban() : "SYSTEM/ATM";
                 String initiatingUser = tx.getInitiatingUser() != null ? tx.getInitiatingUser().getEmail() : "System";
 
-                // 👇 Updated to explicitly output ATM, EMPLOYEE, or TRANSFER
                 String type;
                 if (tx.getFromAccount() == null || tx.getToAccount() == null
                                 || isAtmTransaction(tx)) {
@@ -211,5 +235,11 @@ public class TransactionService {
                                                 && AtmConstants.SYSTEM_ATM_IBAN.equals(tx.getToAccount().getIban()))
                                 || (tx.getFromAccount() != null
                                                 && AtmConstants.SYSTEM_ATM_IBAN.equals(tx.getFromAccount().getIban()));
+        }
+
+        private boolean isEmployee(Authentication authentication) {
+                return authentication.getAuthorities().stream()
+                                .map(GrantedAuthority::getAuthority)
+                                .anyMatch(role -> role.equals("ROLE_EMPLOYEE"));
         }
 }

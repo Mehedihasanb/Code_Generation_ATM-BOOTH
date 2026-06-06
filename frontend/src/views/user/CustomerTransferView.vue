@@ -19,6 +19,7 @@ const description = ref('');
 
 const searchFirstName = ref('');
 const searchLastName = ref('');
+const searchIban = ref('');
 const searchResults = ref<any[]>([]);
 const searching = ref(false);
 
@@ -43,30 +44,80 @@ const fetchMyAccounts = async () => {
 };
 
 const searchDirectory = async () => {
-    if (!searchFirstName.value || !searchLastName.value) return;
+    const firstName = searchFirstName.value.trim();
+    const lastName = searchLastName.value.trim();
+    const iban = searchIban.value.trim();
+
+    if (!firstName && !lastName && !iban) {
+        error.value = "Please enter a name or an IBAN to search.";
+        return;
+    }
+
+    if ((firstName && !lastName) || (!firstName && lastName)) {
+        error.value = "Please enter both first and last name, or use IBAN search.";
+        return;
+    }
+
     searching.value = true;
     searchResults.value = [];
     error.value = null;
     successMessage.value = null;
 
     try {
-        const response = await authorizedFetch(`/users?firstName=${encodeURIComponent(searchFirstName.value)}&lastName=${encodeURIComponent(searchLastName.value)}`);
+        const params = new URLSearchParams();
+
+        if (firstName && lastName) {
+            params.set('firstName', firstName);
+            params.set('lastName', lastName);
+        }
+        if (iban) {
+            params.set('iban', iban);
+        }
+
+        const response = await authorizedFetch(`/users?${params.toString()}`);
         if (!response.ok) throw new Error("Failed to search directory.");
         const data = await response.json();
 
-        let foundUsers = data.content ? data.content : data;
-
-        searchResults.value = foundUsers.filter((user: any) => 
-            user.firstName.toLowerCase() === searchFirstName.value.toLowerCase() &&
-            user.lastName.toLowerCase() === searchLastName.value.toLowerCase()
-        );
+        searchResults.value = data.content ? data.content : data;
         if (searchResults.value.length === 0) {
-            error.value = "No active accounts found for that name.";
+            error.value = iban
+                ? "No active accounts found for that IBAN."
+                : "No active accounts found for that name.";
         }
     } catch (err) {
         error.value = err instanceof Error ? err.message : String(err);
     } finally {
         searching.value = false;
+    }
+};
+
+const extractErrorMessage = async (response: Response) => {
+    const fallbackMessage = `Transfer failed. Please check your details. (${response.status} ${response.statusText})`;
+
+    try {
+        const errorData = await response.json();
+
+        if (typeof errorData === 'string' && errorData.trim()) {
+            return errorData;
+        }
+
+        const message = errorData.message || errorData.detail || errorData.title;
+        if (message && message !== 'No message available') {
+            return message.replace(/^400 BAD_REQUEST "/, '').replace(/"$/, '');
+        }
+
+        if (errorData.error) {
+            return errorData.error;
+        }
+
+        return fallbackMessage;
+    } catch (parseError) {
+        try {
+            const text = await response.text();
+            return text.trim() || fallbackMessage;
+        } catch (textError) {
+            return fallbackMessage;
+        }
     }
 };
 
@@ -108,23 +159,7 @@ const submitTransfer = async () => {
         });
 
        if (!response.ok) {
-            let errorMessage = "Transfer failed. Please check your details.";
-            try {
-                const errorData = await response.json();
-                
-                // 🕵️‍♂️ Print the exact error to your browser console (F12) so we can see it!
-                console.log("Spring Boot Error Data:", errorData);
-
-                // Check all the common places Spring Boot hides the message
-                if (errorData.message && errorData.message !== "No message available") {
-                    // Sometimes Spring prefixes the message with the status code, let's clean it up:
-                    errorMessage = errorData.message.replace(/^400 BAD_REQUEST "/, '').replace(/"$/, '');
-                } else if (errorData.error) {
-                    errorMessage = errorData.error;
-                }
-            } catch (parseError) {
-                console.warn("Could not parse backend error response.");
-            }
+            const errorMessage = await extractErrorMessage(response);
             throw new Error(errorMessage);
         }
 
@@ -207,6 +242,7 @@ onMounted(() => {
                     <div style="display: flex; gap: 0.5rem; margin-bottom: 0.5rem;">
                         <input type="text" v-model="searchFirstName" placeholder="First Name" />
                         <input type="text" v-model="searchLastName" placeholder="Last Name" />
+                        <input type="text" v-model="searchIban" placeholder="IBAN (optional)" />
                         <button type="button" class="btn secondary-btn" @click="searchDirectory" :disabled="searching">
                             {{ searching ? '...' : 'Search' }}
                         </button>

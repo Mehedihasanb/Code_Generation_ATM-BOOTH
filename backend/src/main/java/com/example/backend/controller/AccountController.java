@@ -37,6 +37,7 @@ public class AccountController {
 	@ResponseStatus(HttpStatus.CREATED)
 	@Operation(summary = "Approve customer: create checking + savings with limits (employee only)")
 	@SecurityRequirement(name = "bearerAuth")
+	@PreAuthorize("hasRole('EMPLOYEE')")
 	public CreatedAccountsResponse createAccounts(@Valid @RequestBody CreateAccountsRequest createAccountsRequest) {
 		return accountService.createCheckingAndSavingsAccounts(createAccountsRequest);
 	}
@@ -45,6 +46,7 @@ public class AccountController {
 	@ResponseStatus(HttpStatus.NO_CONTENT)
 	@Operation(summary = "Close an account by IBAN (employee only); inactive accounts reject new transfers later")
 	@SecurityRequirement(name = "bearerAuth")
+	@PreAuthorize("hasRole('EMPLOYEE')")
 	public void closeAccount(@PathVariable String iban) {
 		accountService.closeAccountByIban(iban);
 	}

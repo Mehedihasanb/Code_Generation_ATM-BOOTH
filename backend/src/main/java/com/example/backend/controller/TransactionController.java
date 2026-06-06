@@ -8,8 +8,6 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -18,11 +16,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.server.ResponseStatusException;
 import org.springframework.security.core.Authentication;
-
-import com.example.backend.dto.SystemTransactionRow;
-import com.example.backend.dto.TransactionHistoryRow;
 import java.time.LocalDate;
 import java.math.BigDecimal;
 
@@ -45,11 +39,7 @@ public class TransactionController {
             @Valid @RequestBody TransferRequest request,
             Authentication authentication) {
 
-        boolean isEmployee = authentication.getAuthorities().stream()
-                .map(GrantedAuthority::getAuthority)
-                .anyMatch(role -> role.equals("ROLE_EMPLOYEE"));
-
-        transactionService.processTransfer(request, authentication.getName(), isEmployee);
+        transactionService.processTransfer(request, authentication);
     }
 
     @GetMapping
@@ -65,20 +55,7 @@ public class TransactionController {
             Pageable pageable,
             Authentication authentication) {
 
-        boolean isEmployee = authentication.getAuthorities().stream()
-                .map(GrantedAuthority::getAuthority)
-                .anyMatch(role -> role.equals("ROLE_EMPLOYEE"));
-
-        if (isEmployee && accountIban == null) {
-            Page<SystemTransactionRow> allTransactions = transactionService.getAllSystemTransactions(pageable);
-            return ResponseEntity.ok(allTransactions);
-        }
-        if (accountIban == null) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "accountIban is required for customer queries.");
-        }
-        Page<TransactionHistoryRow> customerTransactions = transactionService.getTransactionHistory(
-                accountIban, startDate, endDate, amount, amountOperator, counterpartIban, authentication.getName(),
-                pageable);
-        return ResponseEntity.ok(customerTransactions);
+        return ResponseEntity.ok(transactionService.getTransactions(
+                accountIban, startDate, endDate, amount, amountOperator, counterpartIban, authentication, pageable));
     }
 }

@@ -7,13 +7,16 @@ import com.example.backend.repository.UserRegistrationRepository;
 import com.example.backend.dto.CustomerAccountRow;
 import com.example.backend.dto.CustomerDirectoryRow;
 import com.example.backend.dto.PageResponse;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 public class CustomerDirectoryService {
@@ -28,7 +31,12 @@ public class CustomerDirectoryService {
 	}
 
 	@Transactional(readOnly = true)
-	public PageResponse<CustomerDirectoryRow> listCustomerDirectory(Pageable pageable, Boolean hasAccountFilter) {
+	public PageResponse<CustomerDirectoryRow> listCustomerDirectory(Pageable pageable, Boolean hasAccountFilter,
+			String firstName, String lastName, String iban) {
+		if (hasSearchCriteria(firstName, lastName, iban)) {
+			return searchCustomerDirectory(pageable, firstName, lastName, iban);
+		}
+
 		// Load customers from database
 		Page<UserRegistration> customerPage;
 		if (Boolean.FALSE.equals(hasAccountFilter)) {
@@ -79,5 +87,60 @@ public class CustomerDirectoryService {
 
 		// Wrap rows with pagination info (total pages, page number, etc.)
 		return PageResponse.fromPage(customerPage, rows);
+	}
+
+	@Transactional(readOnly = true)
+	public PageResponse<CustomerDirectoryRow> searchCustomerDirectory(Pageable pageable, String firstName,
+			String lastName, String iban) {
+		Map<Long, UserRegistration> matchedCustomers = new LinkedHashMap<>();
+
+		if (hasText(firstName) && hasText(lastName)) {
+			userRegistrationRepository.findByFirstNameIgnoreCaseAndLastNameIgnoreCase(firstName.trim(), lastName.trim())
+					.forEach(user -> matchedCustomers.put(user.getId(), user));
+		}
+
+		if (hasText(iban)) {
+			bankAccountRepository.findByIban(iban.trim()).ifPresent(account -> {
+				UserRegistration owner = account.getOwner();
+				if (owner != null && "CUSTOMER".equalsIgnoreCase(owner.getRole())) {
+					matchedCustomers.put(owner.getId(), owner);
+				}
+			});
+		}
+
+		List<CustomerDirectoryRow> rows = matchedCustomers.values().stream()
+				.map(this::toDirectoryRow)
+				.toList();
+
+		return PageResponse.fromPage(new PageImpl<>(rows, pageable, rows.size()), rows);
+	}
+
+	private boolean hasSearchCriteria(String firstName, String lastName, String iban) {
+		return hasText(firstName) || hasText(lastName) || hasText(iban);
+	}
+
+	private boolean hasText(String value) {
+		return value != null && !value.trim().isEmpty();
+	}
+
+	private CustomerDirectoryRow toDirectoryRow(UserRegistration customer) {
+		List<BankAccount> userAccounts = bankAccountRepository.findAllByOwner_Id(customer.getId());
+		List<CustomerAccountRow> activeAccountRows = userAccounts.stream()
+				.filter(BankAccount::isActive)
+				.map(CustomerAccountRow::fromBankAccount)
+				.toList();
+
+		String approvalStatus = null;
+		if (customer.getCustomerApprovalStatus() != null) {
+			approvalStatus = customer.getCustomerApprovalStatus().name();
+		}
+
+		return new CustomerDirectoryRow(
+				customer.getId(),
+				customer.getFirstName(),
+				customer.getLastName(),
+				customer.getEmail(),
+				approvalStatus,
+				activeAccountRows);
 	}
 }

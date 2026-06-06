@@ -25,11 +25,14 @@ public class CustomerDirectoryController {
 	}
 
 	@GetMapping("/users")
-	@Operation(summary = "Paginated customers; use hasAccount=false for customers without any bank account (employee only)")
+	@Operation(summary = "Paginated customers; optionally search by exact name or IBAN")
 	@SecurityRequirement(name = "bearerAuth")
 	public PageResponse<CustomerDirectoryRow> listCustomers(
 			@Parameter(description = "When false, only customers with no bank accounts yet") @RequestParam(required = false) Boolean hasAccount,
+			@Parameter(description = "Exact first name for customer search") @RequestParam(required = false) String firstName,
+			@Parameter(description = "Exact last name for customer search") @RequestParam(required = false) String lastName,
+			@Parameter(description = "Exact IBAN for customer search") @RequestParam(required = false) String iban,
 			@ParameterObject @PageableDefault(size = 20) Pageable pageable) {
-		return customerDirectoryService.listCustomerDirectory(pageable, hasAccount);
+		return customerDirectoryService.listCustomerDirectory(pageable, hasAccount, firstName, lastName, iban);
 	}
 }
