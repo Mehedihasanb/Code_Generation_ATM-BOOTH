@@ -91,36 +91,6 @@ const searchDirectory = async () => {
     }
 };
 
-const extractErrorMessage = async (response: Response) => {
-    const fallbackMessage = `Transfer failed. Please check your details. (${response.status} ${response.statusText})`;
-
-    try {
-        const errorData = await response.json();
-
-        if (typeof errorData === 'string' && errorData.trim()) {
-            return errorData;
-        }
-
-        const message = errorData.message || errorData.detail || errorData.title;
-        if (message && message !== 'No message available') {
-            return message.replace(/^400 BAD_REQUEST "/, '').replace(/"$/, '');
-        }
-
-        if (errorData.error) {
-            return errorData.error;
-        }
-
-        return fallbackMessage;
-    } catch (parseError) {
-        try {
-            const text = await response.text();
-            return text.trim() || fallbackMessage;
-        } catch (textError) {
-            return fallbackMessage;
-        }
-    }
-};
-
 // Select an account from the search results
 const selectExternalAccount = (iban: string) => {
     toIban.value = iban;
@@ -159,7 +129,23 @@ const submitTransfer = async () => {
         });
 
        if (!response.ok) {
-            const errorMessage = await extractErrorMessage(response);
+            let errorMessage = "Transfer failed. Please check your details.";
+            try {
+                const errorData = await response.json();
+                
+                // 🕵️‍♂️ Print the exact error to your browser console (F12) so we can see it!
+                console.log("Spring Boot Error Data:", errorData);
+
+                // Check all the common places Spring Boot hides the message
+                if (errorData.message && errorData.message !== "No message available") {
+                    // Sometimes Spring prefixes the message with the status code, let's clean it up:
+                    errorMessage = errorData.message.replace(/^400 BAD_REQUEST "/, '').replace(/"$/, '');
+                } else if (errorData.error) {
+                    errorMessage = errorData.error;
+                }
+            } catch (parseError) {
+                console.warn("Could not parse backend error response.");
+            }
             throw new Error(errorMessage);
         }
 

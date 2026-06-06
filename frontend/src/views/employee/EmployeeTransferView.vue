@@ -47,26 +47,6 @@ const fetchCheckingAccounts = async () => {
         error.value = "Warning: Could not load the accounts. Please refresh the page.";
     }
 };
-//added by AI AS AN ATTEMPT TO EXPLAIN ERROR MESSAGE FROM RESPONSE TO USER
-const extractErrorMessage = async (response: Response) => {
-    const fallbackMessage = `Error: ${response.status} ${response.statusText}`;
-
-    try {
-        const errorData = await response.json();
-        if (typeof errorData === 'string' && errorData.trim()) {
-            return errorData;
-        }
-
-        return errorData.message || errorData.detail || errorData.title || fallbackMessage;
-    } catch (jsonError) {
-        try {
-            const text = await response.text();
-            return text.trim() || fallbackMessage;
-        } catch (textError) {
-            return fallbackMessage;
-        }
-    }
-};
 
 // Selection Handlers
 const selectFromAccount = (acc: any) => {
@@ -118,7 +98,13 @@ const submitTransfer = async () => {
         });
 
         if (!response.ok) {
-            const errorMessage = await extractErrorMessage(response);
+            let errorMessage = "Transfer failed.";
+            try {
+                const errorData = await response.json();
+                errorMessage = errorData.message || errorMessage;
+            } catch (e) {
+                errorMessage = `Error: ${response.status} ${response.statusText}`;
+            }
             throw new Error(errorMessage);
         }
 

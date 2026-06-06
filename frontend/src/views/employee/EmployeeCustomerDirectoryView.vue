@@ -4,6 +4,7 @@ import { authorizedFetch } from '@/composables/useAuthorizedFetch';
 
 const searchFirst = ref('');
 const searchLast = ref('');
+const searchIban = ref('');
 const searchResults = ref<any[]>([]);
 const isSearching = ref(false);
 const searchError = ref<string | null>(null);
@@ -22,8 +23,17 @@ const limitsSuccess = ref<string | null>(null);
 const savingLimits = ref(false);
 
 const searchCustomers = async () => {
-    if (!searchFirst.value || !searchLast.value) {
-        searchError.value = "Please enter both first and last name.";
+    const firstName = searchFirst.value.trim();
+    const lastName = searchLast.value.trim();
+    const iban = searchIban.value.trim();
+
+    if (!firstName && !lastName && !iban) {
+        searchError.value = "Please enter a name or an IBAN.";
+        return;
+    }
+
+    if ((firstName && !lastName) || (!firstName && lastName)) {
+        searchError.value = "Please enter both first and last name, or use IBAN search.";
         return;
     }
     
@@ -32,12 +42,25 @@ const searchCustomers = async () => {
     selectedUser.value = null; 
 
     try {
-        const response = await authorizedFetch(`/users/search?firstName=${searchFirst.value}&lastName=${searchLast.value}`);
+        const params = new URLSearchParams();
+
+        if (firstName && lastName) {
+            params.set('firstName', firstName);
+            params.set('lastName', lastName);
+        }
+        if (iban) {
+            params.set('iban', iban);
+        }
+
+        const response = await authorizedFetch(`/users?${params.toString()}`);
         if (!response.ok) throw new Error("Search failed. Please check the backend.");
-        
-        searchResults.value = await response.json();
+
+        const data = await response.json();
+        searchResults.value = data.content ? data.content : data;
         if (searchResults.value.length === 0) {
-            searchError.value = "No customers found with that exact name.";
+            searchError.value = iban
+                ? "No customers found for that IBAN."
+                : "No customers found with that exact name.";
         }
     } catch (err) {
         searchError.value = err instanceof Error ? err.message : String(err);
@@ -172,6 +195,10 @@ const getTypeBadgeClass = (type: string) => {
                     <label style="flex: 1; font-weight: bold; font-size: 0.9rem;">
                         Last Name
                         <input type="text" v-model="searchLast" placeholder="e.g. Doe" style="width: 100%; padding: 0.5rem; margin-top: 0.3rem;" @keyup.enter="searchCustomers" />
+                    </label>
+                    <label style="flex: 1; font-weight: bold; font-size: 0.9rem;">
+                        IBAN
+                        <input type="text" v-model="searchIban" placeholder="e.g. NL91INHO0000000001" style="width: 100%; padding: 0.5rem; margin-top: 0.3rem;" @keyup.enter="searchCustomers" />
                     </label>
                     <button class="btn" @click="searchCustomers" :disabled="isSearching" style="padding: 0.5rem 1.5rem; height: 38px;">
                         {{ isSearching ? 'Searching...' : 'Search' }}

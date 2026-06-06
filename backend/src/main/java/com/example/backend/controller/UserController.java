@@ -40,7 +40,7 @@ public class UserController {
     @GetMapping("/{id}/transactions")
     @Operation(summary = "Get full transaction history for a specific customer ID")
     @SecurityRequirement(name = "bearerAuth")
-    @PreAuthorize("hasRole('EMPLOYEE')") // Extra layer of security
+    @PreAuthorize("hasRole('EMPLOYEE')")
     public ResponseEntity<Page<SystemTransactionRow>> getUserTransactions(
             @PathVariable Long id,
             Pageable pageable) {

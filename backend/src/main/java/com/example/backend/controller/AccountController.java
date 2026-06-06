@@ -19,7 +19,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
-import java.security.Principal;
+import org.springframework.security.core.Authentication;
 import java.util.List;
 
 @RestController
@@ -54,8 +54,8 @@ public class AccountController {
 	@GetMapping("/mine")
 	@Operation(summary = "Get current customer's accounts and combined balance")
 	@SecurityRequirement(name = "bearerAuth")
-	public AccountSummaryResponse getMyAccounts(Principal principal) {
-		return accountService.getMyAccounts(principal.getName());
+	public AccountSummaryResponse getMyAccounts(Authentication authentication) {
+		return accountService.getMyAccounts(authentication.getName());
 	}
 
 	@GetMapping("/checking-options")
