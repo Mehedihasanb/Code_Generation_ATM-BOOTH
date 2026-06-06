@@ -63,8 +63,8 @@ onMounted(() => {
 <template>
     <main class="home-wrapper">
         <section class="panel hero-section">
-            <h1 class="headline">System Transaction Control</h1>
-            <p class="muted subtitle">Monitor all bank transactions. Use system with responsability as actions are irreversible.</p>
+            <h1 class="headline">Global Transaction History</h1>
+            <p class="muted subtitle">Monitor all bank transactions. Use system with responsability. privacy first.</p>
         </section>
 
         <section class="panel auth-panel" style="max-width: 1100px; margin: 0 auto;">

@@ -133,7 +133,8 @@ onMounted(() => {
     <main class="home-wrapper">
         <section class="panel hero-section">
             <h1 class="headline">Force Transfer</h1>
-            <p class="muted subtitle">Administrative action: Move funds between customer checking accounts.</p>
+            <p class="muted subtitle">Administrative action: Move funds between customer checking accounts. Use with caution, actions are irreversible.</p>
+            <p class="muted subtitle"> Customer approval is required.</p>
         </section>
 
         <section class="panel auth-panel" style="max-width: 600px; margin: 0 auto; padding: 2rem;">
