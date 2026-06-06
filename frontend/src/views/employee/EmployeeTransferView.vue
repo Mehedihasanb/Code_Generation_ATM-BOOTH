@@ -107,7 +107,6 @@ const submitTransfer = async () => {
             }
             throw new Error(errorMessage);
         }
-
         successMessage.value = `Successfully transferred €${parseFloat(form.amount).toFixed(2)} from ${form.fromIban} to ${form.toIban}.`;
         
         // Reset the form and search bars

@@ -129,22 +129,12 @@ const submitTransfer = async () => {
         });
 
        if (!response.ok) {
-            let errorMessage = "Transfer failed. Please check your details.";
+            let errorMessage = "Transfer failed.";
             try {
                 const errorData = await response.json();
-                
-                // 🕵️‍♂️ Print the exact error to your browser console (F12) so we can see it!
-                console.log("Spring Boot Error Data:", errorData);
-
-                // Check all the common places Spring Boot hides the message
-                if (errorData.message && errorData.message !== "No message available") {
-                    // Sometimes Spring prefixes the message with the status code, let's clean it up:
-                    errorMessage = errorData.message.replace(/^400 BAD_REQUEST "/, '').replace(/"$/, '');
-                } else if (errorData.error) {
-                    errorMessage = errorData.error;
-                }
-            } catch (parseError) {
-                console.warn("Could not parse backend error response.");
+                errorMessage = errorData.message || errorMessage;
+            } catch (e) {
+                errorMessage = `Error: ${response.status} ${response.statusText}`;
             }
             throw new Error(errorMessage);
         }
