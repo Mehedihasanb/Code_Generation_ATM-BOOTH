@@ -2,7 +2,6 @@
 import { reactive, ref, onMounted, computed } from 'vue';
 import { authorizedFetch } from '@/composables/useAuthorizedFetch';
 
-// --- STATE ---
 const checkingAccounts = ref<any[]>([]);
 
 const form = reactive({
@@ -16,13 +15,11 @@ const loading = ref(false);
 const error = ref<string | null>(null);
 const successMessage = ref<string | null>(null);
 
-// Autocomplete State
 const searchFrom = ref('');
 const searchTo = ref('');
 const showFromDropdown = ref(false);
 const showToDropdown = ref(false);
 
-// --- COMPUTED: Real-time filtering ---
 const filteredFromAccounts = computed(() => {
     const q = searchFrom.value.toLowerCase();
     return checkingAccounts.value.filter(acc => 
@@ -37,7 +34,6 @@ const filteredToAccounts = computed(() => {
     );
 });
 
-// --- METHODS ---
 const fetchCheckingAccounts = async () => {
     try {
         const response = await authorizedFetch('/accounts/checking-options');
@@ -48,21 +44,19 @@ const fetchCheckingAccounts = async () => {
     }
 };
 
-// Selection Handlers
 const selectFromAccount = (acc: any) => {
     form.fromIban = acc.iban;
-    searchFrom.value = `${acc.ownerName} (${acc.iban})`; // Fill input with full text
+    searchFrom.value = `${acc.ownerName} (${acc.iban})`; 
     showFromDropdown.value = false;
 };
 
 const selectToAccount = (acc: any) => {
     form.toIban = acc.iban;
-    searchTo.value = `${acc.ownerName} (${acc.iban})`; // Fill input with full text
+    searchTo.value = `${acc.ownerName} (${acc.iban})`; 
     showToDropdown.value = false;
 };
 
 const submitTransfer = async () => {
-    // Basic Frontend Validation
     if (!form.fromIban || !form.toIban || !form.amount) {
         error.value = "Please select accounts from the dropdown and enter an amount.";
         successMessage.value = null;
@@ -177,7 +171,6 @@ onMounted(() => {
                     </ul>
                 </label>
 
-                <!-- RECEIVER AUTOCOMPLETE -->
                 <label style="display: flex; flex-direction: column; font-weight: bold; color: #495057; position: relative;">
                     Receiver Account
                     <input 

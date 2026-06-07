@@ -60,7 +60,7 @@ public class TransactionService {
                                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
                                                 "Receiver account not found"));
 
-                // Authorization Check
+                // Auth Check
                 if (isEmployee) {
                         // Requirement: Employees can only transfer between checking accounts
                         if (!"CHECKING".equalsIgnoreCase(fromAccount.getAccountType().name()) ||
@@ -76,7 +76,7 @@ public class TransactionService {
                 // Verify accounts are active
                 transferAuthorizationPolicy.requireActiveAccounts(fromAccount, toAccount);
 
-                // Enforcement: Sender cannot go below zero
+                // Requirement: Sender cannot go below zero
                 BigDecimal newBalance = fromAccount.getBalance().subtract(request.amount());
                 if (newBalance.compareTo(BigDecimal.ZERO) < 0) {
                         throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
@@ -84,7 +84,7 @@ public class TransactionService {
                                                         + formatAmount(fromAccount.getBalance()));
                 }
 
-                // Enforcement: Daily limit
+                // Requirement: Daily limit
                 java.time.LocalDateTime startOfDay = java.time.LocalDate.now().atStartOfDay();
                 BigDecimal totalTransferredToday = transactionRepository.sumOutgoingTransactionsToday(fromAccount,
                                 startOfDay);
@@ -99,7 +99,7 @@ public class TransactionService {
                                                         + " more can be transferred today.");
                 }
 
-                // Enforcement: Receiver cannot exceed their AML cap
+                // Requirement: Receiver cannot exceed their AML cap
                 BigDecimal projectedReceiverBalance = toAccount.getBalance().add(request.amount());
                 if (projectedReceiverBalance.compareTo(toAccount.getMinimumAllowedBalance()) > 0) {
                         BigDecimal remainingSpace = toAccount.getMinimumAllowedBalance()
@@ -133,7 +133,7 @@ public class TransactionService {
                 boolean isEmployee = isEmployee(authentication);
 
                 if (isEmployee && accountIban == null) {
-                        return getAllSystemTransactions(pageable);
+                        return getAllSystemTransactions(null, null, null, null, pageable);
                 }
                 if (accountIban == null) {
                         throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
@@ -191,8 +191,28 @@ public class TransactionService {
         }
 
         @Transactional(readOnly = true)
-        public Page<SystemTransactionRow> getAllSystemTransactions(Pageable pageable) {
-                Page<Transaction> transactions = transactionRepository.findAll(pageable);
+        public Page<SystemTransactionRow> getAllSystemTransactions(
+                        LocalDate startDate,
+                        LocalDate endDate,
+                        BigDecimal amount,
+                        String amountOperator,
+                        Pageable pageable) {
+
+                LocalDateTime startDateTime = (startDate != null) ? startDate.atStartOfDay() : null;
+                LocalDateTime endDateTime = (endDate != null) ? endDate.atTime(23, 59, 59) : null;
+
+                BigDecimal exactAmount = (amount != null && "eq".equals(amountOperator)) ? amount : null;
+                BigDecimal minAmount = (amount != null && "gt".equals(amountOperator)) ? amount : null;
+                BigDecimal maxAmount = (amount != null && "lt".equals(amountOperator)) ? amount : null;
+
+                Page<Transaction> transactions = transactionRepository.findSystemWithFilters(
+                                null,
+                                startDateTime,
+                                endDateTime,
+                                exactAmount,
+                                minAmount,
+                                maxAmount,
+                                pageable);
 
                 return transactions.map(this::mapToSystemTransactionRow);
         }

@@ -59,4 +59,22 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
                         "(t.toAccount IS NOT NULL AND t.toAccount.owner.id = :userId) " +
                         "ORDER BY t.timestamp DESC")
         Page<Transaction> findAllByUserId(@Param("userId") Long userId, Pageable pageable);
+
+        // Global Transaction History filter
+        @Query("SELECT t FROM Transaction t WHERE " +
+                        "(:targetIban IS NULL OR t.fromAccount.iban = :targetIban OR t.toAccount.iban = :targetIban) AND "
+                        +
+                        "(:startDate IS NULL OR t.timestamp >= :startDate) AND " +
+                        "(:endDate IS NULL OR t.timestamp <= :endDate) AND " +
+                        "(:exactAmount IS NULL OR t.amount = :exactAmount) AND " +
+                        "(:minAmount IS NULL OR t.amount > :minAmount) AND " +
+                        "(:maxAmount IS NULL OR t.amount < :maxAmount)")
+        Page<Transaction> findSystemWithFilters(
+                        @Param("targetIban") String targetIban,
+                        @Param("startDate") LocalDateTime startDate,
+                        @Param("endDate") LocalDateTime endDate,
+                        @Param("exactAmount") BigDecimal exactAmount,
+                        @Param("minAmount") BigDecimal minAmount,
+                        @Param("maxAmount") BigDecimal maxAmount,
+                        Pageable pageable);
 }

@@ -2,18 +2,15 @@
 import { ref, reactive, onMounted, watch } from 'vue';
 import { authorizedFetch } from '@/composables/useAuthorizedFetch';
 
-// --- STATE ---
 const myAccounts = ref<any[]>([]);
 const selectedIban = ref('');
 const transactions = ref<any[]>([]);
 
-// Pagination State
 const currentPage = ref(0);
 const totalPages = ref(0);
 const loading = ref(true);
 const error = ref<string | null>(null);
 
-// Filter State
 const filters = reactive({
     startDate: '',
     endDate: '',
@@ -22,7 +19,6 @@ const filters = reactive({
     counterpartIban: ''
 });
 
-// --- METHODS ---
 const fetchMyAccounts = async () => {
     loading.value = true;
     try {
@@ -98,7 +94,6 @@ watch(selectedIban, (newIban) => {
     }
 });
 
-// --- FORMATTING HELPERS ---
 const formatCurrency = (amt: number, type: string) => {
     const formatted = new Intl.NumberFormat('nl-NL', { style: 'currency', currency: 'EUR' }).format(amt);
     return type === 'INCOMING' ? `+ ${formatted}` : `- ${formatted}`;

@@ -86,7 +86,6 @@ async function submit() {
     }
 
     try {
-        // send the form to the backend through the registration store
         await registration.submitRegistration({
             firstName: form.firstName.trim(),
             lastName: form.lastName.trim(),
@@ -96,10 +95,8 @@ async function submit() {
             phoneNumber: form.phoneNumber.trim(),
         });
 
-        // if there was no error, redirect
         if (!registration.error) {
             
-            // Clear the form fields completely
             form.firstName = '';
             form.lastName = '';
             form.email = '';
@@ -108,18 +105,16 @@ async function submit() {
             form.phoneNumber = '';
             clearFieldErrors();
 
-            // Give the user 1.5 seconds to read the success message from the store, then redirect to login
             setTimeout(() => {
                 router.push('/login');
             }, 1500);
         }
     } catch (error) {
-        // Friendly fallback error just in case the server completely crashes or goes offline
         registration.error = "Oops! Something went wrong while connecting to the server. Please try again later.";
     }
 }
 onUnmounted(() => {
-    registration.success = ''; // or null, depending on how your store is set up
+    registration.success = ''; 
     registration.error = '';
 });
 

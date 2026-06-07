@@ -9,14 +9,11 @@ const loadingAccounts = ref(true);
 const submitting = ref(false);
 const error = ref<string | null>(null);
 const successMessage = ref<string | null>(null);
-
 const transferType = ref<'INTERNAL' | 'EXTERNAL'>('INTERNAL');
-
 const fromIban = ref('');
 const toIban = ref('');
 const amount = ref<number | ''>('');
 const description = ref('');
-
 const searchFirstName = ref('');
 const searchLastName = ref('');
 const searchIban = ref('');
@@ -244,12 +241,16 @@ onMounted(() => {
                             
                             <p v-if="user.accounts.length === 0" class="muted" style="font-size: 0.85rem;">No active accounts available.</p>
                         </div>
-                    </div>
-                    <p v-if="error" class="error" style="color: #dc3545; font-weight: bold; margin-top: 1rem;">{{ error }}</p>
-                    <p v-if="successMessage" class="success" style="color: #28a745; font-weight: bold; margin-top: 1rem;">{{ successMessage }}</p>
-                </div>
-                
+                        <div v-if="error" style="background-color: #f8d7da; color: #721c24; padding: 1rem; border-radius: 4px; margin-bottom: 1.5rem; font-weight: bold; border: 1px solid #f5c6cb;">
+                            ❌ {{ error }}
+                        </div>
 
+                        <div v-if="successMessage" style="background-color: #d4edda; color: #155724; padding: 1rem; border-radius: 4px; margin-bottom: 1.5rem; font-weight: bold; border: 1px solid #c3e6cb;">
+                            ✅ {{ successMessage }}
+                        </div>
+                    </div>
+                    </div>
+                
                 <label>
                     <span>Amount (€)</span>
                     <input type="number" v-model="amount" min="0.01" step="0.01" required placeholder="0.00" />
@@ -259,7 +260,6 @@ onMounted(() => {
                     <span>Description (Optional)</span>
                     <input type="text" v-model="description" placeholder="e.g., Dinner last night" maxlength="50" />
                 </label>
-
                 
                 <button class="btn primary-btn" type="submit" :disabled="submitting || !toIban" style="margin-top: 1rem;">
                     {{ submitting ? 'Processing...' : 'Confirm Transfer' }}

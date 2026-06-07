@@ -49,7 +49,7 @@ public class GlobalExceptionHandler {
 	@ExceptionHandler(MethodArgumentNotValidException.class)
 	public ResponseEntity<ApiErrorResponse> handleValidationExceptions(MethodArgumentNotValidException ex,
 			HttpServletRequest request) {
-		// Combines all DTO @Valid errors into a readable string
+		// Combine all DTO @Valid errors into a readable string
 		String errorMessage = ex.getBindingResult().getFieldErrors().stream()
 				.map(error -> error.getDefaultMessage())
 				.collect(Collectors.joining("; "));

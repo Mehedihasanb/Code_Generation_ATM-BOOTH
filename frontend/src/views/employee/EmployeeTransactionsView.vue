@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, reactive, onMounted } from 'vue';
 import { authorizedFetch } from '@/composables/useAuthorizedFetch';
 
 const transactions = ref<any[]>([]);
@@ -8,16 +8,40 @@ const totalPages = ref(0);
 const loading = ref(true);
 const error = ref<string | null>(null);
 
+const filters = reactive({
+    startDate: '',
+    endDate: '',
+    amount: '',
+    amountOperator: 'eq'
+});
+
 const fetchAllTransactions = async (pageIndex: number) => {
     loading.value = true;
     error.value = null;
 
     try {
-        // Not passing an accountIban here because the backend will detect our employee role and return the full system transactions instead of filtering by account
-        const response = await authorizedFetch(`/transactions?page=${pageIndex}&size=10`);
+        // Added: &sort=timestamp,desc forces Spring Boot to order by Date (newest first)
+        let url = `/transactions?page=${pageIndex}&size=10&sort=timestamp,desc`;
+        
+        // Append filters if they have been filled in
+        if (filters.startDate) url += `&startDate=${filters.startDate}`;
+        if (filters.endDate) url += `&endDate=${filters.endDate}`;
+        if (filters.amount) {
+            url += `&amount=${filters.amount}&amountOperator=${filters.amountOperator}`;
+        }
+        
+
+        const response = await authorizedFetch(url);
         
         if (!response.ok) {
-            throw new Error("Failed to load system transactions.");
+            let errorMessage = "Failed to load system transactions.";
+            try {
+                const errorData = await response.json();
+                errorMessage = errorData.message || errorMessage;
+            } catch (e) {
+                errorMessage = `Error: ${response.status} ${response.statusText}`;
+            }
+            throw new Error(errorMessage);
         }
         
         const pageData = await response.json();
@@ -30,6 +54,14 @@ const fetchAllTransactions = async (pageIndex: number) => {
     } finally {
         loading.value = false;
     }
+};
+
+const clearFilters = () => {
+    filters.startDate = '';
+    filters.endDate = '';
+    filters.amount = '';
+    filters.amountOperator = 'eq';
+    fetchAllTransactions(0); 
 };
 
 const formatCurrency = (amt: number) => {
@@ -45,7 +77,6 @@ const formatDate = (dateString: string) => {
     }).format(date);
 };
 
-// Helper to color-code the transaction types
 const getTypeBadgeClass = (type: string) => {
     switch(type) {
         case 'DEPOSIT': return 'badge-deposit';
@@ -64,16 +95,48 @@ onMounted(() => {
     <main class="home-wrapper">
         <section class="panel hero-section">
             <h1 class="headline">Global Transaction History</h1>
-            <p class="muted subtitle">Monitor all bank transactions. Use system with responsability. privacy first.</p>
+            <p class="muted subtitle">Monitor all bank transactions. Use system with responsibility. Privacy first.</p>
         </section>
 
         <section class="panel auth-panel" style="max-width: 1100px; margin: 0 auto;">
             
+            <div class="filter-bar" style="background: #f8f9fa; padding: 1.5rem; border-radius: 8px; margin-bottom: 2rem; display: flex; flex-wrap: wrap; gap: 1rem; align-items: flex-end; border: 1px solid #e9ecef;">
+                
+                <label style="display: flex; flex-direction: column; font-size: 0.9rem; color: #495057; font-weight: 600;">
+                    From:
+                    <input type="date" v-model="filters.startDate" style="padding: 0.4rem; border: 1px solid #ced4da; border-radius: 4px; margin-top: 0.3rem;" />
+                </label>
+                
+                <label style="display: flex; flex-direction: column; font-size: 0.9rem; color: #495057; font-weight: 600;">
+                    To:
+                    <input type="date" v-model="filters.endDate" style="padding: 0.4rem; border: 1px solid #ced4da; border-radius: 4px; margin-top: 0.3rem;" />
+                </label>
+
+                <div style="display: flex; gap: 0.5rem; align-items: flex-end;">
+                    <label style="display: flex; flex-direction: column; font-size: 0.9rem; color: #495057; font-weight: 600;">
+                        Amount:
+                        <select v-model="filters.amountOperator" style="padding: 0.4rem; border: 1px solid #ced4da; border-radius: 4px; margin-top: 0.3rem;">
+                            <option value="eq">Equal to</option>
+                            <option value="gt">Greater than</option>
+                            <option value="lt">Less than</option>
+                        </select>
+                    </label>
+                    <input type="number" v-model="filters.amount" placeholder="0.00" step="0.01" style="padding: 0.4rem; width: 100px; border: 1px solid #ced4da; border-radius: 4px;" />
+                </div>
+
+                
+
+                <div style="margin-left: auto; display: flex; gap: 0.5rem;">
+                    <button class="btn secondary-btn" @click="clearFilters" style="padding: 0.5rem 1rem; border-radius: 4px;">Clear</button>
+                    <button class="btn" @click="fetchAllTransactions(0)" style="padding: 0.5rem 1rem; border-radius: 4px;">Apply Filters</button>
+                </div>
+            </div>
+
             <p v-if="error" class="error" style="color: #dc3545; font-weight: bold;">{{ error }}</p>
             <p v-if="loading && transactions.length === 0" class="muted">Loading system...</p>
 
             <div v-else-if="transactions.length === 0 && !loading" class="empty-state" style="text-align: center; padding: 2rem;">
-                <p class="muted">No transactions exist in the system yet.</p>
+                <p class="muted">No transactions found matching your criteria.</p>
             </div>
 
             <div v-else class="table-container" style="overflow-x: auto;">
@@ -97,11 +160,11 @@ onMounted(() => {
                             </td>
 
                             <td style="padding: 1rem 0.5rem; font-family: monospace;">
-                                {{ tx.fromIban }}
+                                {{ tx.fromIban || '-' }}
                             </td>
 
                             <td style="padding: 1rem 0.5rem; font-family: monospace;">
-                                {{ tx.toIban }}
+                                {{ tx.toIban || '-' }}
                             </td>
 
                             <td style="padding: 1rem 0.5rem; color: #495057;">
