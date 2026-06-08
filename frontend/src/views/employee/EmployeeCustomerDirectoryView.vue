@@ -229,26 +229,26 @@ const getTypeBadgeClass = (type: string) => {
             <p class="muted subtitle">View all customers with accounts, search by name or IBAN, and open transaction history.</p>
         </section>
 
-        <section class="panel auth-panel" style="max-width: 1000px; margin: 0 auto;">
+        <section class="panel page-panel-wide">
             
             <div v-if="!selectedUser">
-                <div class="search-bar" style="display: flex; gap: 1rem; align-items: flex-end; margin-bottom: 2rem; background: #f8f9fa; padding: 1.5rem; border-radius: 8px;">
-                    <label style="flex: 1; font-weight: bold; font-size: 0.9rem;">
+                <div class="search-bar">
+                    <label class="form-field">
                         First Name
-                        <input type="text" v-model="searchFirst" placeholder="e.g. John" style="width: 100%; padding: 0.5rem; margin-top: 0.3rem;" @keyup.enter="searchCustomers" />
+                        <input type="text" v-model="searchFirst" placeholder="e.g. John" @keyup.enter="searchCustomers" />
                     </label>
-                    <label style="flex: 1; font-weight: bold; font-size: 0.9rem;">
+                    <label class="form-field">
                         Last Name
-                        <input type="text" v-model="searchLast" placeholder="e.g. Doe" style="width: 100%; padding: 0.5rem; margin-top: 0.3rem;" @keyup.enter="searchCustomers" />
+                        <input type="text" v-model="searchLast" placeholder="e.g. Doe" @keyup.enter="searchCustomers" />
                     </label>
-                    <label style="flex: 1; font-weight: bold; font-size: 0.9rem;">
+                    <label class="form-field">
                         IBAN
-                        <input type="text" v-model="searchIban" placeholder="e.g. NL91INHO0000000001" style="width: 100%; padding: 0.5rem; margin-top: 0.3rem;" @keyup.enter="searchCustomers" />
+                        <input type="text" v-model="searchIban" placeholder="e.g. NL91INHO0000000001" @keyup.enter="searchCustomers" />
                     </label>
-                    <button class="btn" @click="searchCustomers" :disabled="isSearching || loadingList" style="padding: 0.5rem 1.5rem; height: 38px;">
+                    <button class="btn primary-btn" type="button" @click="searchCustomers" :disabled="isSearching || loadingList">
                         {{ isSearching ? 'Searching...' : 'Search' }}
                     </button>
-                    <button v-if="isSearchMode" class="btn secondary-btn" @click="clearSearch" :disabled="loadingList" style="padding: 0.5rem 1.5rem; height: 38px;">
+                    <button v-if="isSearchMode" class="btn secondary-btn" type="button" @click="clearSearch" :disabled="loadingList">
                         Show all
                     </button>
                 </div>
@@ -257,39 +257,39 @@ const getTypeBadgeClass = (type: string) => {
                 <p v-if="listError" class="error" style="color: #dc3545; font-weight: bold;">{{ listError }}</p>
                 <p v-if="loadingList" class="muted">Loading customers...</p>
 
-                <div v-else-if="customerList.length > 0" class="table-container">
+                <div v-else-if="customerList.length > 0" class="table-container table-cards">
                     <p class="muted" style="margin-bottom: 1rem;">
                         {{ isSearchMode ? 'Search results' : 'All customers' }} ({{ listTotalElements }} total)
                     </p>
-                    <table class="transaction-table" style="width: 100%; border-collapse: collapse; text-align: left;">
+                    <table class="transaction-table responsive-table">
                         <thead>
-                            <tr style="border-bottom: 2px solid #ccc;">
-                                <th style="padding: 1rem;">ID</th>
-                                <th style="padding: 1rem;">Name</th>
-                                <th style="padding: 1rem;">Email</th>
-                                <th style="padding: 1rem;">Status</th>
-                                <th style="padding: 1rem;">Accounts</th>
-                                <th style="padding: 1rem; text-align: right;">Action</th>
+                            <tr>
+                                <th>ID</th>
+                                <th>Name</th>
+                                <th>Email</th>
+                                <th>Status</th>
+                                <th>Accounts</th>
+                                <th>Action</th>
                             </tr>
                         </thead>
                         <tbody>
-                            <tr v-for="user in customerList" :key="user.id" style="border-bottom: 1px solid #eee;">
-                                <td style="padding: 1rem;" class="muted">#{{ user.id }}</td>
-                                <td style="padding: 1rem; font-weight: bold;">{{ user.firstName }} {{ user.lastName }}</td>
-                                <td style="padding: 1rem;">{{ user.email }}</td>
-                                <td style="padding: 1rem;">{{ user.customerApprovalStatus || 'N/A' }}</td>
-                                <td style="padding: 1rem;">
+                            <tr v-for="user in customerList" :key="user.id">
+                                <td data-label="ID" class="muted">#{{ user.id }}</td>
+                                <td data-label="Name"><strong>{{ user.firstName }} {{ user.lastName }}</strong></td>
+                                <td data-label="Email" class="cell-email">{{ user.email }}</td>
+                                <td data-label="Status">{{ user.customerApprovalStatus || 'N/A' }}</td>
+                                <td data-label="Accounts">
                                     <span v-if="!user.accounts?.length" class="muted">No accounts</span>
                                     <span v-else>{{ user.accounts.length }} account(s)</span>
                                 </td>
-                                <td style="padding: 1rem; text-align: right;">
-                                    <button class="btn secondary-btn" @click="viewUserHistory(user)">View History &rarr;</button>
+                                <td data-label="Action" class="action-cell">
+                                    <button class="btn secondary-btn" type="button" @click="viewUserHistory(user)">View History</button>
                                 </td>
                             </tr>
                         </tbody>
                     </table>
 
-                    <div v-if="!isSearchMode && listTotalPages > 1" class="pagination-controls" style="display: flex; justify-content: space-between; align-items: center; margin-top: 2rem; padding-top: 1rem; border-top: 1px solid #eee;">
+                    <div v-if="!isSearchMode && listTotalPages > 1" class="pagination-controls">
                         <button class="btn secondary-btn" :disabled="listPage === 0 || loadingList" @click="loadAllCustomers(listPage - 1)">&laquo; Previous</button>
                         <span class="muted" style="font-size: 0.9rem;">Page {{ listPage + 1 }} of {{ listTotalPages }}</span>
                         <button class="btn secondary-btn" :disabled="listPage >= listTotalPages - 1 || loadingList" @click="loadAllCustomers(listPage + 1)">Next &raquo;</button>
@@ -302,41 +302,38 @@ const getTypeBadgeClass = (type: string) => {
             </div>
 
             <div v-else>
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-                    <h2 style="margin: 0;">{{ selectedUser.firstName }} {{ selectedUser.lastName }}</h2>
-                    <button class="btn secondary-btn" @click="backToSearch">&larr; Back to Search</button>
+                <div class="detail-header">
+                    <h2>{{ selectedUser.firstName }} {{ selectedUser.lastName }}</h2>
+                    <button type="button" class="btn secondary-btn" @click="backToSearch">&larr; Back to Search</button>
                 </div>
 
                 <section
                     v-if="selectedUser.accounts?.length"
-                    class="limits-panel"
-                    style="background: #f8f9fa; padding: 1.25rem; border-radius: 8px; margin-bottom: 1.5rem;">
+                    class="limits-panel">
                     <h3 style="margin: 0 0 0.75rem 0; font-size: 1rem;">Transfer limits</h3>
                     <p class="muted" style="margin: 0 0 1rem 0; font-size: 0.9rem;">
                         Applied to all of this customer's accounts (checking and savings). Changes take effect immediately.
                     </p>
-                    <div style="display: flex; gap: 1rem; align-items: flex-end; flex-wrap: wrap;">
-                        <label style="font-weight: bold; font-size: 0.9rem;">
+                    <div class="limits-form-row">
+                        <label class="form-field">
                             Absolute limit (€)
                             <input
                                 type="number"
                                 v-model.number="absoluteLimitInput"
                                 min="0"
                                 step="0.01"
-                                required
-                                style="display: block; width: 200px; padding: 0.5rem; margin-top: 0.3rem;" />
+                                required />
                         </label>
-                        <label style="font-weight: bold; font-size: 0.9rem;">
+                        <label class="form-field">
                             Daily limit (€)
                             <input
                                 type="number"
                                 v-model.number="dailyLimitInput"
                                 min="0.01"
                                 step="0.01"
-                                required
-                                style="display: block; width: 200px; padding: 0.5rem; margin-top: 0.3rem;" />
+                                required />
                         </label>
-                        <button class="btn" @click="updateCustomerLimits" :disabled="savingLimits" style="height: 38px;">
+                        <button class="btn primary-btn" type="button" @click="updateCustomerLimits" :disabled="savingLimits">
                             {{ savingLimits ? 'Saving...' : 'Update limits' }}
                         </button>
                     </div>
@@ -355,21 +352,21 @@ const getTypeBadgeClass = (type: string) => {
                     <p class="muted">This customer has no transactions on record.</p>
                 </div>
 
-                <div v-else class="table-container">
-                    <table class="transaction-table" style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.95rem;">
+                <div v-else class="table-container table-cards">
+                    <table class="transaction-table responsive-table">
                         <thead>
-                            <tr style="border-bottom: 2px solid #ccc;">
-                                <th style="padding: 1rem 0.5rem;">Date</th>
-                                <th style="padding: 1rem 0.5rem;">Type</th>
-                                <th style="padding: 1rem 0.5rem;">From / To</th>
-                                <th style="padding: 1rem 0.5rem; text-align: right;">Amount</th>
+                            <tr>
+                                <th>Date</th>
+                                <th>Type</th>
+                                <th>From / To</th>
+                                <th>Amount</th>
                             </tr>
                         </thead>
                         <tbody>
-                            <tr v-for="tx in transactions" :key="tx.transactionId" style="border-bottom: 1px solid #eee;">
-                                <td style="padding: 1rem 0.5rem;" class="muted">{{ formatDate(tx.timestamp) }}</td>
-                                <td style="padding: 1rem 0.5rem;"><span :class="['type-badge', getTypeBadgeClass(tx.type)]">{{ tx.type }}</span></td>
-                                <td style="padding: 1rem 0.5rem; font-family: monospace;">
+                            <tr v-for="tx in transactions" :key="tx.transactionId">
+                                <td data-label="Date" class="muted">{{ formatDate(tx.timestamp) }}</td>
+                                <td data-label="Type"><span :class="['type-badge', getTypeBadgeClass(tx.type)]">{{ tx.type }}</span></td>
+                                <td data-label="From / To" class="cell-mono">
                                     <div v-if="tx.type === 'DEPOSIT'">To: {{ tx.toIban }}</div>
                                     <div v-else-if="tx.type === 'WITHDRAWAL'">From: {{ tx.fromIban }}</div>
                                     <div v-else>
@@ -377,12 +374,12 @@ const getTypeBadgeClass = (type: string) => {
                                         <div>To: {{ tx.toIban }}</div>
                                     </div>
                                 </td>
-                                <td style="padding: 1rem 0.5rem; text-align: right; font-weight: bold;">{{ formatCurrency(tx.amount) }}</td>
+                                <td data-label="Amount" style="font-weight: bold;">{{ formatCurrency(tx.amount) }}</td>
                             </tr>
                         </tbody>
                     </table>
 
-                    <div v-if="totalPages > 1" class="pagination-controls" style="display: flex; justify-content: space-between; align-items: center; margin-top: 2rem; padding-top: 1rem; border-top: 1px solid #eee;">
+                    <div v-if="totalPages > 1" class="pagination-controls">
                         <button class="btn secondary-btn" :disabled="currentPage === 0 || loadingTx" @click="viewUserHistory(selectedUser, currentPage - 1)">&laquo; Previous</button>
                         <span class="muted" style="font-size: 0.9rem;">Page {{ currentPage + 1 }} of {{ totalPages }}</span>
                         <button class="btn secondary-btn" :disabled="currentPage >= totalPages - 1 || loadingTx" @click="viewUserHistory(selectedUser, currentPage + 1)">Next &raquo;</button>
@@ -393,30 +390,3 @@ const getTypeBadgeClass = (type: string) => {
         </section>
     </main>
 </template>
-
-<style scoped>
-.secondary-btn {
-    background-color: #6c757d;
-    color: white;
-    padding: 0.5rem 1rem;
-    border: none;
-    border-radius: 4px;
-}
-.secondary-btn:hover:not(:disabled) { background-color: #5a6268; }
-.secondary-btn:disabled { background-color: #e9ecef; color: #6c757d; cursor: not-allowed; }
-
-.transaction-table th { background-color: #f8f9fa; color: #495057; }
-.transaction-table tr:hover { background-color: #f8f9fa; }
-
-/* Badges */
-.type-badge {
-    padding: 0.25rem 0.5rem;
-    border-radius: 12px;
-    font-size: 0.8rem;
-    font-weight: bold;
-}
-.badge-deposit { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
-.badge-withdrawal { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
-.badge-transfer { background-color: #cce5ff; color: #004085; border: 1px solid #b8daff; }
-.badge-default { background-color: #e2e3e5; color: #383d41; }
-</style>

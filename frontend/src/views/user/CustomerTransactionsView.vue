@@ -120,12 +120,12 @@ onMounted(() => {
             <p class="muted subtitle">View all your previous activity.</p>
         </section>
 
-        <section class="panel auth-panel" style="max-width: 800px; margin: 0 auto;">
+        <section class="panel page-panel-wide">
             
-            <div class="account-selector" style="margin-bottom: 1.5rem;">
-                <label>
-                    <span style="font-weight: bold; margin-right: 1rem;">Select Account:</span>
-                    <select v-model="selectedIban" :disabled="loading" style="padding: 0.5rem; border-radius: 4px; border: 1px solid #ccc; width: 60%; max-width: 400px;">
+            <div class="account-selector">
+                <label class="form-field">
+                    <span>Select Account</span>
+                    <select v-model="selectedIban" :disabled="loading">
                         <option disabled value="">Select an account</option>
                         <option v-for="acc in myAccounts" :key="acc.iban" :value="acc.iban">
                             {{ acc.accountType }} - {{ acc.iban }}
@@ -134,38 +134,37 @@ onMounted(() => {
                 </label>
             </div>
 
-            <div class="filter-bar" style="background: #f8f9fa; padding: 1.5rem; border-radius: 8px; margin-bottom: 2rem; display: flex; flex-wrap: wrap; gap: 1rem; align-items: flex-end; border: 1px solid #e9ecef;">
-                
-                <label style="display: flex; flex-direction: column; font-size: 0.9rem; color: #495057; font-weight: 600;">
-                    From:
-                    <input type="date" v-model="filters.startDate" style="padding: 0.4rem; border: 1px solid #ced4da; border-radius: 4px; margin-top: 0.3rem;" />
+            <div class="filter-bar">
+                <label class="filter-field">
+                    From
+                    <input type="date" v-model="filters.startDate" />
                 </label>
                 
-                <label style="display: flex; flex-direction: column; font-size: 0.9rem; color: #495057; font-weight: 600;">
-                    To:
-                    <input type="date" v-model="filters.endDate" style="padding: 0.4rem; border: 1px solid #ced4da; border-radius: 4px; margin-top: 0.3rem;" />
+                <label class="filter-field">
+                    To
+                    <input type="date" v-model="filters.endDate" />
                 </label>
 
-                <div style="display: flex; gap: 0.5rem; align-items: flex-end;">
-                    <label style="display: flex; flex-direction: column; font-size: 0.9rem; color: #495057; font-weight: 600;">
-                        Amount:
-                        <select v-model="filters.amountOperator" style="padding: 0.4rem; border: 1px solid #ced4da; border-radius: 4px; margin-top: 0.3rem;">
+                <div class="filter-amount-row">
+                    <label class="filter-field">
+                        Amount
+                        <select v-model="filters.amountOperator">
                             <option value="eq">Equal to</option>
                             <option value="gt">Greater than</option>
                             <option value="lt">Less than</option>
                         </select>
                     </label>
-                    <input type="number" v-model="filters.amount" placeholder="0.00" step="0.01" style="padding: 0.4rem; width: 100px; border: 1px solid #ced4da; border-radius: 4px;" />
+                    <input type="number" v-model="filters.amount" placeholder="0.00" step="0.01" />
                 </div>
 
-                <label style="display: flex; flex-direction: column; font-size: 0.9rem; color: #495057; font-weight: 600;">
-                    Receiver IBAN:
-                    <input type="text" v-model="filters.counterpartIban" placeholder="NL99 INGB..." style="padding: 0.4rem; border: 1px solid #ced4da; border-radius: 4px; margin-top: 0.3rem;" />
+                <label class="filter-field">
+                    Receiver IBAN
+                    <input type="text" v-model="filters.counterpartIban" placeholder="NL99 INGB..." />
                 </label>
 
-                <div style="margin-left: auto; display: flex; gap: 0.5rem;">
-                    <button class="btn" @click="fetchTransactions(0)" style="padding: 0.5rem 1rem; border-radius: 4px;">Apply Filters</button>
-                    <button class="btn secondary-btn" @click="clearFilters" style="padding: 0.5rem 1rem; border-radius: 4px;">Clear</button>
+                <div class="filter-actions">
+                    <button type="button" class="btn primary-btn" @click="fetchTransactions(0)">Apply Filters</button>
+                    <button type="button" class="btn secondary-btn" @click="clearFilters">Clear</button>
                 </div>
             </div>
 
@@ -177,28 +176,28 @@ onMounted(() => {
                 <p class="muted">No transactions found matching your criteria.</p>
             </div>
 
-            <div v-else class="table-container" style="overflow-x: auto;">
-                <table class="transaction-table" style="width: 100%; border-collapse: collapse; text-align: left;">
+            <div v-else class="table-container table-cards">
+                <table class="transaction-table responsive-table">
                     <thead>
-                        <tr style="border-bottom: 2px solid var(--border-color, #ccc);">
-                            <th style="padding: 1rem 0.5rem;">Date</th>
-                            <th style="padding: 1rem 0.5rem;">Description</th>
-                            <th style="padding: 1rem 0.5rem;">IBAN</th>
-                            <th style="padding: 1rem 0.5rem; text-align: right;">Amount</th>
+                        <tr>
+                            <th>Date</th>
+                            <th>Description</th>
+                            <th>IBAN</th>
+                            <th>Amount</th>
                         </tr>
                     </thead>
                     <tbody>
-                        <tr v-for="tx in transactions" :key="tx.transactionId" style="border-bottom: 1px solid #eee;">
-                            <td style="padding: 1rem 0.5rem; white-space: nowrap;" class="muted">{{ formatDate(tx.timestamp) }}</td>
-                            <td style="padding: 1rem 0.5rem; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" :title="tx.description">
+                        <tr v-for="tx in transactions" :key="tx.transactionId">
+                            <td data-label="Date" class="muted">{{ formatDate(tx.timestamp) }}</td>
+                            <td data-label="Description" :title="tx.description">
                                 {{ tx.description || 'No description' }}
                             </td>
-                            <td style="padding: 1rem 0.5rem; font-family: monospace; font-size: 0.9rem;">
+                            <td data-label="IBAN" class="cell-mono">
                                 <span v-if="tx.type === 'INCOMING'">From: </span>
-                                <span v-else>To: </span><br>
+                                <span v-else>To: </span>
                                 {{ tx.counterpartIban }}
                             </td>
-                            <td style="padding: 1rem 0.5rem; text-align: right; font-weight: bold;" 
+                            <td data-label="Amount" style="font-weight: bold;"
                                 :class="tx.type === 'INCOMING' ? 'text-success' : 'text-danger'">
                                 {{ formatCurrency(tx.amount, tx.type) }}
                             </td>
@@ -207,7 +206,7 @@ onMounted(() => {
                 </table>
             </div>
 
-            <div v-if="totalPages > 1" class="pagination-controls" style="display: flex; justify-content: space-between; align-items: center; margin-top: 2rem; padding-top: 1rem; border-top: 1px solid #eee;">
+            <div v-if="totalPages > 1" class="pagination-controls">
                 <button 
                     class="btn secondary-btn" 
                     :disabled="currentPage === 0 || loading" 
@@ -230,29 +229,3 @@ onMounted(() => {
         </section>
     </main>
 </template>
-
-<style scoped>
-.text-success { color: #28a745; }
-.text-danger { color: #dc3545; }
-.secondary-btn {
-    background-color: #6c757d;
-    color: white;
-    padding: 0.5rem 1rem;
-    border: none;
-}
-.secondary-btn:hover:not(:disabled) {
-    background-color: #5a6268;
-}
-.secondary-btn:disabled {
-    background-color: #e9ecef;
-    color: #6c757d;
-    cursor: not-allowed;
-}
-.transaction-table th {
-    background-color: #f8f9fa;
-    color: #495057;
-}
-.transaction-table tr:hover {
-    background-color: #f8f9fa;
-}
-</style>

@@ -4,6 +4,8 @@ import { useRouter } from 'vue-router';
 import { authorizedFetch } from '@/composables/useAuthorizedFetch';
 
 type AccountSummary = {
+	customerName: string;
+	combinedBalance: number;
 	accounts: { iban: string; accountType: string; balance: number; active?: boolean }[];
 };
 
@@ -23,6 +25,10 @@ const checkingAccounts = computed(() =>
 	)
 );
 
+const selectedAccount = computed(() =>
+	checkingAccounts.value.find((account) => account.iban === selectedIban.value) ?? null
+);
+
 async function loadAccounts() {
 	loading.value = true;
 	error.value = null;
@@ -33,7 +39,7 @@ async function loadAccounts() {
 		}
 		summary.value = await response.json();
 		const accounts = checkingAccounts.value;
-		if (accounts.length === 1) {
+		if (accounts.length > 0 && !accounts.some((a) => a.iban === selectedIban.value)) {
 			selectedIban.value = accounts[0].iban;
 		}
 	} catch (err) {
@@ -107,7 +113,16 @@ onMounted(() => {
 
 			<p v-if="loading" class="muted">Loading accounts...</p>
 
-			<form v-else class="atm-form" @submit.prevent="submitWithdraw">
+			<div v-else-if="selectedAccount" class="atm-balance-card">
+				<span class="atm-balance-label">Available to withdraw</span>
+				<strong class="atm-balance-value">{{ formatCurrency(selectedAccount.balance) }}</strong>
+				<span class="muted atm-balance-iban">{{ selectedAccount.iban }}</span>
+				<span v-if="summary" class="muted atm-balance-total">
+					Total across accounts: {{ formatCurrency(summary.combinedBalance) }}
+				</span>
+			</div>
+
+			<form v-if="!loading" class="atm-form" @submit.prevent="submitWithdraw">
 				<label v-if="checkingAccounts.length > 1">
 					<span>Checking account</span>
 					<select v-model="selectedIban" required>
@@ -118,10 +133,7 @@ onMounted(() => {
 					</select>
 				</label>
 
-				<p v-else-if="checkingAccounts.length === 1" class="muted account-hint">
-					From: {{ checkingAccounts[0].iban }} ({{ formatCurrency(checkingAccounts[0].balance) }})
-				</p>
-				<p v-else class="error">No active checking account available.</p>
+				<p v-if="checkingAccounts.length === 0" class="error">No active checking account available.</p>
 
 				<label>
 					<span>Amount (€)</span>
@@ -147,107 +159,3 @@ onMounted(() => {
 		</section>
 	</div>
 </template>
-
-<style scoped>
-.atm-shell {
-	min-height: calc(100vh - 2rem);
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	padding: 1.5rem;
-	background: linear-gradient(160deg, #0f172a 0%, #1e3a5f 45%, #0f172a 100%);
-}
-
-.atm-home-panel {
-	width: 100%;
-	max-width: 420px;
-	background: #1e293b;
-	border: 2px solid #334155;
-	border-radius: 16px;
-	padding: 1.75rem;
-	color: #f8fafc;
-	box-shadow: 0 24px 48px rgba(0, 0, 0, 0.35);
-}
-
-.atm-home-header {
-	display: flex;
-	justify-content: space-between;
-	align-items: flex-start;
-	gap: 1rem;
-	margin-bottom: 1.25rem;
-}
-
-.atm-session-label {
-	margin: 0 0 0.25rem;
-	font-size: 0.75rem;
-	text-transform: uppercase;
-	letter-spacing: 0.08em;
-	color: #4ade80;
-	font-weight: 700;
-}
-
-.atm-home-header h1 {
-	margin: 0;
-	font-size: 1.25rem;
-	color: #f8fafc;
-}
-
-.atm-form {
-	display: grid;
-	gap: 1rem;
-}
-
-.atm-form label {
-	display: grid;
-	gap: 0.35rem;
-	font-weight: 600;
-	font-size: 0.9rem;
-	color: #cbd5e1;
-}
-
-.atm-form input,
-.atm-form select {
-	padding: 0.75rem;
-	border: 1px solid #475569;
-	border-radius: 8px;
-	background: #0f172a;
-	color: #f8fafc;
-	font: inherit;
-}
-
-.atm-btn {
-	padding: 0.85rem 1.25rem;
-	border-radius: 10px;
-	border: none;
-	font: inherit;
-	font-weight: 700;
-	cursor: pointer;
-}
-
-.atm-btn-secondary {
-	background: #334155;
-	color: #e2e8f0;
-}
-
-.atm-btn-primary {
-	background: linear-gradient(180deg, #22c55e 0%, #16a34a 100%);
-	color: #052e16;
-	width: 100%;
-}
-
-.atm-btn-primary:disabled {
-	opacity: 0.6;
-	cursor: not-allowed;
-}
-
-.account-hint {
-	margin: 0;
-	font-size: 0.9rem;
-}
-
-.success-msg {
-	margin: 0;
-	color: #4ade80;
-	font-weight: 600;
-}
-</style>

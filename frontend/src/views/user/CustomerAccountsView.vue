@@ -59,7 +59,7 @@ onMounted(() => {
         </section>
 
         <section v-else-if="error" class="panel hero-section">
-            <h2 class="headline" style="color: #dc3545;">Unable to load accounts</h2>
+            <h2 class="headline text-danger">Unable to load accounts</h2>
             <p class="muted">{{ error }}</p>
             <button class="btn primary-btn" @click="fetchMyAccounts">Try Again</button>
         </section>
@@ -78,8 +78,8 @@ onMounted(() => {
                     :key="account.iban" 
                     class="panel feature-card"
                 >
-                    <div class="icon">
-                        {{ account.accountType === 'CHECKING' ? '💳' : '📈' }}
+                    <div class="feature-icon">
+                        {{ account.accountType === 'CHECKING' ? 'CH' : 'SV' }}
                     </div>
                     <h3>{{ account.accountType === 'CHECKING' ? 'Checking Account' : 'Savings Account' }}</h3>
                     
@@ -88,32 +88,11 @@ onMounted(() => {
                         <p class="iban muted">IBAN: {{ account.iban }}</p>
                     </div>
 
-                    <div class="button-group" style="margin-top: 1rem;">
-                        <button class="btn primary-btn" style="width: 100%; padding: 0.5rem;">View History</button>
+                    <div class="button-group">
+                        <button class="btn secondary-btn" type="button">View History</button>
                     </div>
                 </article>
             </section>
         </template>
     </main>
 </template>
-
-<style scoped>
-.account-details {
-    margin: 1.5rem 0;
-    text-align: center;
-}
-.balance {
-    font-size: 2rem;
-    font-weight: bold;
-    color: var(--text-color, #2c3e50);
-    margin-bottom: 0.5rem;
-}
-.iban {
-    font-family: monospace;
-    font-size: 0.9rem;
-    background: #f8f9fa;
-    padding: 0.3rem 0.6rem;
-    border-radius: 4px;
-    display: inline-block;
-}
-</style>

@@ -108,7 +108,7 @@ async function submit() {
 			<p v-if="auth.error" class="error">{{ auth.error }}</p>
 			<p v-else-if="isLoggedIn" class="success">Welcome back!</p>
 
-			<button class="btn" type="submit" :disabled="auth.loading">
+			<button class="btn primary-btn" type="submit" :disabled="auth.loading">
 				{{ auth.loading ? 'Signing in...' : 'Login' }}
 			</button>
 		</form>

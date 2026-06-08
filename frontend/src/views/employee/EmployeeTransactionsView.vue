@@ -98,37 +98,34 @@ onMounted(() => {
             <p class="muted subtitle">Monitor all bank transactions. Use system with responsibility. Privacy first.</p>
         </section>
 
-        <section class="panel auth-panel" style="max-width: 1100px; margin: 0 auto;">
+        <section class="panel page-panel-xl">
             
-            <div class="filter-bar" style="background: #f8f9fa; padding: 1.5rem; border-radius: 8px; margin-bottom: 2rem; display: flex; flex-wrap: wrap; gap: 1rem; align-items: flex-end; border: 1px solid #e9ecef;">
-                
-                <label style="display: flex; flex-direction: column; font-size: 0.9rem; color: #495057; font-weight: 600;">
-                    From:
-                    <input type="date" v-model="filters.startDate" style="padding: 0.4rem; border: 1px solid #ced4da; border-radius: 4px; margin-top: 0.3rem;" />
+            <div class="filter-bar">
+                <label class="filter-field">
+                    From
+                    <input type="date" v-model="filters.startDate" />
                 </label>
                 
-                <label style="display: flex; flex-direction: column; font-size: 0.9rem; color: #495057; font-weight: 600;">
-                    To:
-                    <input type="date" v-model="filters.endDate" style="padding: 0.4rem; border: 1px solid #ced4da; border-radius: 4px; margin-top: 0.3rem;" />
+                <label class="filter-field">
+                    To
+                    <input type="date" v-model="filters.endDate" />
                 </label>
 
-                <div style="display: flex; gap: 0.5rem; align-items: flex-end;">
-                    <label style="display: flex; flex-direction: column; font-size: 0.9rem; color: #495057; font-weight: 600;">
-                        Amount:
-                        <select v-model="filters.amountOperator" style="padding: 0.4rem; border: 1px solid #ced4da; border-radius: 4px; margin-top: 0.3rem;">
+                <div class="filter-amount-row">
+                    <label class="filter-field">
+                        Amount
+                        <select v-model="filters.amountOperator">
                             <option value="eq">Equal to</option>
                             <option value="gt">Greater than</option>
                             <option value="lt">Less than</option>
                         </select>
                     </label>
-                    <input type="number" v-model="filters.amount" placeholder="0.00" step="0.01" style="padding: 0.4rem; width: 100px; border: 1px solid #ced4da; border-radius: 4px;" />
+                    <input type="number" v-model="filters.amount" placeholder="0.00" step="0.01" />
                 </div>
 
-                
-
-                <div style="margin-left: auto; display: flex; gap: 0.5rem;">
-                    <button class="btn secondary-btn" @click="clearFilters" style="padding: 0.5rem 1rem; border-radius: 4px;">Clear</button>
-                    <button class="btn" @click="fetchAllTransactions(0)" style="padding: 0.5rem 1rem; border-radius: 4px;">Apply Filters</button>
+                <div class="filter-actions">
+                    <button type="button" class="btn secondary-btn" @click="clearFilters">Clear</button>
+                    <button type="button" class="btn primary-btn" @click="fetchAllTransactions(0)">Apply Filters</button>
                 </div>
             </div>
 
@@ -139,47 +136,34 @@ onMounted(() => {
                 <p class="muted">No transactions found matching your criteria.</p>
             </div>
 
-            <div v-else class="table-container" style="overflow-x: auto;">
-                <table class="transaction-table" style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.95rem;">
+            <div v-else class="table-container table-cards">
+                <table class="transaction-table data-table responsive-table">
                     <thead>
-                        <tr style="border-bottom: 2px solid var(--border-color, #ccc);">
-                            <th style="padding: 1rem 0.5rem;">Timestamp</th>
-                            <th style="padding: 1rem 0.5rem;">Type</th>
-                            <th style="padding: 1rem 0.5rem;">Sender</th>
-                            <th style="padding: 1rem 0.5rem;">Receiver</th>
-                            <th style="padding: 1rem 0.5rem;">Initiating User</th>
-                            <th style="padding: 1rem 0.5rem; text-align: right;">Amount</th>
+                        <tr>
+                            <th>Timestamp</th>
+                            <th>Type</th>
+                            <th>Sender</th>
+                            <th>Receiver</th>
+                            <th>Initiating User</th>
+                            <th>Amount</th>
                         </tr>
                     </thead>
                     <tbody>
-                        <tr v-for="tx in transactions" :key="tx.transactionId" style="border-bottom: 1px solid #eee;">
-                            <td style="padding: 1rem 0.5rem; white-space: nowrap;" class="muted">{{ formatDate(tx.timestamp) }}</td>
-                            
-                            <td style="padding: 1rem 0.5rem;">
+                        <tr v-for="tx in transactions" :key="tx.transactionId">
+                            <td data-label="Time" class="muted">{{ formatDate(tx.timestamp) }}</td>
+                            <td data-label="Type">
                                 <span :class="['type-badge', getTypeBadgeClass(tx.type)]">{{ tx.type }}</span>
                             </td>
-
-                            <td style="padding: 1rem 0.5rem; font-family: monospace;">
-                                {{ tx.fromIban || '-' }}
-                            </td>
-
-                            <td style="padding: 1rem 0.5rem; font-family: monospace;">
-                                {{ tx.toIban || '-' }}
-                            </td>
-
-                            <td style="padding: 1rem 0.5rem; color: #495057;">
-                                {{ tx.initiatingUser }}
-                            </td>
-
-                            <td style="padding: 1rem 0.5rem; text-align: right; font-weight: bold;">
-                                {{ formatCurrency(tx.amount) }}
-                            </td>
+                            <td data-label="Sender" class="cell-mono">{{ tx.fromIban || '-' }}</td>
+                            <td data-label="Receiver" class="cell-mono">{{ tx.toIban || '-' }}</td>
+                            <td data-label="User" class="cell-email muted">{{ tx.initiatingUser }}</td>
+                            <td data-label="Amount" style="font-weight: bold;">{{ formatCurrency(tx.amount) }}</td>
                         </tr>
                     </tbody>
                 </table>
             </div>
 
-            <div v-if="totalPages > 1" class="pagination-controls" style="display: flex; justify-content: space-between; align-items: center; margin-top: 2rem; padding-top: 1rem; border-top: 1px solid #eee;">
+            <div v-if="totalPages > 1" class="pagination-controls">
                 <button class="btn secondary-btn" :disabled="currentPage === 0 || loading" @click="fetchAllTransactions(currentPage - 1)">&laquo; Previous</button>
                 <span class="muted" style="font-size: 0.9rem;">Page {{ currentPage + 1 }} of {{ totalPages }}</span>
                 <button class="btn secondary-btn" :disabled="currentPage >= totalPages - 1 || loading" @click="fetchAllTransactions(currentPage + 1)">Next &raquo;</button>
@@ -188,31 +172,3 @@ onMounted(() => {
         </section>
     </main>
 </template>
-
-<style scoped>
-.secondary-btn {
-    background-color: #6c757d;
-    color: white;
-    padding: 0.5rem 1rem;
-    border: none;
-    border-radius: 4px;
-}
-.secondary-btn:hover:not(:disabled) { background-color: #5a6268; }
-.secondary-btn:disabled { background-color: #e9ecef; color: #6c757d; cursor: not-allowed; }
-
-.transaction-table th { background-color: #f8f9fa; color: #495057; }
-.transaction-table tr:hover { background-color: #f8f9fa; }
-
-/* Transaction Types */
-.type-badge {
-    padding: 0.25rem 0.5rem;
-    border-radius: 12px;
-    font-size: 0.8rem;
-    font-weight: bold;
-    letter-spacing: 0.5px;
-}
-.badge-deposit { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
-.badge-withdrawal { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
-.badge-transfer { background-color: #cce5ff; color: #004085; border: 1px solid #b8daff; }
-.badge-default { background-color: #e2e3e5; color: #383d41; }
-</style>
