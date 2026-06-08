@@ -4,6 +4,7 @@ import com.example.backend.domain.BankAccount;
 
 import java.math.BigDecimal;
 
+// one account inside AccountSummaryResponse; absoluteLimit = max balance cap from entity
 public record AccountDetail(
 	String iban,
 	String accountType,

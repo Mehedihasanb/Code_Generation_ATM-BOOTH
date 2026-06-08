@@ -6,6 +6,7 @@ import jakarta.validation.constraints.NotNull;
 
 import java.math.BigDecimal;
 
+// US-10: employee opens checking + savings when approving a pending customer
 public record CreateAccountsRequest(
 		@NotNull(message = "customerRegistrationId is required") Long customerRegistrationId,
 

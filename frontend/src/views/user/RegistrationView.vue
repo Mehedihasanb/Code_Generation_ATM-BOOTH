@@ -109,8 +109,11 @@ async function submit() {
                 router.push('/login');
             }, 1500);
         }
-    } catch (error) {
-        registration.error = "Oops! Something went wrong while connecting to the server. Please try again later.";
+    } catch {
+        if (!registration.error) {
+            registration.error =
+                'Something went wrong while connecting to the server. Please try again later.';
+        }
     }
 }
 onUnmounted(() => {

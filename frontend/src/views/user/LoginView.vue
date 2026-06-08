@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { reactive, computed } from 'vue';
+import { reactive, computed, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useAuthStore } from '../../stores/auth';
 
@@ -49,10 +49,20 @@ function validate(): boolean {
 	return valid;
 }
 
+function clearLoginError() {
+    auth.error = null;
+}
+
+onMounted(() => {
+    clearLoginError();
+});
+
 async function submit() {
     if (!validate()) {
         return;
     }
+
+    clearLoginError();
 
     try {
         await auth.login({
@@ -95,13 +105,13 @@ async function submit() {
 		<form class="auth-form" @submit.prevent="submit">
 			<label>
 				<span>Email</span>
-				<input v-model="form.email" type="email" autocomplete="email" />
+				<input v-model="form.email" type="email" autocomplete="email" @input="clearLoginError" />
 				<small v-if="fieldError.email" class="error">{{ fieldError.email }}</small>
 			</label>
 
 			<label>
 				<span>Password</span>
-				<input v-model="form.password" type="password" autocomplete="current-password" />
+				<input v-model="form.password" type="password" autocomplete="current-password" @input="clearLoginError" />
 				<small v-if="fieldError.password" class="error">{{ fieldError.password }}</small>
 			</label>
 

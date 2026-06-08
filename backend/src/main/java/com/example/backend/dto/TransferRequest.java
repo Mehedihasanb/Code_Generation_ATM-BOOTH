@@ -5,6 +5,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import java.math.BigDecimal;
 
+// POST /transactions body (customer transfer or employee force transfer)
 public record TransferRequest(
         @NotBlank(message = "Sender IBAN is required") String fromIban,
 

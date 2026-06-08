@@ -43,7 +43,12 @@ public class RegistrationService {
 	}
 
 	public RegisterResponse register(RegisterRequest registerRequest) {
-		if (userRegistrationRepository.findByEmail(registerRequest.email()).isPresent()) {
+		var existingUser = userRegistrationRepository.findByEmail(registerRequest.email().trim().toLowerCase());
+		if (existingUser.isPresent()) {
+			if (existingUser.get().getCustomerApprovalStatus() == CustomerApprovalStatus.DENIED) {
+				throw new BadRequestException(
+						"This registration was denied. You cannot register again with this email.");
+			}
 			throw new BadRequestException("Email is already registered");
 		}
 

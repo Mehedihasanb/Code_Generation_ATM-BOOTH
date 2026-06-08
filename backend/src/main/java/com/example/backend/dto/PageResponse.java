@@ -4,6 +4,7 @@ import org.springframework.data.domain.Page;
 
 import java.util.List;
 
+// generic paginated JSON wrapper (content + page metadata), used by GET /users
 public record PageResponse<T>(List<T> content, long totalElements, int totalPages, int number, int size) {
 
 	public static <T> PageResponse<T> fromPage(Page<?> page, List<T> mappedContent) {

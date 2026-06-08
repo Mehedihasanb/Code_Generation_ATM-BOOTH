@@ -5,6 +5,7 @@ import jakarta.validation.constraints.Digits;
 
 import java.math.BigDecimal;
 
+// employee updates daily transfer limit and max balance cap on customer accounts
 public record UpdateCustomerLimitsRequest(
 		@DecimalMin(value = "0", inclusive = true, message = "absoluteLimit must be zero or greater")
 		@Digits(integer = 12, fraction = 2, message = "absoluteLimit has too many digits")

@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
 import { apiUrl } from '@/config/api';
+import { parseApiErrorMessage } from '@/utils/apiError';
 
 export type RegisterPayload = {
 	firstName: string;
@@ -39,7 +40,12 @@ export const useRegistrationStore = defineStore('registration', () => {
 
 			if (!registerHttpResponse.ok) {
 				const errorText = await registerHttpResponse.text();
-				throw new Error(errorText || `Registration failed (${registerHttpResponse.status})`);
+				throw new Error(
+					parseApiErrorMessage(
+						errorText,
+						`Registration failed (${registerHttpResponse.status})`
+					)
+				);
 			}
 
 			const registerResponseBody = (await registerHttpResponse.json()) as RegisterResponse;

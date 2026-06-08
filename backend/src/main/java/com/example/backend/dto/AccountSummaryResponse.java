@@ -7,6 +7,7 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
+// GET /accounts/me: safe view of customer name, total balance and account list (no password etc.)
 public record AccountSummaryResponse(
 	String customerName,
 	BigDecimal combinedBalance,

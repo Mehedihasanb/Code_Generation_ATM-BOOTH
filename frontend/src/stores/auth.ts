@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia';
 import { computed, ref } from 'vue';
 import { apiUrl } from '@/config/api';
+import { parseApiErrorMessage } from '@/utils/apiError';
 
 export type LoginPayload = {
     email: string;
@@ -106,7 +107,10 @@ export const useAuthStore = defineStore('auth', () => {
             if (!loginHttpResponse.ok) {
                 const errorResponseText = await loginHttpResponse.text();
                 throw new Error(
-                    errorResponseText || `Login failed (${loginHttpResponse.status})`
+                    parseApiErrorMessage(
+                        errorResponseText,
+                        `Login failed (${loginHttpResponse.status})`
+                    )
                 );
             }
 

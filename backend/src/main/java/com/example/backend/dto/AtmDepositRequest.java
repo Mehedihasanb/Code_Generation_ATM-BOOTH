@@ -6,6 +6,7 @@ import jakarta.validation.constraints.NotNull;
 
 import java.math.BigDecimal;
 
+// POST /atm/deposit body; toIban optional when customer has one checking account
 public record AtmDepositRequest(
 		@NotNull(message = "amount is required")
 		@DecimalMin(value = "0.01", message = "amount must be greater than zero")

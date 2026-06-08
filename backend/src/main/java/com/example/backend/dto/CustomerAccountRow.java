@@ -4,6 +4,7 @@ import com.example.backend.domain.BankAccount;
 
 import java.math.BigDecimal;
 
+// nested account info inside CustomerDirectoryRow for employee directory
 public record CustomerAccountRow(
 	String iban,
 	String accountType,
