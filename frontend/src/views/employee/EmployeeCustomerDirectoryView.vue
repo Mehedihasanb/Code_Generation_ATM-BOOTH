@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue';
 import { authorizedFetch } from '@/composables/useAuthorizedFetch';
+import AccountDeletionPanel from '@/components/organisms/AccountDeletionPanel.vue';
 
 const searchFirst = ref('');
 const searchLast = ref('');
@@ -27,6 +28,7 @@ const dailyLimitInput = ref<number>(0);
 const limitsError = ref<string | null>(null);
 const limitsSuccess = ref<string | null>(null);
 const savingLimits = ref(false);
+const showDeactivated = ref(false);
 
 const loadAllCustomers = async (pageIndex: number = 0) => {
     loadingList.value = true;
@@ -35,7 +37,11 @@ const loadAllCustomers = async (pageIndex: number = 0) => {
     searchError.value = null;
 
     try {
-        const response = await authorizedFetch(`/users?page=${pageIndex}&size=10`);
+        const params = new URLSearchParams({ page: String(pageIndex), size: '10' });
+        if (showDeactivated.value) {
+            params.set('deleted', 'true');
+        }
+        const response = await authorizedFetch(`/users?${params.toString()}`);
         if (!response.ok) throw new Error("Could not load customer directory.");
 
         const data = await response.json();
@@ -82,6 +88,9 @@ const searchCustomers = async () => {
         if (iban) {
             params.set('iban', iban);
         }
+        if (showDeactivated.value) {
+            params.set('deleted', 'true');
+        }
 
         const response = await authorizedFetch(`/users?${params.toString()}`);
         if (!response.ok) throw new Error("Search failed. Please check the backend.");
@@ -104,6 +113,15 @@ const searchCustomers = async () => {
 };
 
 const clearSearch = async () => {
+    searchFirst.value = '';
+    searchLast.value = '';
+    searchIban.value = '';
+    await loadAllCustomers(0);
+};
+
+const toggleDeactivatedList = async () => {
+    showDeactivated.value = !showDeactivated.value;
+    selectedUser.value = null;
     searchFirst.value = '';
     searchLast.value = '';
     searchIban.value = '';
@@ -155,6 +173,21 @@ const backToSearch = () => {
     transactions.value = [];
     limitsError.value = null;
     limitsSuccess.value = null;
+};
+
+const handleCustomerDeleted = async () => {
+    backToSearch();
+    if (isSearchMode.value) {
+        await searchCustomers();
+    } else {
+        await loadAllCustomers(listPage.value);
+    }
+};
+
+const handleCustomerReactivated = async () => {
+    backToSearch();
+    showDeactivated.value = false;
+    await loadAllCustomers(0);
 };
 
 const updateCustomerLimits = async () => {
@@ -227,6 +260,14 @@ const getTypeBadgeClass = (type: string) => {
         <section class="panel hero-section">
             <h1 class="headline">Customer Directory</h1>
             <p class="muted subtitle">View all customers with accounts, search by name or IBAN, and open transaction history.</p>
+            <button
+                type="button"
+                class="btn secondary-btn"
+                style="margin-top: 1rem;"
+                @click="toggleDeactivatedList"
+                :disabled="loadingList">
+                {{ showDeactivated ? 'Show active customers' : 'Show deactivated accounts' }}
+            </button>
         </section>
 
         <section class="panel page-panel-wide">
@@ -259,7 +300,7 @@ const getTypeBadgeClass = (type: string) => {
 
                 <div v-else-if="customerList.length > 0" class="table-container table-cards">
                     <p class="muted" style="margin-bottom: 1rem;">
-                        {{ isSearchMode ? 'Search results' : 'All customers' }} ({{ listTotalElements }} total)
+                        {{ showDeactivated ? 'Deactivated customers' : isSearchMode ? 'Search results' : 'All customers' }} ({{ listTotalElements }} total)
                     </p>
                     <table class="transaction-table responsive-table">
                         <thead>
@@ -277,7 +318,10 @@ const getTypeBadgeClass = (type: string) => {
                                 <td data-label="ID" class="muted">#{{ user.id }}</td>
                                 <td data-label="Name"><strong>{{ user.firstName }} {{ user.lastName }}</strong></td>
                                 <td data-label="Email" class="cell-email">{{ user.email }}</td>
-                                <td data-label="Status">{{ user.customerApprovalStatus || 'N/A' }}</td>
+                                <td data-label="Status">
+                                    <span v-if="user.deactivated">DEACTIVATED</span>
+                                    <span v-else>{{ user.customerApprovalStatus || 'N/A' }}</span>
+                                </td>
                                 <td data-label="Accounts">
                                     <span v-if="!user.accounts?.length" class="muted">No accounts</span>
                                     <span v-else>{{ user.accounts.length }} account(s)</span>
@@ -343,6 +387,14 @@ const getTypeBadgeClass = (type: string) => {
                 <p v-else class="muted" style="margin-bottom: 1.5rem;">
                     This customer has no accounts yet; limits can be set when accounts are opened at the service desk.
                 </p>
+
+                <AccountDeletionPanel
+                    mode="employee"
+                    :target-user-id="selectedUser.id"
+                    :target-user-name="`${selectedUser.firstName} ${selectedUser.lastName}`"
+                    :deactivated="selectedUser.deactivated"
+                    @deleted="handleCustomerDeleted"
+                    @reactivated="handleCustomerReactivated" />
 
                 <h3 style="margin: 0 0 1rem 0; font-size: 1rem;">Transaction history</h3>
                 <p v-if="txError" class="error" style="color: #dc3545; font-weight: bold;">{{ txError }}</p>

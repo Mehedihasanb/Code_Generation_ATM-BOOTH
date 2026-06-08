@@ -36,7 +36,8 @@ public class CustomerDirectoryController {
 			@Parameter(description = "Exact first name for customer search") @RequestParam(required = false) String firstName,
 			@Parameter(description = "Exact last name for customer search") @RequestParam(required = false) String lastName,
 			@Parameter(description = "Exact IBAN for customer search") @RequestParam(required = false) String iban,
+			@Parameter(description = "When true, only soft-deleted customers") @RequestParam(required = false) Boolean deleted,
 			@ParameterObject @PageableDefault(size = 20) Pageable pageable) {
-		return customerDirectoryService.listCustomerDirectory(pageable, hasAccount, firstName, lastName, iban);
+		return customerDirectoryService.listCustomerDirectory(pageable, hasAccount, firstName, lastName, iban, deleted);
 	}
 }

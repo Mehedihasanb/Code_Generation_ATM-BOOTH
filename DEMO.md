@@ -6,12 +6,10 @@
 
 ## URLs
 
-| | |
-|---|---|
-| App (local) | http://localhost:5173 |
-| App (live) | https://mehedihasanb.github.io/Code_Generation_ATM-BOOTH/ |
-| Swagger (local) | http://localhost:8080/swagger-ui/index.html |
-| Swagger (live) | https://code-generation-atm-booth.onrender.com/swagger-ui/index.html |
+| App (local)     | http://localhost:5173                                                |
+| App (live)      | https://mehedihasanb.github.io/Code_Generation_ATM-BOOTH/            |
+| Swagger (local) | http://localhost:8080/swagger-ui/index.html                          |
+| Swagger (live)  | https://code-generation-atm-booth.onrender.com/swagger-ui/index.html |
 
 Swagger: login → copy token → **Authorize** → `Bearer <token>`
 
@@ -19,12 +17,11 @@ Swagger: login → copy token → **Authorize** → `Bearer <token>`
 
 ## Accounts
 
-| Email | |
-|-------|---|
-| `employee@inholland.nl` | Employee |
+| `employee@inholland.nl` | Employee          |
 | `customer@inholland.nl` | Approved customer |
-| `dave@inholland.nl` | Pending (approve) |
-| `eva@inholland.nl` | Pending (deny) |
+| `dave@inholland.nl`     | Pending (approve) |
+| `eva@inholland.nl`      | Pending (deny)    |
+| `frank@inholland.nl`    | Approved, €0 balance (permanent delete demo) |
 
 ---
 

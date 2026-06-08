@@ -4,6 +4,7 @@ import com.example.backend.config.JwtService;
 import com.example.backend.domain.CustomerApprovalStatus;
 import com.example.backend.domain.UserRegistration;
 import com.example.backend.policy.CustomerRegistrationPolicy;
+import com.example.backend.policy.UserDeletionPolicy;
 import com.example.backend.repository.UserRegistrationRepository;
 import com.example.backend.dto.LoginRequest;
 import com.example.backend.dto.LoginResponse;
@@ -28,19 +29,22 @@ public class RegistrationService {
 	private final JwtService jwtService;
 	private final AuthenticationManager authenticationManager;
 	private final CustomerRegistrationPolicy customerRegistrationPolicy;
+	private final UserDeletionPolicy userDeletionPolicy;
 
 	public RegistrationService(
 		UserRegistrationRepository userRegistrationRepository,
 		PasswordEncoder passwordEncoder,
 		JwtService jwtService,
 		AuthenticationManager authenticationManager,
-		CustomerRegistrationPolicy customerRegistrationPolicy
+		CustomerRegistrationPolicy customerRegistrationPolicy,
+		UserDeletionPolicy userDeletionPolicy
 	) {
 		this.userRegistrationRepository = userRegistrationRepository;
 		this.passwordEncoder = passwordEncoder;
 		this.jwtService = jwtService;
 		this.authenticationManager = authenticationManager;
 		this.customerRegistrationPolicy = customerRegistrationPolicy;
+		this.userDeletionPolicy = userDeletionPolicy;
 	}
 
 	// someone signs up on /register
@@ -48,6 +52,11 @@ public class RegistrationService {
 		// lowercase email so Dave@x and dave@x count as same
 		var existingUser = userRegistrationRepository.findByEmail(registerRequest.email().trim().toLowerCase());
 		if (existingUser.isPresent()) {
+			if (existingUser.get().isDeleted()) {
+				// soft-deleted email still blocks register until hard delete frees the row
+				throw new BadRequestException(
+						"This account was deactivated. Permanent deletion is required before registering again with this email.");
+			}
 			// if employee already denied them (like eva) they cant register again
 			if (existingUser.get().getCustomerApprovalStatus() == CustomerApprovalStatus.DENIED) {
 				throw new BadRequestException(
@@ -105,6 +114,7 @@ public class RegistrationService {
 
 		// denied cant login even with right password (the eva case)
 		customerRegistrationPolicy.requireNotDeniedForLogin(authenticatedUser);
+		userDeletionPolicy.requireNotDeleted(authenticatedUser); // soft-deleted cant login even with right password
 
 		// pending + approved can login, vue decides where to send them
 		UserDetails authenticatedUserDetails = (UserDetails) authentication.getPrincipal();

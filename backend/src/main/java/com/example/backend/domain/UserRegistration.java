@@ -43,6 +43,9 @@ public class UserRegistration {
 	@Column
 	private String phoneNumber;
 
+	@Column(nullable = false)
+	private boolean deleted; // soft delete flag - true = deactivated, row still in db
+
 	public UserRegistration() {
 	}
 
@@ -64,6 +67,7 @@ public class UserRegistration {
 		this.customerApprovalStatus = customerApprovalStatus;
 		this.bsnNumber = bsnNumber;
 		this.phoneNumber = phoneNumber;
+		this.deleted = false; // new users start active
 	}
 
 	public Long getId() {
@@ -132,5 +136,13 @@ public class UserRegistration {
 
 	public void setPhoneNumber(String phoneNumber) {
 		this.phoneNumber = phoneNumber;
+	}
+
+	public boolean isDeleted() {
+		return deleted;
+	}
+
+	public void setDeleted(boolean deleted) {
+		this.deleted = deleted;
 	}
 }

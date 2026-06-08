@@ -9,5 +9,6 @@ public record CustomerDirectoryRow(
 		String lastName,
 		String email,
 		String customerApprovalStatus,
-		List<CustomerAccountRow> accounts) {
+		List<CustomerAccountRow> accounts,
+		boolean deactivated) {
 }

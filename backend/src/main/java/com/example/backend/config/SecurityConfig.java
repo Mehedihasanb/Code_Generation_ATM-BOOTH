@@ -61,6 +61,9 @@ public class SecurityConfig {
 						.requestMatchers(HttpMethod.GET, "/accounts/checking-options").hasRole("EMPLOYEE")
 						.requestMatchers(HttpMethod.POST, "/auth/register", "/auth/login").permitAll()
 						.requestMatchers(HttpMethod.POST, "/auth/customers/*/deny").hasRole("EMPLOYEE")
+						.requestMatchers(HttpMethod.DELETE, "/auth/me").authenticated() // self soft/hard delete
+						.requestMatchers(HttpMethod.DELETE, "/users/*").hasRole("EMPLOYEE") // delete another user
+						.requestMatchers(HttpMethod.POST, "/users/*/reactivate").hasRole("EMPLOYEE")
 						.requestMatchers(HttpMethod.GET, "/users/search").hasRole("EMPLOYEE")
 						.requestMatchers(HttpMethod.GET, "/users").hasAnyRole("EMPLOYEE", "CUSTOMER")
 						.requestMatchers(HttpMethod.GET, "/accounts/mine").hasRole("CUSTOMER")
@@ -106,6 +109,7 @@ public class SecurityConfig {
 	@Bean
 	public UserDetailsService userDetailsService(UserRegistrationRepository userRegistrationRepository) {
 		return loginEmail -> userRegistrationRepository.findByEmail(loginEmail.trim().toLowerCase())
+				.filter(userRegistration -> !userRegistration.isDeleted()) // soft-deleted = user not found for spring
 				.map(userRegistration -> User.withUsername(userRegistration.getEmail())
 						.password(userRegistration.getPassword())
 						.roles(resolveSpringSecurityRole(userRegistration))

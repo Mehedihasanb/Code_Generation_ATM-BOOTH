@@ -63,6 +63,12 @@ const router = createRouter({
 			meta: { requiresApprovedCustomer: true },
 		},
 		{
+			path: '/account/settings',
+			name: 'account-settings',
+			component: () => import('../views/user/AccountSettingsView.vue'),
+			meta: { requiresAuth: true },
+		},
+		{
 			path: '/transfer',
 			name: 'transfer',
 			component: CustomerTransferView,
@@ -132,6 +138,12 @@ router.beforeEach((to) => {
 
 	if (to.meta.requiresEmployee) {
 		if (!token || role !== 'EMPLOYEE') {
+			return { path: '/login', query: { redirect: to.fullPath } };
+		}
+	}
+
+	if (to.meta.requiresAuth) {
+		if (!token) {
 			return { path: '/login', query: { redirect: to.fullPath } };
 		}
 	}

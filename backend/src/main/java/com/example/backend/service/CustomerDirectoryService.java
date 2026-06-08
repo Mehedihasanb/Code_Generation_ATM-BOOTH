@@ -34,19 +34,21 @@ public class CustomerDirectoryService {
 	// main entry - GET /users from CustomerDirectoryController
 	@Transactional(readOnly = true)
 	public PageResponse<CustomerDirectoryRow> listCustomerDirectory(Pageable pageable, Boolean hasAccountFilter,
-			String firstName, String lastName, String iban) {
+			String firstName, String lastName, String iban, Boolean deletedFilter) {
 		// employee typed a search? skip the normal list and go to search method
 		if (hasSearchCriteria(firstName, lastName, iban)) {
-			return searchCustomerDirectory(pageable, firstName, lastName, iban);
+			return searchCustomerDirectory(pageable, firstName, lastName, iban, deletedFilter);
 		}
 
 		Page<UserRegistration> customerPage;
-		if (Boolean.FALSE.equals(hasAccountFilter)) {
+		if (Boolean.TRUE.equals(deletedFilter)) {
+			customerPage = userRegistrationRepository.findByRoleAndDeletedTrue("CUSTOMER", pageable);
+		} else if (Boolean.FALSE.equals(hasAccountFilter)) {
 			// US-09 service desk - pending customers who registered but have no accounts yet
 			customerPage = userRegistrationRepository.findCustomersWithoutAccounts(pageable);
 		} else {
-			// US-12 directory page - all customers paginated (20 per page default)
-			customerPage = userRegistrationRepository.findByRole("CUSTOMER", pageable);
+			// US-12 directory page - all customers paginated (20 per page default), skip deleted
+			customerPage = userRegistrationRepository.findByRoleAndDeletedFalse("CUSTOMER", pageable);
 		}
 
 		List<UserRegistration> customers = customerPage.getContent();
@@ -87,7 +89,8 @@ public class CustomerDirectoryService {
 					customer.getLastName(),
 					customer.getEmail(),
 					approvalStatus,
-					accountRows));
+					accountRows,
+					customer.isDeleted()));
 		}
 
 		// PageResponse wraps rows + page info (total pages, page number) for vue table
@@ -97,22 +100,31 @@ public class CustomerDirectoryService {
 	// search branch  by exact first+last name and/or iban
 	@Transactional(readOnly = true)
 	public PageResponse<CustomerDirectoryRow> searchCustomerDirectory(Pageable pageable, String firstName,
-			String lastName, String iban) {
+			String lastName, String iban, Boolean deletedFilter) {
 		// map by customer id - dedupes if name + iban search find the same person
 		Map<Long, UserRegistration> matchedCustomers = new LinkedHashMap<>();
+		boolean searchDeleted = Boolean.TRUE.equals(deletedFilter);
 
 		// name search needs BOTH first and last - one alone is not enough
 		if (hasText(firstName) && hasText(lastName)) {
-			userRegistrationRepository.findByFirstNameIgnoreCaseAndLastNameIgnoreCase(firstName.trim(), lastName.trim())
-					.forEach(user -> matchedCustomers.put(user.getId(), user));
+			if (searchDeleted) {
+				userRegistrationRepository
+						.findByFirstNameIgnoreCaseAndLastNameIgnoreCaseAndDeletedTrue(firstName.trim(), lastName.trim())
+						.forEach(user -> matchedCustomers.put(user.getId(), user));
+			} else {
+				userRegistrationRepository
+						.findByFirstNameIgnoreCaseAndLastNameIgnoreCaseAndDeletedFalse(firstName.trim(), lastName.trim())
+						.forEach(user -> matchedCustomers.put(user.getId(), user));
+			}
 		}
 
 		// iban search - find account then grab the customer who owns it
 		if (hasText(iban)) {
 			bankAccountRepository.findByIban(iban.trim()).ifPresent(account -> {
 				UserRegistration owner = account.getOwner();
-				if (owner != null && "CUSTOMER".equalsIgnoreCase(owner.getRole())) {
-					matchedCustomers.put(owner.getId(), owner); // skip if owner is employee somehow
+				if (owner != null && "CUSTOMER".equalsIgnoreCase(owner.getRole())
+						&& owner.isDeleted() == searchDeleted) {
+					matchedCustomers.put(owner.getId(), owner);
 				}
 			});
 		}
@@ -157,6 +169,7 @@ public class CustomerDirectoryService {
 				customer.getLastName(),
 				customer.getEmail(),
 				approvalStatus,
-				activeAccountRows);
+				activeAccountRows,
+				customer.isDeleted());
 	}
 }

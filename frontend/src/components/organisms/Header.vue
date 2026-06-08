@@ -193,6 +193,9 @@ watch(() => route.path, () => {
             <div class="nav-user">
                 <template v-if="auth.isAuthenticated">
                     <span class="greeting">Hello, {{ auth.firstName || 'User' }}</span>
+                    <RouterLink to="/account/settings" class="btn-link nav-logout" @click="closeMenu">
+                        Account
+                    </RouterLink>
                     <button type="button" @click="handleLogout" class="btn-link nav-logout">Logout</button>
                 </template>
 

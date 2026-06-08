@@ -7,6 +7,7 @@ import java.math.BigDecimal;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import java.time.LocalDateTime;
@@ -77,4 +78,8 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
                         @Param("minAmount") BigDecimal minAmount,
                         @Param("maxAmount") BigDecimal maxAmount,
                         Pageable pageable);
+
+	@Modifying(clearAutomatically = true) // bulk delete, flush persistence context after
+	@Query("DELETE FROM Transaction t WHERE t.fromAccount.owner.id = :userId OR t.toAccount.owner.id = :userId OR t.initiatingUser.id = :userId")
+	void deleteAllForUser(@Param("userId") Long userId); // hard delete - clear history before removing accounts
 }

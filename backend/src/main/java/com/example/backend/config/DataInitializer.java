@@ -35,15 +35,17 @@ public class DataInitializer {
 			TransactionRepository transactionRepository,
 			PasswordEncoder passwordEncoder) {
 		return startupArguments -> {
-			// employee (always present)
-			if (userRegistrationRepository.findByEmail("employee@inholland.nl").isEmpty()) {
-				userRegistrationRepository.save(new UserRegistration(
-					"Employee", "User", "employee@inholland.nl",
-					passwordEncoder.encode("Password123!"), "EMPLOYEE", null, null, null));
-			}
+			ensureDemoEmployee(userRegistrationRepository, passwordEncoder);
 
-			// only seed the demo data once
+			// only seed the bulk demo data once
 			if (userRegistrationRepository.findByEmail("alice@inholland.nl").isPresent()) {
+				ensureDemoPendingCustomer(userRegistrationRepository, bankAccountRepository, passwordEncoder,
+					"Dave", "Pending", "dave@inholland.nl", "555555555");
+				ensureDemoPendingCustomer(userRegistrationRepository, bankAccountRepository, passwordEncoder,
+					"Eva", "Wachtend", "eva@inholland.nl", "666666666");
+				ensureDemoApprovedCustomer(userRegistrationRepository, bankAccountRepository,
+					"customer@inholland.nl");
+				ensureZeroBalanceDemoCustomer(userRegistrationRepository, bankAccountRepository, passwordEncoder);
 				return;
 			}
 
@@ -56,10 +58,14 @@ public class DataInitializer {
 				"Bob", "de Vries", "bob@inholland.nl", "333333333");
 			UserRegistration carol = approvedCustomer(userRegistrationRepository, passwordEncoder,
 				"Carol", "Jansen", "carol@inholland.nl", "444444444");
+			UserRegistration frank = approvedCustomer(userRegistrationRepository, passwordEncoder,
+				"Frank", "Zero", "frank@inholland.nl", "777777777");
 
 			// pending customers (no accounts yet) for the live approve demo
-			pendingCustomer(userRegistrationRepository, passwordEncoder, "Dave", "Pending", "dave@inholland.nl", "555555555");
-			pendingCustomer(userRegistrationRepository, passwordEncoder, "Eva", "Wachtend", "eva@inholland.nl", "666666666");
+			ensureDemoPendingCustomer(userRegistrationRepository, bankAccountRepository, passwordEncoder,
+				"Dave", "Pending", "dave@inholland.nl", "555555555");
+			ensureDemoPendingCustomer(userRegistrationRepository, bankAccountRepository, passwordEncoder,
+				"Eva", "Wachtend", "eva@inholland.nl", "666666666");
 
 			BankAccount custChecking = account(bankAccountRepository, demoCustomer, "NL11INHO0000000001", AccountType.CHECKING, "4000.00");
 			account(bankAccountRepository, demoCustomer, "NL11INHO0000000002", AccountType.SAVINGS, "9000.00");
@@ -69,6 +75,8 @@ public class DataInitializer {
 			account(bankAccountRepository, bob, "NL33INHO0000000006", AccountType.SAVINGS, "5000.00");
 			BankAccount carolChecking = account(bankAccountRepository, carol, "NL44INHO0000000007", AccountType.CHECKING, "3200.00");
 			account(bankAccountRepository, carol, "NL44INHO0000000008", AccountType.SAVINGS, "11000.00");
+			account(bankAccountRepository, frank, "NL55INHO0000000009", AccountType.CHECKING, "0.00");
+			account(bankAccountRepository, frank, "NL55INHO0000000010", AccountType.SAVINGS, "0.00");
 
 			// transactions between the checking accounts so the history list has enough rows to paginate
 			List<BankAccount> checkings = new ArrayList<>();
@@ -116,6 +124,74 @@ public class DataInitializer {
 		return repository.save(new UserRegistration(
 			firstName, lastName, email, passwordEncoder.encode("Password123!"), "CUSTOMER",
 			CustomerApprovalStatus.PENDING, bsn, "+31 6 12345678"));
+	}
+
+	// demo employee: create if missing, reactivate if you deactivated yourself during testing
+	private void ensureDemoEmployee(UserRegistrationRepository repository, PasswordEncoder passwordEncoder) {
+		var existing = repository.findByEmail("employee@inholland.nl");
+		if (existing.isEmpty()) {
+			repository.save(new UserRegistration(
+					"Employee", "User", "employee@inholland.nl",
+					passwordEncoder.encode("Password123!"), "EMPLOYEE", null, null, null));
+			return;
+		}
+		UserRegistration employee = existing.get();
+		if (employee.isDeleted()) {
+			employee.setDeleted(false);
+			repository.save(employee);
+		}
+	}
+
+	// demo accounts: create dave/eva if missing, or reset to PENDING when denied/deleted but still no accounts
+	private void ensureDemoPendingCustomer(
+			UserRegistrationRepository userRepository,
+			BankAccountRepository accountRepository,
+			PasswordEncoder passwordEncoder,
+			String firstName, String lastName, String email, String bsn) {
+		var existing = userRepository.findByEmail(email);
+		if (existing.isEmpty()) {
+			pendingCustomer(userRepository, passwordEncoder, firstName, lastName, email, bsn);
+			return;
+		}
+		UserRegistration user = existing.get();
+		if (!accountRepository.findAllByOwner_Id(user.getId()).isEmpty()) {
+			return;
+		}
+		user.setDeleted(false);
+		user.setCustomerApprovalStatus(CustomerApprovalStatus.PENDING);
+		userRepository.save(user);
+	}
+
+	// main demo customer - undo soft delete on restart so assessment login still works
+	private void ensureDemoApprovedCustomer(
+			UserRegistrationRepository userRepository,
+			BankAccountRepository accountRepository,
+			String email) {
+		userRepository.findByEmail(email).ifPresent(user -> {
+			if (!user.isDeleted()) {
+				return;
+			}
+			user.setDeleted(false);
+			userRepository.save(user);
+			for (BankAccount account : accountRepository.findAllByOwner_Id(user.getId())) {
+				account.setActive(true);
+				accountRepository.save(account);
+			}
+		});
+	}
+
+	// zero balance on all accounts - use for permanent delete demo
+	private void ensureZeroBalanceDemoCustomer(
+			UserRegistrationRepository userRepository,
+			BankAccountRepository accountRepository,
+			PasswordEncoder passwordEncoder) {
+		var existing = userRepository.findByEmail("frank@inholland.nl");
+		if (existing.isEmpty()) {
+			UserRegistration frank = approvedCustomer(userRepository, passwordEncoder,
+					"Frank", "Zero", "frank@inholland.nl", "777777777");
+			account(accountRepository, frank, "NL55INHO0000000009", AccountType.CHECKING, "0.00");
+			account(accountRepository, frank, "NL55INHO0000000010", AccountType.SAVINGS, "0.00");
+		}
 	}
 
 	private BankAccount account(BankAccountRepository repository, UserRegistration owner, String iban,

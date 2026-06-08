@@ -8,6 +8,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.server.ResponseStatusException;
+import org.springframework.security.authentication.BadCredentialsException;
 
 import java.time.LocalDateTime;
 import java.util.stream.Collectors;
@@ -30,6 +31,14 @@ public class GlobalExceptionHandler {
 		ApiErrorResponse response = new ApiErrorResponse(LocalDateTime.now(), HttpStatus.BAD_REQUEST.value(),
 				"Bad Request", ex.getMessage(), request.getRequestURI());
 		return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+	}
+
+	// wrong password on login
+	@ExceptionHandler(BadCredentialsException.class)
+	public ResponseEntity<ApiErrorResponse> handleBadCredentials(BadCredentialsException ex, HttpServletRequest request) {
+		ApiErrorResponse response = new ApiErrorResponse(LocalDateTime.now(), HttpStatus.UNAUTHORIZED.value(),
+				"Unauthorized", "Invalid email or password", request.getRequestURI());
+		return new ResponseEntity<>(response, HttpStatus.UNAUTHORIZED);
 	}
 
 	// my 403 - eva cant login after deny

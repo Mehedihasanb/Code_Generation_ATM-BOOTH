@@ -5,6 +5,7 @@ import com.example.backend.dto.LoginResponse;
 import com.example.backend.dto.RegisterRequest;
 import com.example.backend.dto.RegisterResponse;
 import com.example.backend.service.RegistrationService;
+import com.example.backend.service.UserDeletionService;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -14,6 +15,7 @@ import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.security.core.Authentication;
 
 @RestController
 @RequestMapping("/auth")
@@ -21,9 +23,11 @@ import org.springframework.web.bind.annotation.*;
 public class AuthController {
 
 	private final RegistrationService registrationService;
+	private final UserDeletionService userDeletionService;
 
-	public AuthController(RegistrationService registrationService) {
+	public AuthController(RegistrationService registrationService, UserDeletionService userDeletionService) {
 		this.registrationService = registrationService;
+		this.userDeletionService = userDeletionService;
 	}
 
 	// no login needed, new customer fills the form and we save them as pending
@@ -51,5 +55,19 @@ public class AuthController {
 	@SecurityRequirement(name = "bearerAuth")
 	public void denyCustomerRegistration(@PathVariable Long customerRegistrationId) {
 		registrationService.denyCustomerRegistration(customerRegistrationId);
+	}
+
+	@DeleteMapping("/me")
+	@ResponseStatus(HttpStatus.NO_CONTENT)
+	@Operation(summary = "Delete your own account (soft by default, permanent when permanent=true)")
+	@SecurityRequirement(name = "bearerAuth")
+	// DELETE /auth/me - customer or employee deletes their own login
+	// ?permanent=false = soft delete (deleted flag, accounts inactive, cant login)
+	// ?permanent=true = hard delete (row gone, email free again, needs zero balance)
+	public void deleteMyAccount(
+			@RequestParam(defaultValue = "false") boolean permanent,
+			Authentication authentication) {
+		// null targetUserId tells UserDeletionService to delete the logged-in user
+		userDeletionService.deleteAccount(authentication.getName(), null, permanent);
 	}
 }

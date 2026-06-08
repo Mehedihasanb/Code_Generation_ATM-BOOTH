@@ -131,9 +131,9 @@ public class AccountService {
 	// directory name search called from UserController when employee searches first + last name
 	@Transactional(readOnly = true)
 	public List<CustomerDirectoryRow> searchCustomersByName(String firstName, String lastName) {
-		// both names must match, ignoreCase so Dave = dave
+		// both names must match, ignoreCase so Dave = dave; deleted customers excluded
 		List<UserRegistration> users = userRegistrationRepository
-				.findByFirstNameIgnoreCaseAndLastNameIgnoreCase(firstName.trim(), lastName.trim());
+				.findByFirstNameIgnoreCaseAndLastNameIgnoreCaseAndDeletedFalse(firstName.trim(), lastName.trim());
 
 		return users.stream().map(user -> {
 			List<BankAccount> userAccounts = bankAccountRepository.findAllByOwner_Id(user.getId());
@@ -150,8 +150,9 @@ public class AccountService {
 					user.getFirstName(),
 					user.getLastName(),
 					user.getEmail(),
-					user.getCustomerApprovalStatus().name(),
-					activeAccountRows);
+					user.getCustomerApprovalStatus() != null ? user.getCustomerApprovalStatus().name() : null,
+					activeAccountRows,
+					user.isDeleted());
 		}).toList();
 	}
 
@@ -161,7 +162,8 @@ public class AccountService {
 				.filter(acc -> "CHECKING".equalsIgnoreCase(acc.getAccountType().name())) // savings not allowed here
 				.map(acc -> new CheckingAccountOptionRow(
 						acc.getIban(),
-						acc.getOwner().getFirstName() + " " + acc.getOwner().getLastName())) // label for dropdown
+						// label for dropdown
+						acc.getOwner().getFirstName() + " " + acc.getOwner().getLastName())) 
 				.collect(Collectors.toList());
 	}
 }
