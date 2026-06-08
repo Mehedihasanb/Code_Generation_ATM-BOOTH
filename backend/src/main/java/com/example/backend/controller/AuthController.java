@@ -26,6 +26,8 @@ public class AuthController {
 		this.registrationService = registrationService;
 	}
 
+	// no login needed, new customer fills the form and we save them as pending
+	// they cant use banking till employee approves them
 	@PostMapping("/register")
 	@ResponseStatus(HttpStatus.CREATED)
 	@Operation(summary = "Register a new customer (public)")
@@ -33,14 +35,16 @@ public class AuthController {
 		return registrationService.register(registerRequest);
 	}
 
+	// you dont need a token to call login
+	// check email + password, if good send back jwt, frontend saves it for other requests
 	@PostMapping("/login")
 	@Operation(summary = "Login and receive a JWT")
 	public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest loginRequest) {
 		return ResponseEntity.ok(registrationService.login(loginRequest));
 	}
 
-	// Note: Technically this belongs in CustomerDirectoryController,
-	// but I left it here to don't break Majd's routing
+	// employee must be logged in with token
+	// sets customer status to denied so they cant get approved later
 	@PostMapping("/customers/{customerRegistrationId}/deny")
 	@ResponseStatus(HttpStatus.NO_CONTENT)
 	@Operation(summary = "Deny a pending customer registration (employee only)")

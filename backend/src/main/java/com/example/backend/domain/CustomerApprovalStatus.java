@@ -1,6 +1,6 @@
 package com.example.backend.domain;
 
-// status of a customer, null for employees
+// pending till employee approves, or denied
 public enum CustomerApprovalStatus {
 	PENDING,
 	APPROVED,

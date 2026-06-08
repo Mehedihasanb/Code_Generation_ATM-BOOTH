@@ -1,11 +1,17 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { onMounted, ref } from 'vue';
 import { authorizedFetch } from '@/composables/useAuthorizedFetch';
 
 const searchFirst = ref('');
 const searchLast = ref('');
 const searchIban = ref('');
-const searchResults = ref<any[]>([]);
+const customerList = ref<any[]>([]);
+const listPage = ref(0);
+const listTotalPages = ref(0);
+const listTotalElements = ref(0);
+const loadingList = ref(false);
+const listError = ref<string | null>(null);
+const isSearchMode = ref(false);
 const isSearching = ref(false);
 const searchError = ref<string | null>(null);
 
@@ -22,13 +28,36 @@ const limitsError = ref<string | null>(null);
 const limitsSuccess = ref<string | null>(null);
 const savingLimits = ref(false);
 
+const loadAllCustomers = async (pageIndex: number = 0) => {
+    loadingList.value = true;
+    listError.value = null;
+    isSearchMode.value = false;
+    searchError.value = null;
+
+    try {
+        const response = await authorizedFetch(`/users?page=${pageIndex}&size=10`);
+        if (!response.ok) throw new Error("Could not load customer directory.");
+
+        const data = await response.json();
+        customerList.value = data.content || [];
+        listPage.value = data.number ?? pageIndex;
+        listTotalPages.value = data.totalPages ?? 0;
+        listTotalElements.value = data.totalElements ?? customerList.value.length;
+    } catch (err) {
+        listError.value = err instanceof Error ? err.message : String(err);
+        customerList.value = [];
+    } finally {
+        loadingList.value = false;
+    }
+};
+
 const searchCustomers = async () => {
     const firstName = searchFirst.value.trim();
     const lastName = searchLast.value.trim();
     const iban = searchIban.value.trim();
 
     if (!firstName && !lastName && !iban) {
-        searchError.value = "Please enter a name or an IBAN.";
+        await loadAllCustomers(0);
         return;
     }
 
@@ -39,7 +68,9 @@ const searchCustomers = async () => {
     
     isSearching.value = true;
     searchError.value = null;
-    selectedUser.value = null; 
+    listError.value = null;
+    selectedUser.value = null;
+    isSearchMode.value = true;
 
     try {
         const params = new URLSearchParams();
@@ -56,8 +87,11 @@ const searchCustomers = async () => {
         if (!response.ok) throw new Error("Search failed. Please check the backend.");
 
         const data = await response.json();
-        searchResults.value = data.content ? data.content : data;
-        if (searchResults.value.length === 0) {
+        customerList.value = data.content ? data.content : data;
+        listPage.value = 0;
+        listTotalPages.value = 1;
+        listTotalElements.value = customerList.value.length;
+        if (customerList.value.length === 0) {
             searchError.value = iban
                 ? "No customers found for that IBAN."
                 : "No customers found with that exact name.";
@@ -68,6 +102,17 @@ const searchCustomers = async () => {
         isSearching.value = false;
     }
 };
+
+const clearSearch = async () => {
+    searchFirst.value = '';
+    searchLast.value = '';
+    searchIban.value = '';
+    await loadAllCustomers(0);
+};
+
+onMounted(() => {
+    loadAllCustomers(0);
+});
 
 const currentAbsoluteLimit = (user: { accounts?: { minimumAllowedBalance?: number }[] }) => {
     const accounts = user.accounts ?? [];
@@ -181,7 +226,7 @@ const getTypeBadgeClass = (type: string) => {
     <main class="home-wrapper">
         <section class="panel hero-section">
             <h1 class="headline">Customer Directory</h1>
-            <p class="muted subtitle">Search for customers and view their specific transaction history.</p>
+            <p class="muted subtitle">View all customers with accounts, search by name or IBAN, and open transaction history.</p>
         </section>
 
         <section class="panel auth-panel" style="max-width: 1000px; margin: 0 auto;">
@@ -200,34 +245,59 @@ const getTypeBadgeClass = (type: string) => {
                         IBAN
                         <input type="text" v-model="searchIban" placeholder="e.g. NL91INHO0000000001" style="width: 100%; padding: 0.5rem; margin-top: 0.3rem;" @keyup.enter="searchCustomers" />
                     </label>
-                    <button class="btn" @click="searchCustomers" :disabled="isSearching" style="padding: 0.5rem 1.5rem; height: 38px;">
+                    <button class="btn" @click="searchCustomers" :disabled="isSearching || loadingList" style="padding: 0.5rem 1.5rem; height: 38px;">
                         {{ isSearching ? 'Searching...' : 'Search' }}
+                    </button>
+                    <button v-if="isSearchMode" class="btn secondary-btn" @click="clearSearch" :disabled="loadingList" style="padding: 0.5rem 1.5rem; height: 38px;">
+                        Show all
                     </button>
                 </div>
 
                 <p v-if="searchError" class="error" style="color: #dc3545; font-weight: bold;">{{ searchError }}</p>
+                <p v-if="listError" class="error" style="color: #dc3545; font-weight: bold;">{{ listError }}</p>
+                <p v-if="loadingList" class="muted">Loading customers...</p>
 
-                <div v-if="searchResults.length > 0" class="table-container">
+                <div v-else-if="customerList.length > 0" class="table-container">
+                    <p class="muted" style="margin-bottom: 1rem;">
+                        {{ isSearchMode ? 'Search results' : 'All customers' }} ({{ listTotalElements }} total)
+                    </p>
                     <table class="transaction-table" style="width: 100%; border-collapse: collapse; text-align: left;">
                         <thead>
                             <tr style="border-bottom: 2px solid #ccc;">
                                 <th style="padding: 1rem;">ID</th>
                                 <th style="padding: 1rem;">Name</th>
                                 <th style="padding: 1rem;">Email</th>
+                                <th style="padding: 1rem;">Status</th>
+                                <th style="padding: 1rem;">Accounts</th>
                                 <th style="padding: 1rem; text-align: right;">Action</th>
                             </tr>
                         </thead>
                         <tbody>
-                            <tr v-for="user in searchResults" :key="user.id" style="border-bottom: 1px solid #eee;">
+                            <tr v-for="user in customerList" :key="user.id" style="border-bottom: 1px solid #eee;">
                                 <td style="padding: 1rem;" class="muted">#{{ user.id }}</td>
                                 <td style="padding: 1rem; font-weight: bold;">{{ user.firstName }} {{ user.lastName }}</td>
                                 <td style="padding: 1rem;">{{ user.email }}</td>
+                                <td style="padding: 1rem;">{{ user.customerApprovalStatus || 'N/A' }}</td>
+                                <td style="padding: 1rem;">
+                                    <span v-if="!user.accounts?.length" class="muted">No accounts</span>
+                                    <span v-else>{{ user.accounts.length }} account(s)</span>
+                                </td>
                                 <td style="padding: 1rem; text-align: right;">
                                     <button class="btn secondary-btn" @click="viewUserHistory(user)">View History &rarr;</button>
                                 </td>
                             </tr>
                         </tbody>
                     </table>
+
+                    <div v-if="!isSearchMode && listTotalPages > 1" class="pagination-controls" style="display: flex; justify-content: space-between; align-items: center; margin-top: 2rem; padding-top: 1rem; border-top: 1px solid #eee;">
+                        <button class="btn secondary-btn" :disabled="listPage === 0 || loadingList" @click="loadAllCustomers(listPage - 1)">&laquo; Previous</button>
+                        <span class="muted" style="font-size: 0.9rem;">Page {{ listPage + 1 }} of {{ listTotalPages }}</span>
+                        <button class="btn secondary-btn" :disabled="listPage >= listTotalPages - 1 || loadingList" @click="loadAllCustomers(listPage + 1)">Next &raquo;</button>
+                    </div>
+                </div>
+
+                <div v-else-if="!loadingList && !searchError && !listError" class="empty-state" style="text-align: center; padding: 2rem;">
+                    <p class="muted">No customers found.</p>
                 </div>
             </div>
 
