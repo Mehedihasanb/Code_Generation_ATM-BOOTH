@@ -189,6 +189,9 @@ onMounted(() => {
             <p v-if="loadingAccounts" class="muted">Loading your accounts...</p>
             
             <form v-else class="auth-form" @submit.prevent="submitTransfer">
+                <div v-if="error" class="alert-error">{{ error }}</div>
+
+                <div v-if="successMessage" class="alert-success">{{ successMessage }}</div>
                 
                 <label>
                     <span>From Account</span>
@@ -240,11 +243,8 @@ onMounted(() => {
                             
                             <p v-if="user.accounts.length === 0" class="muted" style="font-size: 0.85rem;">No active accounts available.</p>
                         </div>
-                        <div v-if="error" class="alert-error">{{ error }}</div>
-
-                        <div v-if="successMessage" class="alert-success">{{ successMessage }}</div>
                     </div>
-                    </div>
+                </div>
                 
                 <label>
                     <span>Amount (€)</span>
