@@ -46,7 +46,7 @@ public class BankAccount {
 	private BigDecimal balance;
 
 	@Column(nullable = false, precision = 19, scale = 4)
-	private BigDecimal minimumAllowedBalance; // overdraft floor, set when employee approves
+	private BigDecimal minimumAllowedBalance; // max balance cap (absolute limit), set when employee approves
 
 	@Column(nullable = false, precision = 19, scale = 4)
 	private BigDecimal dailyOutgoingTransferLimit; // max outgoing per day
