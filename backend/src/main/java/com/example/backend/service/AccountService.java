@@ -25,6 +25,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+// my account service - approve (US-10), close (US-11), my accounts, directory search
 @Service
 public class AccountService {
 
@@ -44,16 +45,19 @@ public class AccountService {
 		this.ibanAllocationService = ibanAllocationService;
 	}
 
+	// US-10 employee approve - POST /accounts, opens checking + savings
 	@Transactional
 	public CreatedAccountsResponse createCheckingAndSavingsAccounts(CreateAccountsRequest createAccountsRequest) {
+		// load the pending customer id that came from the approve form
 		UserRegistration customer = userRegistrationRepository.findById(createAccountsRequest.customerRegistrationId())
 				.orElseThrow(() -> new ResourceNotFoundException("Customer not found"));
 
+		// throws if not PENDING or if they already got accounts somehow
 		accountOpeningPolicy.requireEligibleForNewAccounts(customer);
 
-		// BigDecimal zeroBalance = BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP);
-		// Previous line is original and next 1 line is troubleshooting
+		// started at 0.00 originally - changed to 1000 so we can demo transfers without funding first
 		BigDecimal startingBalance = new BigDecimal("1000.00").setScale(2, RoundingMode.HALF_UP);
+		// limits from employee form on service desk, rounded to cents
 		BigDecimal minimumAllowedBalance = createAccountsRequest.minimumAllowedBalance()
 				.setScale(2, RoundingMode.HALF_UP);
 		BigDecimal dailyOutgoingTransferLimit = createAccountsRequest.dailyOutgoingTransferLimit()
@@ -62,13 +66,12 @@ public class AccountService {
 		String checkingIban = ibanAllocationService.allocateUniqueDutchIban();
 		String savingsIban = ibanAllocationService.allocateUniqueDutchIban();
 
+		// BankAccount constructor order: owner, iban, type, active, balance, min balance, daily limit
 		BankAccount checkingAccount = new BankAccount(
 				customer,
 				checkingIban,
 				AccountType.CHECKING,
 				true,
-				// zeroBalance,
-				// Previous line is original and next 1 line is troubleshooting
 				startingBalance,
 				minimumAllowedBalance,
 				dailyOutgoingTransferLimit);
@@ -77,8 +80,6 @@ public class AccountService {
 				savingsIban,
 				AccountType.SAVINGS,
 				true,
-				// zeroBalance,
-				// Previous line is original and next 1 line is troubleshooting
 				startingBalance,
 				minimumAllowedBalance,
 				dailyOutgoingTransferLimit);
@@ -86,9 +87,11 @@ public class AccountService {
 		bankAccountRepository.save(checkingAccount);
 		bankAccountRepository.save(savingsAccount);
 
+		// this is the real approve register only made them PENDING
 		customer.setCustomerApprovalStatus(CustomerApprovalStatus.APPROVED);
 		userRegistrationRepository.save(customer);
 
+		// response dto for service desk not entities, just iban + type per account
 		List<CreatedAccountLine> createdAccounts = new ArrayList<>();
 		createdAccounts.add(new CreatedAccountLine(checkingIban, AccountType.CHECKING.name()));
 		createdAccounts.add(new CreatedAccountLine(savingsIban, AccountType.SAVINGS.name()));
@@ -99,6 +102,7 @@ public class AccountService {
 				createdAccounts);
 	}
 
+	// US-11 employee close account - PUT /accounts/{iban}/close
 	@Transactional
 	public void closeAccountByIban(String ibanFromPath) {
 		String normalizedIban = ibanFromPath.trim().toUpperCase();
@@ -107,13 +111,14 @@ public class AccountService {
 				.orElseThrow(() -> new ResourceNotFoundException("Unknown IBAN"));
 
 		if (!bankAccount.isActive()) {
-			return;
+			return; // already closed, nothing to do
 		}
 
 		bankAccount.setActive(false);
 		bankAccountRepository.save(bankAccount);
 	}
 
+	// logged in customer sees their accounts - GET /accounts/mine
 	@Transactional(readOnly = true)
 	public AccountSummaryResponse getMyAccounts(String email) {
 		UserRegistration customer = userRegistrationRepository.findByEmail(email)
@@ -123,22 +128,23 @@ public class AccountService {
 		return AccountSummaryResponse.fromCustomerAndAccounts(customer, accounts);
 	}
 
+	// directory name search called from UserController when employee searches first + last name
 	@Transactional(readOnly = true)
 	public List<CustomerDirectoryRow> searchCustomersByName(String firstName, String lastName) {
-		// Find users by exact name match ignoring case
+		// both names must match, ignoreCase so Dave = dave
 		List<UserRegistration> users = userRegistrationRepository
 				.findByFirstNameIgnoreCaseAndLastNameIgnoreCase(firstName.trim(), lastName.trim());
 
-		// Map the users and their active accounts into the Directory DTO
 		return users.stream().map(user -> {
 			List<BankAccount> userAccounts = bankAccountRepository.findAllByOwner_Id(user.getId());
 
-			// People transfer money only to active accounts
+			// BankAccount entity -> CustomerAccountRow dto, closed accounts filtered out
 			List<CustomerAccountRow> activeAccountRows = userAccounts.stream()
-					.filter(BankAccount::isActive)
+					.filter(BankAccount::isActive) // inactive = employee closed it, dont show for transfer
 					.map(CustomerAccountRow::fromBankAccount)
 					.toList();
 
+			// one customer row for the directory table json
 			return new CustomerDirectoryRow(
 					user.getId(),
 					user.getFirstName(),
@@ -149,12 +155,13 @@ public class AccountService {
 		}).toList();
 	}
 
+	// force transfer dropdown - GET /accounts/checking-options, employee picks from/to account
 	public List<CheckingAccountOptionRow> getAllCheckingAccountsForDropdown() {
 		return bankAccountRepository.findAll().stream()
-				.filter(acc -> "CHECKING".equalsIgnoreCase(acc.getAccountType().name()))
+				.filter(acc -> "CHECKING".equalsIgnoreCase(acc.getAccountType().name())) // savings not allowed here
 				.map(acc -> new CheckingAccountOptionRow(
 						acc.getIban(),
-						acc.getOwner().getFirstName() + " " + acc.getOwner().getLastName()))
+						acc.getOwner().getFirstName() + " " + acc.getOwner().getLastName())) // label for dropdown
 				.collect(Collectors.toList());
 	}
 }

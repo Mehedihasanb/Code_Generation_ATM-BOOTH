@@ -1,8 +1,9 @@
 package com.example.backend.exception;
 
-// thrown when a request breaks a business rule (not pending, already has accounts, etc). handler turns this into a 400
+// 400 - business rule broken (duplicate email, not pending, already has accounts)
+// throw from service/policy, GlobalExceptionHandler sends message json to vue
 public class BadRequestException extends RuntimeException {
 	public BadRequestException(String message) {
-		super(message);
+		super(message); // this string ends up in ApiErrorResponse.message
 	}
 }

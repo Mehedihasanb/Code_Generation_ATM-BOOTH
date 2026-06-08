@@ -2,11 +2,11 @@ package com.example.backend.dto;
 
 import java.time.LocalDateTime;
 
-// standard error JSON shape returned by GlobalExceptionHandler
+// error json vue reads - frontend apiError.ts pulls the message field
 public record ApiErrorResponse(
         LocalDateTime timestamp,
-        int status,
-        String error,
-        String message,
-        String path) {
+        int status,      // 400, 403, 404 etc
+        String error,    // short label like "Bad Request"
+        String message,  // the actual text we show the user
+        String path) {   // which endpoint failed e.g. /auth/login
 }

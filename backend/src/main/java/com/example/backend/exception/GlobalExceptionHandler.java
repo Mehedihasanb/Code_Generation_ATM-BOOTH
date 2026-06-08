@@ -12,9 +12,11 @@ import org.springframework.web.server.ResponseStatusException;
 import java.time.LocalDateTime;
 import java.util.stream.Collectors;
 
+// catches thrown exceptions app-wide and turns them into same json error shape for frontend
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
+	// my 404 - customer not found, unknown iban
 	@ExceptionHandler(ResourceNotFoundException.class)
 	public ResponseEntity<ApiErrorResponse> handleNotFound(ResourceNotFoundException ex, HttpServletRequest request) {
 		ApiErrorResponse response = new ApiErrorResponse(LocalDateTime.now(), HttpStatus.NOT_FOUND.value(), "Not Found",
@@ -22,6 +24,7 @@ public class GlobalExceptionHandler {
 		return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
 	}
 
+	// my 400 - duplicate email, not pending, denied re-register etc
 	@ExceptionHandler(BadRequestException.class)
 	public ResponseEntity<ApiErrorResponse> handleBadRequest(BadRequestException ex, HttpServletRequest request) {
 		ApiErrorResponse response = new ApiErrorResponse(LocalDateTime.now(), HttpStatus.BAD_REQUEST.value(),
@@ -29,6 +32,7 @@ public class GlobalExceptionHandler {
 		return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
 	}
 
+	// my 403 - eva cant login after deny
 	@ExceptionHandler(RegistrationDeniedException.class)
 	public ResponseEntity<ApiErrorResponse> handleDenied(RegistrationDeniedException ex, HttpServletRequest request) {
 		ApiErrorResponse response = new ApiErrorResponse(LocalDateTime.now(), HttpStatus.FORBIDDEN.value(), "Forbidden",
@@ -36,8 +40,7 @@ public class GlobalExceptionHandler {
 		return new ResponseEntity<>(response, HttpStatus.FORBIDDEN);
 	}
 
-	// For transactions and validation
-
+	// teammates use ResponseStatusException in TransactionService etc - same json format
 	@ExceptionHandler(ResponseStatusException.class)
 	public ResponseEntity<ApiErrorResponse> handleResponseStatusException(ResponseStatusException ex,
 			HttpServletRequest request) {
@@ -46,10 +49,10 @@ public class GlobalExceptionHandler {
 		return new ResponseEntity<>(response, ex.getStatusCode());
 	}
 
+	// @Valid on dtos failed - e.g. blank email on register, joins all field errors into one message
 	@ExceptionHandler(MethodArgumentNotValidException.class)
 	public ResponseEntity<ApiErrorResponse> handleValidationExceptions(MethodArgumentNotValidException ex,
 			HttpServletRequest request) {
-		// Combine all DTO @Valid errors into a readable string
 		String errorMessage = ex.getBindingResult().getFieldErrors().stream()
 				.map(error -> error.getDefaultMessage())
 				.collect(Collectors.joining("; "));
@@ -59,7 +62,7 @@ public class GlobalExceptionHandler {
 		return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
 	}
 
-	// Fallback for unexpected server crashes
+	// anything we didnt expect - dont leak stack trace to client
 	@ExceptionHandler(Exception.class)
 	public ResponseEntity<ApiErrorResponse> handleAllOtherExceptions(Exception ex, HttpServletRequest request) {
 		ApiErrorResponse response = new ApiErrorResponse(LocalDateTime.now(), HttpStatus.INTERNAL_SERVER_ERROR.value(),
