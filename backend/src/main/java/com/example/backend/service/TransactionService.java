@@ -99,7 +99,7 @@ public class TransactionService {
                                                         + " more can be transferred today.");
                 }
 
-                // Requirement: Receiver cannot exceed their AML cap
+                // Requirement: Receiver cannot exceed set AML cap
                 BigDecimal projectedReceiverBalance = toAccount.getBalance().add(request.amount());
                 if (projectedReceiverBalance.compareTo(toAccount.getMinimumAllowedBalance()) > 0) {
                         BigDecimal remainingSpace = toAccount.getMinimumAllowedBalance()
@@ -164,6 +164,7 @@ public class TransactionService {
 
                 if (!account.getOwner().getEmail().equals(userEmail)) {
                         throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You do not have permission.");
+                        // to prevent Insecure Direct Object Reference
                 }
                 LocalDateTime start = (startDate != null) ? startDate.atStartOfDay() : null;
                 LocalDateTime end = (endDate != null) ? endDate.atTime(23, 59, 59) : null;
