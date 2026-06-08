@@ -9,6 +9,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 
+// user table, employee or customer
 @Entity
 @Table(name = "user_registrations")
 public class UserRegistration {
@@ -17,7 +18,7 @@ public class UserRegistration {
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
 
-	@Column(name = "FIRST_NAME")
+	@Column
 	private String firstName;
 
 	@Column(nullable = false)
@@ -32,15 +33,14 @@ public class UserRegistration {
 	@Column(nullable = false)
 	private String role;
 
-	// null for employees. for customers: pending until an employee opens accounts or denies
 	@Enumerated(EnumType.STRING)
-	@Column(name = "customer_approval_status", length = 20, nullable = true)
+	@Column(nullable = true)
 	private CustomerApprovalStatus customerApprovalStatus;
 
-	@Column(nullable = true)
+	@Column
 	private String bsnNumber;
 
-	@Column(nullable = true)
+	@Column
 	private String phoneNumber;
 
 	public UserRegistration() {

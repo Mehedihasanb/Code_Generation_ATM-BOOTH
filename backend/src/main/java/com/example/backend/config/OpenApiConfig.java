@@ -7,6 +7,7 @@ import io.swagger.v3.oas.models.security.SecurityScheme;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+// swagger setup bearerAuth links to the Authorize button (paste Bearer + token from login)
 @Configuration
 public class OpenApiConfig {
 
@@ -20,8 +21,8 @@ public class OpenApiConfig {
 								.scheme("bearer")
 								.bearerFormat("JWT")))
 				.info(new Info()
-						.title("Backend API")
-						.version("v1")
-						.description("REST API with Spring Security, JPA, and H2"));
+						.title("ATM Booth API")
+						.version("1.0")
+						.description("Project API docs"));
 	}
 }

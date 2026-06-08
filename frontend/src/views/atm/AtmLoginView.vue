@@ -93,10 +93,19 @@ async function submit() {
 <template>
 	<div class="atm-shell">
 		<section class="atm-panel atm-login-panel">
+			<header class="atm-home-header">
+				<div>
+					<p class="atm-session-label">Customer ATM</p>
+					<h1>RhinoBank ATM</h1>
+				</div>
+				<button type="button" class="atm-btn atm-btn-secondary" @click="router.push('/')">
+					&larr; Back
+				</button>
+			</header>
+
 			<div class="atm-brand">
-				<span class="atm-logo" aria-hidden="true">🏧</span>
-				<h1>RhinoBank ATM</h1>
-				<p class="atm-tagline">Insert card — sign in with your online banking credentials</p>
+				<span class="atm-logo" aria-hidden="true">ATM</span>
+				<p class="atm-tagline">Sign in with your online banking credentials</p>
 			</div>
 
 			<form class="atm-form" @submit.prevent="submit">
@@ -126,118 +135,6 @@ async function submit() {
 					{{ auth.loading ? 'Signing in...' : 'Enter ATM' }}
 				</button>
 			</form>
-
-			<p class="atm-footnote muted">Secured with JWT — same login as online banking.</p>
 		</section>
 	</div>
 </template>
-
-<style scoped>
-.atm-shell {
-	min-height: calc(100vh - 2rem);
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	padding: 1.5rem;
-	background: linear-gradient(160deg, #0f172a 0%, #1e3a5f 45%, #0f172a 100%);
-}
-
-.atm-login-panel {
-	width: 100%;
-	max-width: 420px;
-	background: #1e293b;
-	border: 2px solid #334155;
-	border-radius: 16px;
-	padding: 2rem;
-	color: #f8fafc;
-	box-shadow: 0 24px 48px rgba(0, 0, 0, 0.35);
-}
-
-.atm-brand {
-	text-align: center;
-	margin-bottom: 1.75rem;
-}
-
-.atm-logo {
-	font-size: 2.5rem;
-	display: block;
-	margin-bottom: 0.5rem;
-}
-
-.atm-brand h1 {
-	margin: 0 0 0.5rem;
-	font-size: 1.5rem;
-	color: #f8fafc;
-}
-
-.atm-tagline {
-	margin: 0;
-	font-size: 0.9rem;
-	color: #94a3b8;
-}
-
-.atm-form {
-	display: grid;
-	gap: 1rem;
-}
-
-.atm-form label {
-	display: grid;
-	gap: 0.35rem;
-	font-weight: 600;
-	font-size: 0.9rem;
-	color: #cbd5e1;
-}
-
-.atm-form input {
-	padding: 0.75rem;
-	border: 1px solid #475569;
-	border-radius: 8px;
-	background: #0f172a;
-	color: #f8fafc;
-	font: inherit;
-}
-
-.atm-form input:focus {
-	outline: none;
-	border-color: #38bdf8;
-	box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.25);
-}
-
-.atm-btn {
-	padding: 0.85rem 1.25rem;
-	border-radius: 10px;
-	border: none;
-	font: inherit;
-	font-weight: 700;
-	cursor: pointer;
-	width: 100%;
-	margin-top: 0.25rem;
-}
-
-.atm-btn-primary {
-	background: linear-gradient(180deg, #22c55e 0%, #16a34a 100%);
-	color: #052e16;
-}
-
-.atm-btn-primary:hover:not(:disabled) {
-	filter: brightness(1.05);
-}
-
-.atm-btn-primary:disabled {
-	opacity: 0.6;
-	cursor: not-allowed;
-}
-
-.atm-error {
-	margin: 0;
-	text-align: center;
-}
-
-.atm-footnote {
-	margin: 1.25rem 0 0;
-	text-align: center;
-	font-size: 0.8rem;
-	color: #64748b;
-}
-</style>

@@ -113,6 +113,8 @@ public class SecurityConfig {
 				.orElseThrow(() -> new UsernameNotFoundException("User not found"));
 	}
 
+	// DB stores role + approval status separately; Spring Security only uses role strings.
+	// Pending customers log in as PENDING_CUSTOMER so they cannot hit banking routes yet.
 	private String resolveSpringSecurityRole(UserRegistration userRegistration) {
 		if (!"CUSTOMER".equals(userRegistration.getRole())) {
 			return userRegistration.getRole();

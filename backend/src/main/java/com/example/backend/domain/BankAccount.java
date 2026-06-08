@@ -15,6 +15,7 @@ import jakarta.persistence.UniqueConstraint;
 
 import java.math.BigDecimal;
 
+// bank account table, each customer can have checking and savings
 @Entity
 @Table(
 	name = "bank_accounts",
@@ -26,6 +27,7 @@ public class BankAccount {
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
 
+	// which customer owns this account
 	@ManyToOne(optional = false, fetch = FetchType.LAZY)
 	@JoinColumn(name = "owner_id", nullable = false)
 	private UserRegistration owner;
@@ -38,16 +40,16 @@ public class BankAccount {
 	private AccountType accountType;
 
 	@Column(nullable = false)
-	private boolean active;
+	private boolean active; // false when employee closes the account
 
 	@Column(nullable = false, precision = 19, scale = 4)
 	private BigDecimal balance;
 
 	@Column(nullable = false, precision = 19, scale = 4)
-	private BigDecimal minimumAllowedBalance;
+	private BigDecimal minimumAllowedBalance; // max balance cap (absolute limit), set when employee approves
 
 	@Column(nullable = false, precision = 19, scale = 4)
-	private BigDecimal dailyOutgoingTransferLimit;
+	private BigDecimal dailyOutgoingTransferLimit; // max outgoing per day
 
 	public BankAccount() {
 	}

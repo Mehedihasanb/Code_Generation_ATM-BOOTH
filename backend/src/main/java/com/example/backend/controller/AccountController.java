@@ -22,6 +22,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.security.core.Authentication;
 import java.util.List;
 
+
 @RestController
 @RequestMapping("/accounts")
 @Tag(name = "Accounts")
@@ -33,6 +34,8 @@ public class AccountController {
 		this.accountService = accountService;
 	}
 
+	// employee only, this is the approve button basically
+	// takes pending customer id + limits, service makes checking and savings with new ibans
 	@PostMapping
 	@ResponseStatus(HttpStatus.CREATED)
 	@Operation(summary = "Approve customer: create checking + savings with limits (employee only)")
@@ -42,6 +45,8 @@ public class AccountController {
 		return accountService.createCheckingAndSavingsAccounts(createAccountsRequest);
 	}
 
+	// employee only, close an account by iban
+	// sets it inactive so transfers cant use it anymore
 	@PutMapping("/{iban}/close")
 	@ResponseStatus(HttpStatus.NO_CONTENT)
 	@Operation(summary = "Close an account by IBAN (employee only); inactive accounts reject new transfers later")
@@ -51,6 +56,8 @@ public class AccountController {
 		accountService.closeAccountByIban(iban);
 	}
 
+	// customer logged in with token sees their accounts
+	// uses email from authentication to find the right customer
 	@GetMapping("/mine")
 	@Operation(summary = "Get current customer's accounts and combined balance")
 	@SecurityRequirement(name = "bearerAuth")
@@ -58,6 +65,8 @@ public class AccountController {
 		return accountService.getMyAccounts(authentication.getName());
 	}
 
+	// employee only, returns all checking accounts
+	// used on force transfer page so employee can pick from and to accounts
 	@GetMapping("/checking-options")
 	@PreAuthorize("hasRole('EMPLOYEE')")
 	@Operation(summary = "Get all checking accounts for employee dropdowns")

@@ -24,6 +24,22 @@
 	}
 }
 
+@media (max-width: 768px) {
+	.modal {
+		max-height: 90vh;
+		overflow-y: auto;
+	}
+
+	.modal-content {
+		padding: 1.25rem;
+	}
+
+	.footer-links {
+		flex-wrap: wrap;
+		justify-content: center;
+	}
+}
+
 .footer-text {
 	font-size: 0.875rem;
 }

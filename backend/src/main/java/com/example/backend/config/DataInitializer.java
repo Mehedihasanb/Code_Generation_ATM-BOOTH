@@ -22,9 +22,8 @@ import java.util.List;
 @Configuration
 public class DataInitializer {
 
-	// the transfer/ATM logic treats minimumAllowedBalance as the account's MAX balance cap,
-	// so seed it high enough that demo accounts can receive transfers and deposits
-	private static final BigDecimal BALANCE_CAP = new BigDecimal("1000000.00");
+	// minimumAllowedBalance is the max balance cap (absolute limit) on each account
+	private static final BigDecimal ABSOLUTE_LIMIT = new BigDecimal("50000.00");
 	private static final BigDecimal DAILY_LIMIT = new BigDecimal("2000.00");
 
 	// runs first so the employee + customers exist before other seeders (e.g. ATM system account)
@@ -122,6 +121,6 @@ public class DataInitializer {
 	private BankAccount account(BankAccountRepository repository, UserRegistration owner, String iban,
 			AccountType type, String balance) {
 		return repository.save(new BankAccount(
-			owner, iban, type, true, new BigDecimal(balance).setScale(2), BALANCE_CAP, DAILY_LIMIT));
+			owner, iban, type, true, new BigDecimal(balance).setScale(2), ABSOLUTE_LIMIT, DAILY_LIMIT));
 	}
 }

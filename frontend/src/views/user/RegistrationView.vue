@@ -165,7 +165,7 @@ onUnmounted(() => {
             <p v-if="registration.success" class="success">{{ registration.success }}</p>
             <p v-if="registration.error" class="error">{{ registration.error }}</p>
 
-            <button class="btn" type="submit" :disabled="registration.loading">
+            <button class="btn primary-btn" type="submit" :disabled="registration.loading">
                 {{ registration.loading ? 'Submitting...' : 'Register' }}
             </button>
         </form>

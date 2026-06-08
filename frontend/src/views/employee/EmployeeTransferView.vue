@@ -131,21 +131,16 @@ onMounted(() => {
             <p class="muted subtitle"> Customer approval is required.</p>
         </section>
 
-        <section class="panel auth-panel" style="max-width: 600px; margin: 0 auto; padding: 2rem;">
+        <section class="panel auth-panel">
             
-            <div v-if="successMessage" class="success-banner">
-                ✅ {{ successMessage }}
-            </div>
+            <div v-if="successMessage" class="alert-success">{{ successMessage }}</div>
 
-            <div v-if="error" class="error-banner">
-                ❌ {{ error }}
-            </div>
+            <div v-if="error" class="alert-error">{{ error }}</div>
 
-            <form @submit.prevent="submitTransfer" style="display: flex; flex-direction: column; gap: 1.5rem;">
+            <form class="auth-form" @submit.prevent="submitTransfer">
                 
-                <!-- SENDER AUTOCOMPLETE -->
-                <label style="display: flex; flex-direction: column; font-weight: bold; color: #495057; position: relative;">
-                    Sender Account
+                <label class="field-relative">
+                    <span>Sender Account</span>
                     <input 
                         type="text" 
                         v-model="searchFrom" 
@@ -171,8 +166,8 @@ onMounted(() => {
                     </ul>
                 </label>
 
-                <label style="display: flex; flex-direction: column; font-weight: bold; color: #495057; position: relative;">
-                    Receiver Account
+                <label class="field-relative">
+                    <span>Receiver Account</span>
                     <input 
                         type="text" 
                         v-model="searchTo" 
@@ -198,63 +193,22 @@ onMounted(() => {
                     </ul>
                 </label>
 
-                <div style="display: flex; gap: 1rem;">
-                    <label style="display: flex; flex-direction: column; font-weight: bold; color: #495057; flex: 1;">
-                        Amount (€)
-                        <input type="number" v-model="form.amount" step="0.01" min="0.01" placeholder="0.00" required style="padding: 0.75rem; margin-top: 0.5rem; border: 1px solid #ced4da; border-radius: 4px; font-size: 1rem;" />
-                    </label>
+                <label class="form-field">
+                    <span>Amount (€)</span>
+                    <input type="number" v-model="form.amount" step="0.01" min="0.01" placeholder="0.00" required />
+                </label>
 
-                    <label style="display: flex; flex-direction: column; font-weight: bold; color: #495057; flex: 2;">
-                        Description
-                        <input type="text" v-model="form.description" placeholder="Reason for transfer" required style="padding: 0.75rem; margin-top: 0.5rem; border: 1px solid #ced4da; border-radius: 4px; font-size: 1rem;" />
-                    </label>
-                </div>
+                <label class="form-field">
+                    <span>Description</span>
+                    <input type="text" v-model="form.description" placeholder="Reason for transfer" required />
+                </label>
 
-                <button type="submit" class="btn" :disabled="loading" style="padding: 1rem; font-size: 1.1rem; font-weight: bold; margin-top: 1rem; background-color: #dc3545; border: none; border-radius: 4px; color: white; cursor: pointer;">
+                <button type="submit" class="btn danger-btn" :disabled="loading">
                     {{ loading ? 'Processing...' : 'Execute Transfer' }}
                 </button>
-                <p class="muted" style="text-align: center; font-size: 0.85rem; margin-top: 0;">This action is logged and cannot be undone.</p>
+                <p class="muted" style="text-align: center; font-size: 0.85rem;">This action is logged and cannot be undone.</p>
             </form>
 
         </section>
     </main>
 </template>
-
-<style scoped>
-/* Basic Form Styling */
-.success-banner { background-color: #d4edda; color: #155724; padding: 1rem; border-radius: 4px; margin-bottom: 1.5rem; font-weight: bold; border: 1px solid #c3e6cb; }
-.error-banner { background-color: #f8d7da; color: #721c24; padding: 1rem; border-radius: 4px; margin-bottom: 1.5rem; font-weight: bold; border: 1px solid #f5c6cb; }
-.search-input { padding: 0.75rem; margin-top: 0.5rem; border: 1px solid #ced4da; border-radius: 4px; font-size: 1rem; background-color: white; }
-
-/* The Autocomplete Dropdown Box */
-.dropdown-list {
-    position: absolute;
-    top: 100%; /* Positions it directly below the input */
-    left: 0;
-    right: 0;
-    max-height: 200px;
-    overflow-y: auto;
-    background-color: white;
-    border: 1px solid #ced4da;
-    border-radius: 0 0 4px 4px;
-    margin: 0;
-    padding: 0;
-    list-style: none;
-    z-index: 1000;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-}
-
-/* Individual Dropdown Items */
-.dropdown-list li {
-    padding: 0.75rem;
-    border-bottom: 1px solid #f1f3f5;
-    cursor: pointer;
-    transition: background-color 0.2s;
-}
-.dropdown-list li:last-child { border-bottom: none; }
-.dropdown-list li:hover { background-color: #f8f9fa; }
-
-/* Danger Button */
-.btn:hover:not(:disabled) { background-color: #c82333 !important; }
-.btn:disabled { background-color: #e9ecef !important; color: #6c757d !important; cursor: not-allowed; }
-</style>

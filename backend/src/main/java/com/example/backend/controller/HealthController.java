@@ -13,9 +13,12 @@ import java.util.Map;
 @Tag(name = "Health")
 public class HealthController {
 
+	// quick check if backend is alive, no token needed
+	// render and github pages use this to know the api is running
 	@GetMapping("/health")
 	@Operation(summary = "Liveness check for the API (no auth)")
 	public Map<String, String> health() {
+		// nothing else to call, just return UP from here
 		return Map.of("status", "UP");
 	}
 }

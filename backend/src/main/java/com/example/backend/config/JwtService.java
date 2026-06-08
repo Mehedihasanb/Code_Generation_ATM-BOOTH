@@ -14,12 +14,14 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
 
+// builds and checks JWT tokens after login (uses jjwt from application.yml secret + expiry)
 @Service
 public class JwtService {
 
 	private final SecretKey signingKey;
 	private final long expirationMs;
 
+	// reads secret and expiry from application.yml and turns the secret into a signing key
 	public JwtService(
 			@Value("${security.jwt.secret}") String jwtSecret,
 			@Value("${security.jwt.expiration-ms}") long expirationMs) {
@@ -27,6 +29,7 @@ public class JwtService {
 		this.expirationMs = expirationMs;
 	}
 
+	// called on login: packs email + roles into a signed token string we send back to the frontend
 	public String generateToken(UserDetails userDetails) {
 		Map<String, Object> jwtClaims = new HashMap<>();
 		jwtClaims.put("roles", userDetails.getAuthorities());
@@ -43,20 +46,25 @@ public class JwtService {
 				.compact();
 	}
 
+	// pulls the email (subject) out of the token so the filter knows who is calling
 	public String extractUsername(String jwtTokenString) {
 		return extractClaim(jwtTokenString, Claims::getSubject);
 	}
 
+	// true only if the email matches and the token is not expired
 	public boolean isTokenValid(String jwtTokenString, UserDetails userDetails) {
 		String emailFromTokenSubject = extractUsername(jwtTokenString);
 		return emailFromTokenSubject.equals(userDetails.getUsername()) && !isTokenExpired(jwtTokenString);
 	}
 
+	// checks the expiry date inside the token against now
 	private boolean isTokenExpired(String jwtTokenString) {
 		Date expirationDate = extractClaim(jwtTokenString, Claims::getExpiration);
 		return expirationDate.before(new Date());
 	}
 
+	// helper so we do not repeat jjwt parsing everywhere
+	// verifies the token with our signing key, then pulls one field (email, expiry, roles, etc.)
 	private <ClaimType> ClaimType extractClaim(String jwtTokenString, Function<Claims, ClaimType> claimsExtractor) {
 		Claims parsedClaims = Jwts.parser()
 				.verifyWith(signingKey)

@@ -165,9 +165,9 @@ onMounted(() => {
             <p class="muted subtitle">Move money securely.</p>
         </section>
 
-        <section class="panel auth-panel" style="max-width: 600px; margin: 0 auto;">
+        <section class="panel auth-panel">
             
-            <div class="toggle-group" style="display: flex; gap: 1rem; margin-bottom: 2rem; justify-content: center;">
+            <div class="toggle-group">
                 <button 
                     type="button"
                     class="btn" 
@@ -210,9 +210,9 @@ onMounted(() => {
                     </select>
                 </label>
 
-                <div v-if="transferType === 'EXTERNAL'" class="external-search-box" style="background: #f8f9fa; padding: 1rem; border-radius: 8px; margin: 1rem 0;">
+                <div v-if="transferType === 'EXTERNAL'" class="external-search-box">
                     <p style="margin-bottom: 0.5rem; font-weight: bold;">Find Recipient</p>
-                    <div style="display: flex; gap: 0.5rem; margin-bottom: 0.5rem;">
+                    <div class="external-search-row">
                         <input type="text" v-model="searchFirstName" placeholder="First Name" />
                         <input type="text" v-model="searchLastName" placeholder="Last Name" />
                         <input type="text" v-model="searchIban" placeholder="IBAN (optional)" />
@@ -231,23 +231,18 @@ onMounted(() => {
                                 v-for="acc in user.accounts" 
                                 :key="acc.iban"
                                 type="button"
-                                class="btn"
-                                style="display: block; width: 100%; text-align: left; margin-bottom: 0.5rem; background: white; border: 1px solid #ccc; color: black;"
+                                class="btn recipient-picker-btn"
                                 @click="selectExternalAccount(acc.iban)"
                             >
-                                <span style="font-weight: bold; color: var(--primary-color);">{{ acc.accountType }}</span><br>
+                                <span style="font-weight: bold; color: var(--color-primary);">{{ acc.accountType }}</span><br>
                                 <span class="muted" style="font-family: monospace;">{{ acc.iban }}</span>
                             </button>
                             
                             <p v-if="user.accounts.length === 0" class="muted" style="font-size: 0.85rem;">No active accounts available.</p>
                         </div>
-                        <div v-if="error" style="background-color: #f8d7da; color: #721c24; padding: 1rem; border-radius: 4px; margin-bottom: 1.5rem; font-weight: bold; border: 1px solid #f5c6cb;">
-                            ❌ {{ error }}
-                        </div>
+                        <div v-if="error" class="alert-error">{{ error }}</div>
 
-                        <div v-if="successMessage" style="background-color: #d4edda; color: #155724; padding: 1rem; border-radius: 4px; margin-bottom: 1.5rem; font-weight: bold; border: 1px solid #c3e6cb;">
-                            ✅ {{ successMessage }}
-                        </div>
+                        <div v-if="successMessage" class="alert-success">{{ successMessage }}</div>
                     </div>
                     </div>
                 
@@ -268,19 +263,3 @@ onMounted(() => {
         </section>
     </main>
 </template>
-
-<style scoped>
-select, input[type="text"], input[type="number"] {
-    width: 100%;
-    padding: 0.8rem;
-    margin-top: 0.5rem;
-    border: 1px solid var(--border-color, #ccc);
-    border-radius: 4px;
-    font-size: 1rem;
-    background-color: white;
-}
-.secondary-btn {
-    background-color: #6c757d;
-    color: white;
-}
-</style>

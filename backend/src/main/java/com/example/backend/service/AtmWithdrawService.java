@@ -62,10 +62,10 @@ public class AtmWithdrawService {
 		BigDecimal amount = request.amount().setScale(2, RoundingMode.HALF_UP);
 
 		BigDecimal newBalance = fromAccount.getBalance().subtract(amount);
-		if (newBalance.compareTo(fromAccount.getMinimumAllowedBalance()) < 0) {
+		if (newBalance.compareTo(BigDecimal.ZERO) < 0) {
 			throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-					"Withdrawal exceeds your absolute limit. Minimum allowed balance is €"
-							+ formatAmount(fromAccount.getMinimumAllowedBalance()));
+					"Insufficient funds. Maximum available to withdraw is €"
+							+ formatAmount(fromAccount.getBalance()));
 		}
 
 		LocalDateTime startOfDay = LocalDate.now().atStartOfDay();

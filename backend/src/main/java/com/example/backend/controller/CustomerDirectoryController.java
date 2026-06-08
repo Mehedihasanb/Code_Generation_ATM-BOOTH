@@ -24,6 +24,10 @@ public class CustomerDirectoryController {
 		this.customerDirectoryService = customerDirectoryService;
 	}
 
+	// employee looks up customers, needs token
+	// hasAccount false shows pending customers with no accounts (service desk page)
+	// no search params shows all customers with accounts paginated
+	// firstName and lastName or iban to search one customer
 	@GetMapping("/users")
 	@Operation(summary = "Paginated customers; optionally search by exact name or IBAN")
 	@SecurityRequirement(name = "bearerAuth")
