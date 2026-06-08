@@ -32,7 +32,8 @@ public class UserController {
     @Operation(summary = "Find customer IBANs by exact first and last name")
     @SecurityRequirement(name = "bearerAuth")
     public List<CustomerDirectoryRow> searchUsers(
-            @RequestParam String firstName,
+            @RequestParam String firstName, // these annotations r used to sort, filter, search across a collection of
+                                            // resources
             @RequestParam String lastName) {
         return accountService.searchCustomersByName(firstName, lastName);
     }
@@ -42,7 +43,7 @@ public class UserController {
     @SecurityRequirement(name = "bearerAuth")
     @PreAuthorize("hasRole('EMPLOYEE')")
     public ResponseEntity<Page<SystemTransactionRow>> getUserTransactions(
-            @PathVariable Long id,
+            @PathVariable Long id, // this @ identifies a specific resource
             Pageable pageable) {
 
         Page<SystemTransactionRow> transactions = transactionService.getTransactionsByUserId(id, pageable);
