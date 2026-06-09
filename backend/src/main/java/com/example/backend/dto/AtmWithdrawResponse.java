@@ -2,7 +2,7 @@ package com.example.backend.dto;
 
 import java.math.BigDecimal;
 
-// ATM withdraw success: transaction id and updated checking balance
+/** Response after a successful ATM withdrawal. */
 public record AtmWithdrawResponse(
 		Long transactionId,
 		String fromIban,

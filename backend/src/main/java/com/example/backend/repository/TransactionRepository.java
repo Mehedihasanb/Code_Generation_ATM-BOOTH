@@ -24,6 +24,7 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
                         @Param("account") com.example.backend.domain.BankAccount account,
                         @Param("startOfDay") java.time.LocalDateTime startOfDay);
 
+        // Used by AtmDepositService to enforce daily incoming deposit limit
         @Query("SELECT COALESCE(SUM(t.amount), 0) FROM Transaction t WHERE t.toAccount = :account AND t.timestamp >= :startOfDay")
         BigDecimal sumIncomingTransactionsToday(
                         @Param("account") com.example.backend.domain.BankAccount account,

@@ -19,6 +19,11 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
+/**
+ * ATM cash operations.
+ * Base path: /atm
+ * Only logged-in customers may call these endpoints (JWT required).
+ */
 @RestController
 @RequestMapping("/atm")
 @Tag(name = "ATM")
@@ -32,6 +37,7 @@ public class AtmController {
 		this.atmDepositService = atmDepositService;
 	}
 
+	/** Customer withdraws cash from a CHECKING account. Returns HTTP 201 on success. */
 	@PostMapping("/withdraw")
 	@ResponseStatus(HttpStatus.CREATED)
 	@PreAuthorize("hasRole('CUSTOMER')")
@@ -40,9 +46,11 @@ public class AtmController {
 	public AtmWithdrawResponse withdraw(
 			@Valid @RequestBody AtmWithdrawRequest request,
 			Authentication authentication) {
+		// authentication.getName() = customer email from the JWT token
 		return atmWithdrawService.withdraw(request, authentication.getName());
 	}
 
+	/** Customer deposits cash into a CHECKING account. Returns HTTP 201 on success. */
 	@PostMapping("/deposit")
 	@ResponseStatus(HttpStatus.CREATED)
 	@PreAuthorize("hasRole('CUSTOMER')")
@@ -54,3 +62,4 @@ public class AtmController {
 		return atmDepositService.deposit(request, authentication.getName());
 	}
 }
+

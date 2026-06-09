@@ -1,4 +1,5 @@
 <script setup lang="ts">
+// ATM withdraw screen — calls POST /atm/withdraw with customer JWT.
 import { computed, onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { authorizedFetch } from '@/composables/useAuthorizedFetch';
@@ -64,6 +65,7 @@ async function submitWithdraw() {
 	success.value = null;
 
 	try {
+		// Send amount + checking account to backend; limits enforced server-side
 		const body: { amount: number; fromIban: string } = {
 			amount: Number(amount.value),
 			fromIban: selectedIban.value,

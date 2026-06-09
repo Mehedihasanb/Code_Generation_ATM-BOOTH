@@ -6,12 +6,13 @@ import jakarta.validation.constraints.NotNull;
 
 import java.math.BigDecimal;
 
-// POST /atm/deposit body; toIban optional when customer has one checking account
+/** Request body for POST /atm/deposit. */
 public record AtmDepositRequest(
 		@NotNull(message = "amount is required")
 		@DecimalMin(value = "0.01", message = "amount must be greater than zero")
 		@Digits(integer = 12, fraction = 2, message = "amount has too many digits")
 		BigDecimal amount,
 
+		// Optional: required only when customer has more than one CHECKING account
 		String toIban) {
 }

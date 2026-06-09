@@ -22,6 +22,11 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
+/**
+ * ATM withdrawal logic.
+ * Money moves from customer CHECKING account -> system ATM account.
+ * Enforces balance check and daily outgoing limit. Records a transaction.
+ */
 @Service
 public class AtmWithdrawService {
 
@@ -43,6 +48,7 @@ public class AtmWithdrawService {
 
 	@Transactional
 	public AtmWithdrawResponse withdraw(AtmWithdrawRequest request, String customerEmail) {
+		// Identify customer from JWT email
 		UserRegistration customer = userRegistrationRepository.findByEmail(customerEmail.trim().toLowerCase())
 				.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Customer not found"));
 
@@ -54,6 +60,7 @@ public class AtmWithdrawService {
 		transferAuthorizationPolicy.requireCanInitiateFromAccount(customer, fromAccount);
 		transferAuthorizationPolicy.requireActiveAccounts(fromAccount, systemAtmAccount);
 
+		// ATM only works with CHECKING accounts (not SAVINGS)
 		if (!AccountType.CHECKING.equals(fromAccount.getAccountType())) {
 			throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
 					"ATM withdrawals are only allowed from CHECKING accounts");
@@ -61,6 +68,7 @@ public class AtmWithdrawService {
 
 		BigDecimal amount = request.amount().setScale(2, RoundingMode.HALF_UP);
 
+		// Absolute limit for withdraw: cannot go below zero balance
 		BigDecimal newBalance = fromAccount.getBalance().subtract(amount);
 		if (newBalance.compareTo(BigDecimal.ZERO) < 0) {
 			throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
@@ -68,6 +76,7 @@ public class AtmWithdrawService {
 							+ formatAmount(fromAccount.getBalance()));
 		}
 
+		// Daily limit: sum of money sent OUT today + this withdrawal must stay within limit
 		LocalDateTime startOfDay = LocalDate.now().atStartOfDay();
 		BigDecimal totalOutgoingToday = transactionRepository.sumOutgoingTransactionsToday(fromAccount, startOfDay);
 		BigDecimal projectedTotal = totalOutgoingToday.add(amount);
@@ -79,11 +88,13 @@ public class AtmWithdrawService {
 							+ " more can be withdrawn today.");
 		}
 
+		// Update balances: customer loses money, ATM pool receives it
 		fromAccount.setBalance(newBalance);
 		systemAtmAccount.setBalance(systemAtmAccount.getBalance().add(amount));
 		bankAccountRepository.save(fromAccount);
 		bankAccountRepository.save(systemAtmAccount);
 
+		// Record transaction for history and employee transaction control
 		Transaction transaction = new Transaction(
 				fromAccount,
 				systemAtmAccount,
@@ -99,6 +110,11 @@ public class AtmWithdrawService {
 				fromAccount.getBalance());
 	}
 
+	/**
+	 * Picks the CHECKING account to withdraw from.
+	 * If fromIban is given, use that account (must belong to this customer).
+	 * If omitted, auto-select when customer has exactly one active CHECKING account.
+	 */
 	private BankAccount resolveWithdrawalAccount(UserRegistration customer, String fromIban) {
 		if (fromIban != null && !fromIban.isBlank()) {
 			String normalizedIban = fromIban.trim().toUpperCase();

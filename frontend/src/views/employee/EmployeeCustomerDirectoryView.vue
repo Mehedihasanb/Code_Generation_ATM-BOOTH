@@ -23,6 +23,7 @@ const totalPages = ref(0);
 const loadingTx = ref(false);
 const txError = ref<string | null>(null);
 
+// Form state for employee limit updates
 const absoluteLimitInput = ref<number>(0);
 const dailyLimitInput = ref<number>(0);
 const limitsError = ref<string | null>(null);
@@ -190,6 +191,7 @@ const handleCustomerReactivated = async () => {
     await loadAllCustomers(0);
 };
 
+// Calls PUT /users/{id}/limits with employee JWT
 const updateCustomerLimits = async () => {
     if (!selectedUser.value) return;
 
@@ -351,6 +353,7 @@ const getTypeBadgeClass = (type: string) => {
                     <button type="button" class="btn secondary-btn" @click="backToSearch">&larr; Back to Search</button>
                 </div>
 
+                <!-- Employee updates absolute + daily limits via PUT /users/{id}/limits -->
                 <section
                     v-if="selectedUser.accounts?.length"
                     class="limits-panel">

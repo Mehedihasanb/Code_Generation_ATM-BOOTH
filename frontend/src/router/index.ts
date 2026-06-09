@@ -97,6 +97,7 @@ const router = createRouter({
             component: EmployeeTransferView,
             meta: { requiresEmployee: true }
         },
+		// ATM routes (separate layout, approved customers only after login)
 		{
 			path: '/atm',
 			name: 'atm',
@@ -154,12 +155,14 @@ router.beforeEach((to) => {
 		}
 	}
 
+	// Block ATM pages without approved customer JWT
 	if (to.meta.requiresAtmApprovedCustomer) {
 		if (!token || !isApprovedCustomer) {
 			return { path: '/atm/login', query: { redirect: to.fullPath } };
 		}
 	}
 
+	// Already logged in at ATM? Skip login page and go straight to home
 	if (to.path === '/atm/login' && token && isApprovedCustomer) {
 		return '/atm/home';
 	}

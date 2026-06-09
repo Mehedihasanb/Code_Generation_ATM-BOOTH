@@ -2,7 +2,7 @@ package com.example.backend.dto;
 
 import java.math.BigDecimal;
 
-// confirmation after limits update (how many accounts were touched)
+/** Response after PUT /users/{id}/limits — confirms what was saved. */
 public record UpdateCustomerLimitsResponse(
 		Long customerId,
 		BigDecimal absoluteLimit,

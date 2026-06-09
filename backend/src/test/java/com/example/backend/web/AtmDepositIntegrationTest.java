@@ -20,7 +20,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @SpringBootTest
 @AutoConfigureMockMvc
-class UserStory22AtmWithdrawIntegrationTest {
+class AtmDepositIntegrationTest {
 
 	@Autowired
 	private MockMvc mockMvc;
@@ -46,15 +46,15 @@ class UserStory22AtmWithdrawIntegrationTest {
 
 	private CustomerContext registerCustomerWithAccounts() throws Exception {
 		String suffix = String.valueOf(System.nanoTime());
-		String email = "atm.withdraw." + suffix + "@example.com";
+		String email = "atm.deposit." + suffix + "@example.com";
 
 		String registerRequestBody = objectMapper.writeValueAsString(Map.of(
 			"firstName", "Atm",
-			"lastName", "User" + suffix,
+			"lastName", "Dep" + suffix,
 			"email", email,
 			"password", "Password123!",
-			"bsnNumber", "123456784",
-			"phoneNumber", "+31 6 44444444"
+			"bsnNumber", "123456785",
+			"phoneNumber", "+31 6 55555555"
 		));
 		String registerResponseBody = mockMvc.perform(post("/auth/register")
 				.contentType(MediaType.APPLICATION_JSON)
@@ -68,7 +68,7 @@ class UserStory22AtmWithdrawIntegrationTest {
 		String createAccountsBody = objectMapper.writeValueAsString(Map.of(
 			"customerRegistrationId", customerId,
 			"dailyOutgoingTransferLimit", new BigDecimal("300.00"),
-			"minimumAllowedBalance", new BigDecimal("0.00")
+			"minimumAllowedBalance", new BigDecimal("5000.00")
 		));
 		String createAccountsResponse = mockMvc.perform(post("/accounts")
 				.contentType(MediaType.APPLICATION_JSON)
@@ -94,67 +94,82 @@ class UserStory22AtmWithdrawIntegrationTest {
 	}
 
 	@Test
-	void withdrawWithoutJwtIsUnauthorized() throws Exception {
+	void depositWithoutJwtIsUnauthorized() throws Exception {
 		String body = objectMapper.writeValueAsString(Map.of("amount", new BigDecimal("10.00")));
-		mockMvc.perform(post("/atm/withdraw")
+		mockMvc.perform(post("/atm/deposit")
 				.contentType(MediaType.APPLICATION_JSON)
 				.content(body))
 			.andExpect(status().isUnauthorized());
 	}
 
 	@Test
-	void customerCanWithdrawFromCheckingAccount() throws Exception {
+	void customerCanDepositToCheckingAccount() throws Exception {
 		CustomerContext customer = registerCustomerWithAccounts();
 
-		String withdrawBody = objectMapper.writeValueAsString(Map.of(
+		String depositBody = objectMapper.writeValueAsString(Map.of(
 			"amount", new BigDecimal("50.00"),
-			"fromIban", customer.checkingIban()
+			"toIban", customer.checkingIban()
 		));
-		mockMvc.perform(post("/atm/withdraw")
+		mockMvc.perform(post("/atm/deposit")
 				.contentType(MediaType.APPLICATION_JSON)
-				.content(withdrawBody)
+				.content(depositBody)
 				.header("Authorization", "Bearer " + customer.jwt()))
 			.andExpect(status().isCreated())
 			.andExpect(jsonPath("$.amount").value(50.00))
-			.andExpect(jsonPath("$.fromIban").value(customer.checkingIban()))
-			.andExpect(jsonPath("$.newBalance").value(950.00))
+			.andExpect(jsonPath("$.toIban").value(customer.checkingIban()))
+			.andExpect(jsonPath("$.newBalance").value(1050.00))
 			.andExpect(jsonPath("$.transactionId").exists());
 
 		mockMvc.perform(get("/accounts/mine")
 				.header("Authorization", "Bearer " + customer.jwt()))
 			.andExpect(status().isOk())
-			.andExpect(jsonPath("$.combinedBalance").value(1950.00));
+			.andExpect(jsonPath("$.combinedBalance").value(2050.00));
 	}
 
 	@Test
-	void withdrawEnforcesDailyLimit() throws Exception {
+	void depositEnforcesAbsoluteLimit() throws Exception {
 		CustomerContext customer = registerCustomerWithAccounts();
 
-		String firstWithdraw = objectMapper.writeValueAsString(Map.of(
-			"amount", new BigDecimal("250.00"),
-			"fromIban", customer.checkingIban()
+		String depositBody = objectMapper.writeValueAsString(Map.of(
+			"amount", new BigDecimal("4500.00"),
+			"toIban", customer.checkingIban()
 		));
-		mockMvc.perform(post("/atm/withdraw")
+		mockMvc.perform(post("/atm/deposit")
 				.contentType(MediaType.APPLICATION_JSON)
-				.content(firstWithdraw)
-				.header("Authorization", "Bearer " + customer.jwt()))
-			.andExpect(status().isCreated());
-
-		String secondWithdraw = objectMapper.writeValueAsString(Map.of(
-			"amount", new BigDecimal("100.00"),
-			"fromIban", customer.checkingIban()
-		));
-		mockMvc.perform(post("/atm/withdraw")
-				.contentType(MediaType.APPLICATION_JSON)
-				.content(secondWithdraw)
+				.content(depositBody)
 				.header("Authorization", "Bearer " + customer.jwt()))
 			.andExpect(status().isBadRequest());
 	}
 
 	@Test
-	void withdrawValidatesAmount() throws Exception {
+	void depositEnforcesDailyLimit() throws Exception {
 		CustomerContext customer = registerCustomerWithAccounts();
-		mockMvc.perform(post("/atm/withdraw")
+
+		String firstDeposit = objectMapper.writeValueAsString(Map.of(
+			"amount", new BigDecimal("250.00"),
+			"toIban", customer.checkingIban()
+		));
+		mockMvc.perform(post("/atm/deposit")
+				.contentType(MediaType.APPLICATION_JSON)
+				.content(firstDeposit)
+				.header("Authorization", "Bearer " + customer.jwt()))
+			.andExpect(status().isCreated());
+
+		String secondDeposit = objectMapper.writeValueAsString(Map.of(
+			"amount", new BigDecimal("100.00"),
+			"toIban", customer.checkingIban()
+		));
+		mockMvc.perform(post("/atm/deposit")
+				.contentType(MediaType.APPLICATION_JSON)
+				.content(secondDeposit)
+				.header("Authorization", "Bearer " + customer.jwt()))
+			.andExpect(status().isBadRequest());
+	}
+
+	@Test
+	void depositValidatesAmount() throws Exception {
+		CustomerContext customer = registerCustomerWithAccounts();
+		mockMvc.perform(post("/atm/deposit")
 				.contentType(MediaType.APPLICATION_JSON)
 				.content("{}")
 				.header("Authorization", "Bearer " + customer.jwt()))

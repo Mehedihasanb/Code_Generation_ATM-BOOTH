@@ -21,6 +21,7 @@ const auth = useAuthStore();
             <div class="button-group">
                 <button type="button" class="btn primary-btn" @click="navigateTo('/register')">Open an Account</button>
                 <button type="button" class="btn secondary-btn" @click="navigateTo('/login')">Sign In</button>
+                <!-- Entry point to ATM login -->
                 <button type="button" class="btn secondary-btn" @click="navigateTo('/atm')">Use ATM</button>
             </div>
         </section>

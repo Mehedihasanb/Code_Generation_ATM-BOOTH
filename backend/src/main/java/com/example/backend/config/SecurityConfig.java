@@ -71,7 +71,9 @@ public class SecurityConfig {
 						.requestMatchers(HttpMethod.POST, "/transactions").hasAnyRole("CUSTOMER", "EMPLOYEE")
 						.requestMatchers(HttpMethod.POST, "/accounts").hasRole("EMPLOYEE")
 						.requestMatchers(HttpMethod.PUT, "/accounts/*/close").hasRole("EMPLOYEE")
+						// Only employees may update customer limits
 						.requestMatchers(HttpMethod.PUT, "/users/*/limits").hasRole("EMPLOYEE")
+						// Only customers may use ATM endpoints (JWT required)
 						.requestMatchers(HttpMethod.POST, "/atm/withdraw").hasRole("CUSTOMER")
 						.requestMatchers(HttpMethod.POST, "/atm/deposit").hasRole("CUSTOMER")
 						// Add this line so Spring Security stops hiding our custom error messages!

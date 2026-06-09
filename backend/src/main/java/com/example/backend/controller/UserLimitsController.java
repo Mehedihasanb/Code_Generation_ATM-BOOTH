@@ -14,6 +14,10 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+/**
+ * Employee updates customer transfer limits.
+ * API: PUT /users/{id}/limits
+ */
 @RestController
 @RequestMapping("/users")
 @Tag(name = "Customer limits")
@@ -25,6 +29,11 @@ public class UserLimitsController {
 		this.customerLimitsService = customerLimitsService;
 	}
 
+	/**
+	 * Updates absolute and/or daily limits for one customer.
+	 * {id} = customer user id from the directory.
+	 * Requires employee JWT (Authorization: Bearer ...).
+	 */
 	@PutMapping("/{id}/limits")
 	@PreAuthorize("hasRole('EMPLOYEE')")
 	@Operation(summary = "Update a customer's absolute and/or daily transfer limits (employee only)")
@@ -32,6 +41,8 @@ public class UserLimitsController {
 	public UpdateCustomerLimitsResponse updateCustomerLimits(
 			@PathVariable Long id,
 			@Valid @RequestBody UpdateCustomerLimitsRequest request) {
+		// Controller stays thin: validate input, then delegate to service layer
 		return customerLimitsService.updateCustomerLimits(id, request);
 	}
 }
+

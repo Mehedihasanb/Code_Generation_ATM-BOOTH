@@ -22,6 +22,11 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
+/**
+ * ATM deposit logic.
+ * Money moves from system ATM account -> customer CHECKING account.
+ * Enforces absolute balance cap and daily incoming limit. Records a transaction.
+ */
 @Service
 public class AtmDepositService {
 
@@ -60,6 +65,7 @@ public class AtmDepositService {
 
 		BigDecimal amount = request.amount().setScale(2, RoundingMode.HALF_UP);
 
+		// Absolute limit: balance after deposit must not exceed minimumAllowedBalance (max cap)
 		BigDecimal projectedBalance = toAccount.getBalance().add(amount);
 		if (projectedBalance.compareTo(toAccount.getMinimumAllowedBalance()) > 0) {
 			BigDecimal remainingSpace = toAccount.getMinimumAllowedBalance().subtract(toAccount.getBalance());
@@ -68,6 +74,7 @@ public class AtmDepositService {
 							+ formatAmount(remainingSpace.max(BigDecimal.ZERO)) + " more.");
 		}
 
+		// Daily limit: sum of money received IN today + this deposit must stay within limit
 		LocalDateTime startOfDay = LocalDate.now().atStartOfDay();
 		BigDecimal totalIncomingToday = transactionRepository.sumIncomingTransactionsToday(toAccount, startOfDay);
 		BigDecimal projectedIncomingTotal = totalIncomingToday.add(amount);
@@ -79,6 +86,7 @@ public class AtmDepositService {
 							+ " more can be deposited today.");
 		}
 
+		// Update balances: ATM pool loses money, customer gains it
 		systemAtmAccount.setBalance(systemAtmAccount.getBalance().subtract(amount));
 		toAccount.setBalance(projectedBalance);
 		bankAccountRepository.save(systemAtmAccount);
@@ -99,6 +107,7 @@ public class AtmDepositService {
 				toAccount.getBalance());
 	}
 
+	/** Same account resolution as withdraw, but for the destination (toIban) CHECKING account. */
 	private BankAccount resolveDepositAccount(UserRegistration customer, String toIban) {
 		if (toIban != null && !toIban.isBlank()) {
 			String normalizedIban = toIban.trim().toUpperCase();

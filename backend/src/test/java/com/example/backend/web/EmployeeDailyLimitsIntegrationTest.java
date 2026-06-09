@@ -21,7 +21,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @SpringBootTest
 @AutoConfigureMockMvc
-class UserStory14EmployeeDailyLimitsIntegrationTest {
+class EmployeeDailyLimitsIntegrationTest {
 
 	@Autowired
 	private MockMvc mockMvc;
@@ -78,7 +78,7 @@ class UserStory14EmployeeDailyLimitsIntegrationTest {
 	@Test
 	void employeeCanUpdateDailyLimitOnAllAccounts() throws Exception {
 		String suffix = String.valueOf(System.nanoTime());
-		String uniqueEmail = "limits.us14." + suffix + "@example.com";
+		String uniqueEmail = "limits.daily." + suffix + "@example.com";
 		String firstName = "Daily" + suffix;
 		long customerId = registerAndOpenAccounts(uniqueEmail, firstName);
 
@@ -121,7 +121,7 @@ class UserStory14EmployeeDailyLimitsIntegrationTest {
 	@Test
 	void updateDailyLimitRejectsZeroOrNegative() throws Exception {
 		String suffix = String.valueOf(System.nanoTime());
-		long customerId = registerAndOpenAccounts("limits.us14.bad." + suffix + "@example.com", "DailyBad" + suffix);
+		long customerId = registerAndOpenAccounts("limits.daily.bad." + suffix + "@example.com", "DailyBad" + suffix);
 
 		String updateBody = objectMapper.writeValueAsString(
 				Map.of("dailyOutgoingTransferLimit", new BigDecimal("0")));
@@ -135,7 +135,7 @@ class UserStory14EmployeeDailyLimitsIntegrationTest {
 	@Test
 	void employeeCanUpdateBothLimitsInOneRequest() throws Exception {
 		String suffix = String.valueOf(System.nanoTime());
-		long customerId = registerAndOpenAccounts("limits.us14.both." + suffix + "@example.com", "DailyBoth" + suffix);
+		long customerId = registerAndOpenAccounts("limits.daily.both." + suffix + "@example.com", "DailyBoth" + suffix);
 
 		String updateBody = objectMapper.writeValueAsString(Map.of(
 			"absoluteLimit", new BigDecimal("9000.00"),

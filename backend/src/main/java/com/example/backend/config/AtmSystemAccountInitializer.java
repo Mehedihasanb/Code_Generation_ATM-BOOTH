@@ -11,6 +11,10 @@ import org.springframework.context.annotation.Configuration;
 
 import java.math.BigDecimal;
 
+/**
+ * Creates the system ATM account on startup if it does not exist yet.
+ * Withdraw/deposit services need this account to move money in and out.
+ */
 @Configuration
 public class AtmSystemAccountInitializer {
 
@@ -29,7 +33,7 @@ public class AtmSystemAccountInitializer {
 						AccountType.CHECKING,
 						true,
 						BigDecimal.ZERO.setScale(2),
-						new BigDecimal("999999999.00"),
+						new BigDecimal("999999999.00"), // very high limits so ATM pool never blocks
 						new BigDecimal("999999999.00"));
 				bankAccountRepository.save(systemAtmAccount);
 			});

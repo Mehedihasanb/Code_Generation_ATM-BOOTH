@@ -249,6 +249,7 @@ public class TransactionService {
                                 type);
         }
 
+        // Show ATM withdraw/deposit in employee transaction list as type "ATM"
         private boolean isAtmTransaction(Transaction tx) {
                 return AtmConstants.WITHDRAWAL_DESCRIPTION.equals(tx.getDescription())
                                 || AtmConstants.DEPOSIT_DESCRIPTION.equals(tx.getDescription())

@@ -5,6 +5,7 @@ import Header from './components/organisms/Header.vue';
 import Footer from './components/organisms/Footer.vue';
 
 const route = useRoute();
+// ATM pages use full-screen dark layout instead of normal bank header/footer
 const isAtmLayout = computed(() => Boolean(route.meta.atmLayout));
 </script>
 

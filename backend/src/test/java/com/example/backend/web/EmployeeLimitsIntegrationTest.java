@@ -21,7 +21,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @SpringBootTest
 @AutoConfigureMockMvc
-class UserStory13EmployeeLimitsIntegrationTest {
+class EmployeeLimitsIntegrationTest {
 
 	@Autowired
 	private MockMvc mockMvc;
@@ -103,7 +103,7 @@ class UserStory13EmployeeLimitsIntegrationTest {
 
 	@Test
 	void employeeCanUpdateAbsoluteLimitOnAllAccounts() throws Exception {
-		String uniqueEmail = "limits.us13." + System.nanoTime() + "@example.com";
+		String uniqueEmail = "limits.abs." + System.nanoTime() + "@example.com";
 		long customerId = registerAndOpenAccounts(uniqueEmail);
 
 		String updateBody = objectMapper.writeValueAsString(Map.of("absoluteLimit", new BigDecimal("8000.00")));

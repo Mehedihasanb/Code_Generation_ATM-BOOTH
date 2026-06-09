@@ -34,6 +34,7 @@ export default defineConfig({
 				changeOrigin: true,
 			},
 			'/transactions': { target: 'http://localhost:8080', changeOrigin: true },
+			// Forward /atm/withdraw and /atm/deposit to Spring Boot during npm run dev
 			'/atm': { target: 'http://localhost:8080', changeOrigin: true },
 		},
 	},

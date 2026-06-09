@@ -1,4 +1,5 @@
 <script setup lang="ts">
+// ATM deposit screen — calls POST /atm/deposit with customer JWT.
 import { computed, onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { authorizedFetch } from '@/composables/useAuthorizedFetch';
@@ -62,6 +63,7 @@ async function submitDeposit() {
 	success.value = null;
 
 	try {
+		// Send amount + checking account to backend; absolute + daily limits enforced there
 		const body: { amount: number; toIban: string } = {
 			amount: Number(amount.value),
 			toIban: selectedIban.value,
