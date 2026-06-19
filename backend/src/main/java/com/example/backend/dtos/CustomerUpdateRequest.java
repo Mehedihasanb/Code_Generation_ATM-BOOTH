@@ -1,0 +1,28 @@
+package com.example.backend.dtos;
+
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.PositiveOrZero;
+import jakarta.validation.constraints.Size;
+import com.example.backend.entities.enums.CustomerStatus;
+
+import java.math.BigDecimal;
+
+public record CustomerUpdateRequest(
+        // Jackson converts the JSON string "ACTIVE" / "PENDING" to this enum for us
+        CustomerStatus status,
+
+        @Size(max = 64, message = "First name must be at most 64 characters")
+        String firstName,
+
+        @Size(max = 64, message = "Last name must be at most 64 characters")
+        String lastName,
+
+        @Pattern(regexp = "\\+?[0-9]{10,15}", message = "Phone number must be between 10 and 15 digits")
+        String phoneNumber,
+
+        @PositiveOrZero(message = "Absolute transfer limit must be zero or greater")
+        BigDecimal absoluteTransferLimit,
+
+        @PositiveOrZero(message = "Daily transfer limit must be zero or greater")
+        BigDecimal dailyTransferLimit
+) {}

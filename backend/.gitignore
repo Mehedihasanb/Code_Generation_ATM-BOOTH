@@ -31,3 +31,11 @@ build/
 
 ### VS Code ###
 .vscode/
+
+### Environment variables ###
+.env
+
+### Local project tooling ###
+.omx/
+.omc/
+PROJECT_REQUIREMENTS.md

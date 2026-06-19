@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
 import { authorizedFetch } from '@/composables/useAuthorizedFetch';
+import { fetchMyAccounts as loadMyAccounts } from '@/composables/useMyAccounts';
 import { useRouter } from 'vue-router';
 
 const router = useRouter();
@@ -14,21 +15,15 @@ const fromIban = ref('');
 const toIban = ref('');
 const amount = ref<number | ''>('');
 const description = ref('');
-const searchFirstName = ref('');
-const searchLastName = ref('');
-const searchIban = ref('');
+const searchName = ref('');
 const searchResults = ref<any[]>([]);
 const searching = ref(false);
 
 
 const fetchMyAccounts = async () => {
     try {
-        const response = await authorizedFetch('/accounts/mine');
-        
-        if (!response.ok) throw new Error("Could not load your accounts.");
-        
-        const data = await response.json();
-        myAccounts.value = data.accounts || [];
+        const summary = await loadMyAccounts();
+        myAccounts.value = summary.accounts;
         
         if (myAccounts.value.length > 0) {
             fromIban.value = myAccounts.value[0].iban;
@@ -41,17 +36,10 @@ const fetchMyAccounts = async () => {
 };
 
 const searchDirectory = async () => {
-    const firstName = searchFirstName.value.trim();
-    const lastName = searchLastName.value.trim();
-    const iban = searchIban.value.trim();
+    const name = searchName.value.trim();
 
-    if (!firstName && !lastName && !iban) {
-        error.value = "Please enter a name or an IBAN to search.";
-        return;
-    }
-
-    if ((firstName && !lastName) || (!firstName && lastName)) {
-        error.value = "Please enter both first and last name, or use IBAN search.";
+    if (!name) {
+        error.value = 'Please enter a recipient name to search.';
         return;
     }
 
@@ -61,25 +49,13 @@ const searchDirectory = async () => {
     successMessage.value = null;
 
     try {
-        const params = new URLSearchParams();
-
-        if (firstName && lastName) {
-            params.set('firstName', firstName);
-            params.set('lastName', lastName);
-        }
-        if (iban) {
-            params.set('iban', iban);
-        }
-
-        const response = await authorizedFetch(`/users?${params.toString()}`);
-        if (!response.ok) throw new Error("Failed to search directory.");
+        const response = await authorizedFetch(`/accounts/transfer-targets?name=${encodeURIComponent(name)}&size=20`);
+        if (!response.ok) throw new Error('Failed to search transfer targets.');
         const data = await response.json();
 
-        searchResults.value = data.content ? data.content : data;
+        searchResults.value = data.content || [];
         if (searchResults.value.length === 0) {
-            error.value = iban
-                ? "No active accounts found for that IBAN."
-                : "No active accounts found for that name.";
+            error.value = 'No active accounts found for that name.';
         }
     } catch (err) {
         error.value = err instanceof Error ? err.message : String(err);
@@ -121,6 +97,7 @@ const submitTransfer = async () => {
                 fromIban: fromIban.value,
                 toIban: toIban.value,
                 amount: amount.value,
+                type: 'TRANSFER',
                 description: description.value || "Transfer"
             })
         });
@@ -216,9 +193,7 @@ onMounted(() => {
                 <div v-if="transferType === 'EXTERNAL'" class="external-search-box">
                     <p style="margin-bottom: 0.5rem; font-weight: bold;">Find Recipient</p>
                     <div class="external-search-row">
-                        <input type="text" v-model="searchFirstName" placeholder="First Name" />
-                        <input type="text" v-model="searchLastName" placeholder="Last Name" />
-                        <input type="text" v-model="searchIban" placeholder="IBAN (optional)" />
+                        <input type="text" v-model="searchName" placeholder="Full name (e.g. John Doe)" />
                         <button type="button" class="btn secondary-btn" @click="searchDirectory" :disabled="searching">
                             {{ searching ? '...' : 'Search' }}
                         </button>
@@ -226,23 +201,16 @@ onMounted(() => {
 
                     <div v-if="searchResults.length > 0" class="results-list">
                         <p class="muted" style="font-size: 0.9rem; margin-bottom: 0.5rem;">Select an account:</p>
-                        
-                        <div v-for="user in searchResults" :key="user.id" style="margin-bottom: 1rem;">
-                            <strong style="display: block; margin-bottom: 0.5rem;">{{ user.firstName }} {{ user.lastName }}</strong>
-                            
-                            <button 
-                                v-for="acc in user.accounts" 
-                                :key="acc.iban"
-                                type="button"
-                                class="btn recipient-picker-btn"
-                                @click="selectExternalAccount(acc.iban)"
-                            >
-                                <span style="font-weight: bold; color: var(--color-primary);">{{ acc.accountType }}</span><br>
-                                <span class="muted" style="font-family: monospace;">{{ acc.iban }}</span>
-                            </button>
-                            
-                            <p v-if="user.accounts.length === 0" class="muted" style="font-size: 0.85rem;">No active accounts available.</p>
-                        </div>
+                        <button
+                            v-for="target in searchResults"
+                            :key="target.iban"
+                            type="button"
+                            class="btn recipient-picker-btn"
+                            @click="selectExternalAccount(target.iban)"
+                        >
+                            <span style="font-weight: bold;">{{ target.firstName }} {{ target.lastName }}</span><br>
+                            <span class="muted" style="font-family: monospace;">{{ target.iban }}</span>
+                        </button>
                     </div>
                 </div>
                 

@@ -1,41 +1,26 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
 import { useAuthStore } from '@/stores/auth';
-import { authorizedFetch } from '@/composables/useAuthorizedFetch';
+import { fetchMyAccounts } from '@/composables/useMyAccounts';
 
 const auth = useAuthStore();
 
 const loading = ref(true);
 const error = ref<string | null>(null);
 
-type AccountDetail = {
-    iban: string;
-    accountType: 'CHECKING' | 'SAVINGS';
-    balance: number;
-    absoluteLimit: number;
-};
+const customerName = ref('');
+const combinedBalance = ref(0);
+const accounts = ref<Awaited<ReturnType<typeof fetchMyAccounts>>['accounts']>([]);
 
-type AccountSummaryResponse = {
-    customerName: string;
-    combinedBalance: number;
-    accounts: AccountDetail[];
-};
-
-const accountSummary = ref<AccountSummaryResponse | null>(null);
-
-const fetchMyAccounts = async () => {
+const fetchAccounts = async () => {
     loading.value = true;
     error.value = null;
     
     try {
-        const response = await authorizedFetch('/accounts/mine');
-        
-        if (!response.ok) {
-            const errText = await response.text();
-            throw new Error(errText || `Failed to load accounts (${response.status})`);
-        }
-        
-        accountSummary.value = await response.json();
+        const summary = await fetchMyAccounts();
+        accounts.value = summary.accounts;
+        combinedBalance.value = summary.combinedBalance;
+        customerName.value = auth.firstName ?? '';
     } catch (err) {
         error.value = err instanceof Error ? err.message : String(err);
     } finally {
@@ -48,7 +33,7 @@ const formatCurrency = (amount: number) => {
 };
 
 onMounted(() => {
-    fetchMyAccounts();
+    fetchAccounts();
 });
 </script>
 
@@ -61,20 +46,20 @@ onMounted(() => {
         <section v-else-if="error" class="panel hero-section">
             <h2 class="headline text-danger">Unable to load accounts</h2>
             <p class="muted">{{ error }}</p>
-            <button class="btn primary-btn" @click="fetchMyAccounts">Try Again</button>
+            <button class="btn primary-btn" @click="fetchAccounts">Try Again</button>
         </section>
 
-        <template v-else-if="accountSummary">
+        <template v-else>
             <section class="panel hero-section">
-                <h1 class="headline">{{ formatCurrency(accountSummary.combinedBalance) }}</h1>
+                <h1 class="headline">{{ formatCurrency(combinedBalance) }}</h1>
                 <p class="muted subtitle">
-                    Total Combined Balance for {{ accountSummary.customerName || auth.firstName }}
+                    Total Combined Balance for {{ customerName || auth.firstName }}
                 </p>
             </section>
 
             <section class="features-grid">
                 <article 
-                    v-for="account in accountSummary.accounts" 
+                    v-for="account in accounts" 
                     :key="account.iban" 
                     class="panel feature-card"
                 >

@@ -17,7 +17,7 @@ type RegisterResponse = {
 	firstName: string;
 	lastName: string;
 	email: string;
-	message: string;
+	role: string;
 };
 
 export const useRegistrationStore = defineStore('registration', () => {
@@ -49,7 +49,7 @@ export const useRegistrationStore = defineStore('registration', () => {
 			}
 
 			const registerResponseBody = (await registerHttpResponse.json()) as RegisterResponse;
-			success.value = registerResponseBody.message;
+			success.value = `Registration submitted for ${registerResponseBody.email}. Please wait for employee approval.`;
 			return registerResponseBody;
 		} catch (registrationFailure) {
 			error.value = registrationFailure instanceof Error

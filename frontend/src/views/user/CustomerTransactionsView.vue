@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted, watch } from 'vue';
 import { authorizedFetch } from '@/composables/useAuthorizedFetch';
+import { fetchMyAccounts as loadMyAccounts } from '@/composables/useMyAccounts';
 
 const myAccounts = ref<any[]>([]);
 const selectedIban = ref('');
@@ -22,11 +23,8 @@ const filters = reactive({
 const fetchMyAccounts = async () => {
     loading.value = true;
     try {
-        const response = await authorizedFetch('/accounts/mine');
-        if (!response.ok) throw new Error("Could not load your accounts.");
-        
-        const data = await response.json();
-        myAccounts.value = data.accounts || [];
+        const summary = await loadMyAccounts();
+        myAccounts.value = summary.accounts;
         
         if (myAccounts.value.length > 0) {
             selectedIban.value = myAccounts.value[0].iban;
@@ -62,7 +60,12 @@ const fetchTransactions = async (pageIndex: number) => {
         
         const pageData = await response.json();
         
-        transactions.value = pageData.content || [];
+        transactions.value = (pageData.content || []).map((tx: any) => ({
+            ...tx,
+            transactionId: tx.id,
+            type: tx.toIban === selectedIban.value ? 'INCOMING' : 'OUTGOING',
+            counterpartIban: tx.toIban === selectedIban.value ? tx.fromIban : tx.toIban,
+        }));
         currentPage.value = pageData.number;   
         totalPages.value = pageData.totalPages;
 

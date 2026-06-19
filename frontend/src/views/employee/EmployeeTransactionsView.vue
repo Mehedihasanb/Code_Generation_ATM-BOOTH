@@ -45,7 +45,11 @@ const fetchAllTransactions = async (pageIndex: number) => {
         }
         
         const pageData = await response.json();
-        transactions.value = pageData.content || [];
+        transactions.value = (pageData.content || []).map((tx: any) => ({
+            ...tx,
+            transactionId: tx.id,
+            initiatingUser: tx.initiatingUserEmail,
+        }));
         currentPage.value = pageData.number;   
         totalPages.value = pageData.totalPages;
 

@@ -36,11 +36,24 @@ const filteredToAccounts = computed(() => {
 
 const fetchCheckingAccounts = async () => {
     try {
-        const response = await authorizedFetch('/accounts/checking-options');
-        if (!response.ok) throw new Error("Failed to load account list.");
-        checkingAccounts.value = await response.json();
+        const [usersResponse, accountsResponse] = await Promise.all([
+            authorizedFetch('/users?size=500'),
+            authorizedFetch('/accounts?type=CHECKING&size=500'),
+        ]);
+        if (!usersResponse.ok || !accountsResponse.ok) throw new Error('Failed to load account list.');
+
+        const usersData = await usersResponse.json();
+        const accountsData = await accountsResponse.json();
+        const nameByUserId = new Map<number, string>(
+            (usersData.content || []).map((user: any) => [user.id, `${user.firstName} ${user.lastName}`])
+        );
+
+        checkingAccounts.value = (accountsData.content || []).map((acc: any) => ({
+            iban: acc.iban,
+            ownerName: nameByUserId.get(acc.userId) ?? 'Unknown',
+        }));
     } catch (err) {
-        error.value = "Warning: Could not load the accounts. Please refresh the page.";
+        error.value = 'Warning: Could not load the accounts. Please refresh the page.';
     }
 };
 
@@ -87,6 +100,7 @@ const submitTransfer = async () => {
                 fromIban: form.fromIban,
                 toIban: form.toIban,
                 amount: parseFloat(form.amount),
+                type: 'TRANSFER',
                 description: form.description.trim()
             })
         });

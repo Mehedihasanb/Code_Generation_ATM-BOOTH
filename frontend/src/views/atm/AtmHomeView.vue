@@ -2,7 +2,7 @@
 import { onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '@/stores/auth';
-import { authorizedFetch } from '@/composables/useAuthorizedFetch';
+import { fetchMyAccounts } from '@/composables/useMyAccounts';
 
 type AccountSummary = {
 	customerName: string;
@@ -21,11 +21,17 @@ async function loadAccounts() {
 	loading.value = true;
 	error.value = null;
 	try {
-		const response = await authorizedFetch('/accounts/mine');
-		if (!response.ok) {
-			throw new Error('Could not load your accounts.');
-		}
-		summary.value = await response.json();
+		const result = await fetchMyAccounts();
+		summary.value = {
+			customerName: auth.firstName ?? '',
+			combinedBalance: result.combinedBalance,
+			accounts: result.accounts.map((account) => ({
+				iban: account.iban,
+				accountType: account.accountType,
+				balance: account.balance,
+				absoluteLimit: account.absoluteLimit,
+			})),
+		};
 	} catch (err) {
 		error.value = err instanceof Error ? err.message : String(err);
 	} finally {

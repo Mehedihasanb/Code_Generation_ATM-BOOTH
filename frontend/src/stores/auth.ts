@@ -9,10 +9,21 @@ export type LoginPayload = {
 };
 
 export type LoginResponse = {
-    token: string;
-    role: 'CUSTOMER' | 'EMPLOYEE';
-    customerApprovalStatus?: string | null;
-    firstName: string;
+    token: {
+        value: string;
+        expiration: number;
+        type: string;
+    };
+    user: {
+        id: number;
+        email: string;
+        firstName: string;
+        lastName: string;
+        role: string;
+        status?: 'PENDING' | 'ACTIVE' | 'CLOSED' | null;
+        bsn?: string | null;
+        phoneNumber?: string | null;
+    };
 };
 
 export const tokenStorageKey = 'code-generation-token';
@@ -31,6 +42,19 @@ function migrateLegacyApprovedFlag() {
         sessionStorage.setItem(customerApprovalStatusStorageKey, 'PENDING');
     }
     sessionStorage.removeItem('code-generation-approved');
+}
+
+function mapCustomerStatus(status?: string | null): string | null {
+    if (status == null || status === '') {
+        return null;
+    }
+    if (status === 'ACTIVE') {
+        return 'APPROVED';
+    }
+    if (status === 'CLOSED') {
+        return 'DENIED';
+    }
+    return status;
 }
 
 migrateLegacyApprovedFlag();
@@ -115,13 +139,12 @@ export const useAuthStore = defineStore('auth', () => {
             }
 
             const loginResponseBody = (await loginHttpResponse.json()) as LoginResponse;
-            setToken(loginResponseBody.token);
-            const status =
-                loginResponseBody.customerApprovalStatus != null &&
-                loginResponseBody.customerApprovalStatus !== ''
-                    ? loginResponseBody.customerApprovalStatus
-                    : null;
-            setProfile(loginResponseBody.role, status, loginResponseBody.firstName);
+            setToken(loginResponseBody.token.value);
+            setProfile(
+                loginResponseBody.user.role,
+                mapCustomerStatus(loginResponseBody.user.status),
+                loginResponseBody.user.firstName
+            );
             return loginResponseBody;
         } catch (loginFailure) {
             error.value = loginFailure instanceof Error ? loginFailure.message : String(loginFailure);

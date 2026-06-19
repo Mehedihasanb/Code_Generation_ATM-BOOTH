@@ -2,6 +2,7 @@
 import { computed, onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { authorizedFetch } from '@/composables/useAuthorizedFetch';
+import { fetchMyAccounts } from '@/composables/useMyAccounts';
 
 type AccountSummary = {
 	customerName: string;
@@ -31,11 +32,17 @@ async function loadAccounts() {
 	loading.value = true;
 	error.value = null;
 	try {
-		const response = await authorizedFetch('/accounts/mine');
-		if (!response.ok) {
-			throw new Error('Could not load accounts.');
-		}
-		summary.value = await response.json();
+		const result = await fetchMyAccounts();
+		summary.value = {
+			customerName: '',
+			combinedBalance: result.combinedBalance,
+			accounts: result.accounts.map((account) => ({
+				iban: account.iban,
+				accountType: account.accountType,
+				balance: account.balance,
+				absoluteLimit: account.absoluteLimit,
+			})),
+		};
 		const accounts = checkingAccounts.value;
 		if (accounts.length > 0 && !accounts.some((a) => a.iban === selectedIban.value)) {
 			selectedIban.value = accounts[0].iban;
@@ -62,11 +69,12 @@ async function submitDeposit() {
 	success.value = null;
 
 	try {
-		const body: { amount: number; toIban: string } = {
+		const body: { amount: number; toIban: string; type: string } = {
 			amount: Number(amount.value),
 			toIban: selectedIban.value,
+			type: 'DEPOSIT',
 		};
-		const response = await authorizedFetch('/atm/deposit', {
+		const response = await authorizedFetch('/transactions', {
 			method: 'POST',
 			body: JSON.stringify(body),
 		});
@@ -77,7 +85,7 @@ async function submitDeposit() {
 		}
 
 		const result = await response.json();
-		success.value = `Deposit successful. Accepted €${Number(result.amount).toFixed(2)}. New balance: €${Number(result.newBalance).toFixed(2)}.`;
+		success.value = `Deposit successful. Accepted €${Number(result.amount).toFixed(2)}.`;
 		amount.value = null;
 		await loadAccounts();
 	} catch (err) {

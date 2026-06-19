@@ -15,13 +15,13 @@ const fetchPendingCustomers = async () => {
     loading.value = true;
     error.value = null;
     try {
-        const response = await authorizedFetch('/users?hasAccount=false');
-        
+        const response = await authorizedFetch('/users?status=PENDING');
+
         if (!response.ok) throw new Error("Failed to fetch pending customers.");
-        
+
         const pageData = await response.json();
         pendingCustomers.value = pageData.content || pageData.items || pageData;
-        
+
     } catch (err) {
         error.value = err instanceof Error ? err.message : String(err);
     } finally {
@@ -43,28 +43,25 @@ const closeReviewModal = () => {
 
 const submitApproval = async () => {
     if (!selectedCustomer.value) return;
-    
-    try {
-        const minimumAllowedBalance = Number(absoluteLimit.value);
-        const dailyOutgoingTransferLimit = Number(dailyLimit.value);
 
-        const response = await authorizedFetch('/accounts', {
-            method: 'POST',
+    try {
+        const response = await authorizedFetch(`/users/${selectedCustomer.value.id}`, {
+            method: 'PATCH',
             body: JSON.stringify({
-                customerRegistrationId: selectedCustomer.value.id,
-                minimumAllowedBalance,
-                dailyOutgoingTransferLimit
-            })
+                status: 'ACTIVE',
+                absoluteTransferLimit: Number(absoluteLimit.value),
+                dailyTransferLimit: Number(dailyLimit.value),
+            }),
         });
 
         if (!response.ok) {
             const errorText = await response.text();
             throw new Error(errorText || `Approval failed (${response.status})`);
         }
-        
+
         alert(`Customer ${selectedCustomer.value.firstName} approved! Accounts generated.`);
         closeReviewModal();
-        await fetchPendingCustomers(); 
+        await fetchPendingCustomers();
     } catch (err) {
         console.error(err);
         alert(`Failed to approve customer: ${err instanceof Error ? err.message : String(err)}`);
@@ -75,14 +72,15 @@ const denyCustomer = async (id: number) => {
     if (!confirm("Are you sure you want to DENY this application?")) return;
 
     try {
-        const response = await authorizedFetch(`/auth/customers/${id}/deny`, {
-            method: 'POST',
+        const response = await authorizedFetch(`/users/${id}`, {
+            method: 'PATCH',
+            body: JSON.stringify({ status: 'CLOSED' }),
         });
 
         if (!response.ok) throw new Error("Denial failed.");
-        
+
         alert("Customer application denied.");
-        await fetchPendingCustomers(); // Refresh the list
+        await fetchPendingCustomers();
     } catch (err) {
         console.error(err);
         alert("Failed to deny customer.");
@@ -90,7 +88,7 @@ const denyCustomer = async (id: number) => {
 };
 
 onMounted(() => {
-    fetchPendingCustomers(); 
+    fetchPendingCustomers();
 });
 </script>
 
@@ -107,7 +105,7 @@ onMounted(() => {
             <p v-if="loading">Loading applications...</p>
             <p v-else-if="error" class="error">{{ error }}</p>
             <p v-else-if="pendingCustomers.length === 0" class="muted">No pending registrations at this time.</p>
-            
+
             <div v-else class="table-container table-cards">
                 <table class="data-table responsive-table">
                     <thead>
@@ -122,7 +120,7 @@ onMounted(() => {
                         <tr v-for="customer in pendingCustomers" :key="customer.id">
                             <td data-label="Name">{{ customer.firstName }} {{ customer.lastName }}</td>
                             <td data-label="Email" class="cell-email">{{ customer.email }}</td>
-                            <td data-label="BSN">{{ customer.bsnNumber || 'N/A' }}</td>
+                            <td data-label="BSN">{{ customer.bsn || customer.bsnNumber || 'N/A' }}</td>
                             <td data-label="Actions" class="action-cell">
                                 <button type="button" class="btn primary-btn" @click="openReviewModal(customer)">Review</button>
                                 <button type="button" class="btn danger-btn" @click="denyCustomer(customer.id)">Deny</button>
@@ -137,7 +135,7 @@ onMounted(() => {
             <div class="panel modal-content">
                 <h2>Approve Customer</h2>
                 <p class="muted">Approving <strong>{{ selectedCustomer?.firstName }} {{ selectedCustomer?.lastName }}</strong> will automatically generate their Checking and Savings accounts.</p>
-                
+
                 <form class="auth-form" @submit.prevent="submitApproval">
                     <label>
                         <span>Daily Transfer Limit (€)</span>
