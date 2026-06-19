@@ -1,4 +1,5 @@
 <script setup lang="ts">
+// ATM login screen. Reuses /auth/login, then checks customer is approved.
 import { reactive } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useAuthStore } from '@/stores/auth';
@@ -53,11 +54,13 @@ async function submit() {
 	}
 
 	try {
+		// Step 1: same login API as online banking — returns JWT stored in sessionStorage
 		await auth.login({
 			email: form.email.trim(),
 			password: form.password,
 		});
 
+		// Step 2: ATM-specific rules — only approved customers may continue
 		if (auth.role === 'EMPLOYEE') {
 			auth.logout();
 			auth.error = 'ATM login is for customers only. Please use the employee portal.';
@@ -82,6 +85,7 @@ async function submit() {
 			return;
 		}
 
+		// Step 3: show ATM home screen (balances + withdraw/deposit menu)
 		const redirect = typeof route.query.redirect === 'string' ? route.query.redirect : '/atm/home';
 		await router.push(redirect);
 	} catch {

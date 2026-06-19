@@ -1,4 +1,5 @@
 <script setup lang="ts">
+// ATM deposit screen — calls POST /atm/deposit with customer JWT.
 import { computed, onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { authorizedFetch } from '@/composables/useAuthorizedFetch';
