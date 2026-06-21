@@ -6,15 +6,13 @@ import jakarta.validation.constraints.PositiveOrZero;
 
 import java.math.BigDecimal;
 
-/**
- * PATCH body for {@code PATCH /accounts/{iban}} — all fields optional, but at least one is required.
- */
+
 public class AccountUpdateRequest {
 
     private AccountStatus status;
 
-    @PositiveOrZero(message = "absoluteTransferLimit must be zero or greater")
-    private BigDecimal absoluteTransferLimit;
+    @PositiveOrZero(message = "minimumBalanceLimit must be zero or greater")
+    private BigDecimal minimumBalanceLimit;
 
     @PositiveOrZero(message = "dailyTransferLimit must be zero or greater")
     private BigDecimal dailyTransferLimit;
@@ -22,10 +20,10 @@ public class AccountUpdateRequest {
     public AccountUpdateRequest() {
     }
 
-    public AccountUpdateRequest(BigDecimal absoluteTransferLimit,
+    public AccountUpdateRequest(BigDecimal minimumBalanceLimit,
                               BigDecimal dailyTransferLimit,
                               AccountStatus status) {
-        this.absoluteTransferLimit = absoluteTransferLimit;
+        this.minimumBalanceLimit = minimumBalanceLimit;
         this.dailyTransferLimit = dailyTransferLimit;
         this.status = status;
     }
@@ -38,12 +36,12 @@ public class AccountUpdateRequest {
         this.status = status;
     }
 
-    public BigDecimal getAbsoluteTransferLimit() {
-        return absoluteTransferLimit;
+    public BigDecimal getMinimumBalanceLimit() {
+        return minimumBalanceLimit;
     }
 
-    public void setAbsoluteTransferLimit(BigDecimal absoluteTransferLimit) {
-        this.absoluteTransferLimit = absoluteTransferLimit;
+    public void setMinimumBalanceLimit(BigDecimal minimumBalanceLimit) {
+        this.minimumBalanceLimit = minimumBalanceLimit;
     }
 
     public BigDecimal getDailyTransferLimit() {
@@ -56,6 +54,6 @@ public class AccountUpdateRequest {
 
     @AssertTrue(message = "At least one field must be provided")
     public boolean hasAtLeastOneField() {
-        return absoluteTransferLimit != null || dailyTransferLimit != null || status != null;
+        return minimumBalanceLimit != null || dailyTransferLimit != null || status != null;
     }
 }

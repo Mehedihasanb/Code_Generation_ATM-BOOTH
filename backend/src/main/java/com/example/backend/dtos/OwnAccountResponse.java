@@ -10,7 +10,7 @@ public record OwnAccountResponse(
         String iban,
         AccountType type,
         BigDecimal balance,
-        BigDecimal absoluteTransferLimit,
+        BigDecimal minimumBalanceLimit,
         BigDecimal dailyTransferLimit,
         AccountStatus status,
         LocalDateTime createdAt

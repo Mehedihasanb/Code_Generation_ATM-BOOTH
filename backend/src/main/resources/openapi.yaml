@@ -690,9 +690,10 @@ components:
       type: object
       description: At least one field must be provided.
       properties:
-        absoluteTransferLimit:
+        minimumBalanceLimit:
           type: number
           minimum: 0
+          description: Minimum balance that must remain after a transfer or withdrawal (not a max account balance).
         dailyTransferLimit:
           type: number
           minimum: 0
@@ -713,10 +714,11 @@ components:
         phoneNumber:
           type: string
           pattern: '^\+?[0-9]{10,15}$'
-        absoluteTransferLimit:
+        minimumBalanceLimit:
           type: number
           minimum: 0
-          description: Applied to both accounts on first activation. Defaults to 1000.00 if omitted.
+          description: Minimum balance that must remain after a transfer or withdrawal (not a max account balance).
+          description: Minimum balance applied to both accounts on first activation. Defaults to 0.00 if omitted.
         dailyTransferLimit:
           type: number
           minimum: 0
@@ -816,7 +818,7 @@ components:
           $ref: '#/components/schemas/AccountType'
         balance:
           type: number
-        absoluteTransferLimit:
+        minimumBalanceLimit:
           type: number
         dailyTransferLimit:
           type: number
@@ -835,7 +837,7 @@ components:
           $ref: '#/components/schemas/AccountType'
         balance:
           type: number
-        absoluteTransferLimit:
+        minimumBalanceLimit:
           type: number
         dailyTransferLimit:
           type: number

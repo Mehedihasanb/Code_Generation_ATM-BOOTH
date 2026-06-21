@@ -26,8 +26,8 @@ public class CustomerService {
     private final CustomerProfileRepository customerProfileRepository;
     private final AccountService accountService;
 
-    @Value("${banking.defaults.absolute-transfer-limit}")
-    private BigDecimal defaultAbsoluteTransferLimit;
+    @Value("${banking.defaults.minimum-balance-limit}")
+    private BigDecimal defaultMinimumBalanceLimit;
 
     @Value("${banking.defaults.daily-transfer-limit}")
     private BigDecimal defaultDailyTransferLimit;
@@ -85,8 +85,8 @@ public class CustomerService {
     private void provisionAccountsIfActivated(User user, CustomerStatus previousStatus,
                                                CustomerStatus newStatus, CustomerUpdateRequest request) {
         if (newStatus != CustomerStatus.ACTIVE || previousStatus == CustomerStatus.ACTIVE) return;
-        BigDecimal absLimit = request.absoluteTransferLimit() != null
-                ? request.absoluteTransferLimit() : defaultAbsoluteTransferLimit;
+        BigDecimal absLimit = request.minimumBalanceLimit() != null
+                ? request.minimumBalanceLimit() : defaultMinimumBalanceLimit;
         BigDecimal dailyLimit = request.dailyTransferLimit() != null
                 ? request.dailyTransferLimit() : defaultDailyTransferLimit;
         accountService.createAccountsForUser(user, absLimit, dailyLimit);

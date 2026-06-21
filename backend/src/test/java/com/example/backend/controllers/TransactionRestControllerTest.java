@@ -106,7 +106,7 @@ class TransactionRestControllerTest {
         account.setIban(iban);
         account.setType(type);
         account.setBalance(new BigDecimal("1000.00"));
-        account.setAbsoluteTransferLimit(new BigDecimal("-500.00"));
+        account.setMinimumBalanceLimit(new BigDecimal("-500.00"));
         account.setDailyTransferLimit(new BigDecimal("5000.00"));
         account.setStatus(AccountStatus.ACTIVE);
         account.setCreatedAt(LocalDateTime.now());

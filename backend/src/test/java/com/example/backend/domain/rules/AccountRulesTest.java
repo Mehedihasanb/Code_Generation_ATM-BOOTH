@@ -28,7 +28,7 @@ class AccountRulesTest {
         account.setType(AccountType.CHECKING);
         account.setStatus(AccountStatus.ACTIVE);
         account.setBalance(new BigDecimal("100.00"));
-        account.setAbsoluteTransferLimit(BigDecimal.ZERO);
+        account.setMinimumBalanceLimit(BigDecimal.ZERO);
         account.setDailyTransferLimit(new BigDecimal("500.00"));
     }
 
@@ -62,7 +62,7 @@ class AccountRulesTest {
     void requireLimitsForNewAccount_missingAbsoluteLimit_throwsIllegalArgument() {
         IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
                 () -> rules.requireLimitsForNewAccount(null, BigDecimal.ZERO));
-        assertTrue(ex.getMessage().contains("absolute transfer limit is required"));
+        assertTrue(ex.getMessage().contains("minimum balance limit is required"));
     }
 
     @Test

@@ -244,7 +244,7 @@ class UserRestControllerTest {
 
             Map<String, Object> request = new HashMap<>();
             request.put("status", "ACTIVE");
-            request.put("absoluteTransferLimit", "1000.00");
+            request.put("minimumBalanceLimit", "1000.00");
             request.put("dailyTransferLimit", "500.00");
 
             mockMvc.perform(patch("/users/{id}", customer.getId())
@@ -263,7 +263,7 @@ class UserRestControllerTest {
 
             Map<String, Object> request = new HashMap<>();
             request.put("status", "ACTIVE");
-            request.put("absoluteTransferLimit", "1000.00");
+            request.put("minimumBalanceLimit", "1000.00");
             request.put("dailyTransferLimit", "500.00");
 
             mockMvc.perform(patch("/users/{id}", customer.getId())
@@ -305,7 +305,7 @@ class UserRestControllerTest {
             User employee = createEmployee("usr-neg-limit-emp@test.inholland.nl");
 
             Map<String, Object> request = new HashMap<>();
-            request.put("absoluteTransferLimit", "-50.00");
+            request.put("minimumBalanceLimit", "-50.00");
 
             mockMvc.perform(patch("/users/{id}", customer.getId())
                     .header("Authorization", bearerToken(employee))

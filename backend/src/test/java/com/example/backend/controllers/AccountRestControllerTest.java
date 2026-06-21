@@ -102,7 +102,7 @@ class AccountRestControllerTest {
         account.setIban(iban);
         account.setType(type);
         account.setBalance(new BigDecimal("1000.00"));
-        account.setAbsoluteTransferLimit(new BigDecimal("0.00"));
+        account.setMinimumBalanceLimit(new BigDecimal("0.00"));
         account.setDailyTransferLimit(new BigDecimal("5000.00"));
         account.setStatus(status);
         account.setCreatedAt(LocalDateTime.now());
@@ -335,7 +335,7 @@ class AccountRestControllerTest {
                 .andExpect(jsonPath("$.content[0].lastName").value("Lookup"))
                 .andExpect(jsonPath("$.content[0].userId").doesNotExist())
                 .andExpect(jsonPath("$.content[0].balance").doesNotExist())
-                .andExpect(jsonPath("$.content[0].absoluteTransferLimit").doesNotExist())
+                .andExpect(jsonPath("$.content[0].minimumBalanceLimit").doesNotExist())
                 .andExpect(jsonPath("$.content[0].dailyTransferLimit").doesNotExist());
     }
 
@@ -416,7 +416,7 @@ class AccountRestControllerTest {
         accountRepository.save(account);
 
         Map<String, Object> request = new HashMap<>();
-        request.put("absoluteTransferLimit", "200.00");
+        request.put("minimumBalanceLimit", "200.00");
         request.put("dailyTransferLimit", "3000.00");
         request.put("status", "CLOSED");
 
@@ -426,7 +426,7 @@ class AccountRestControllerTest {
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.iban").value(account.getIban()))
-                .andExpect(jsonPath("$.absoluteTransferLimit").value(200.00))
+                .andExpect(jsonPath("$.minimumBalanceLimit").value(200.00))
                 .andExpect(jsonPath("$.dailyTransferLimit").value(3000.00))
                 .andExpect(jsonPath("$.status").value("CLOSED"));
     }
@@ -492,7 +492,7 @@ class AccountRestControllerTest {
         Account account = createAccount(customer, "RHINONEGLIM01");
 
         Map<String, Object> request = new HashMap<>();
-        request.put("absoluteTransferLimit", -1.00);
+        request.put("minimumBalanceLimit", -1.00);
 
         // negative limits are not allowed
         mockMvc.perform(patch("/accounts/{iban}", account.getIban())
@@ -509,7 +509,7 @@ class AccountRestControllerTest {
         User employee = createEmployee("ac-notfound-emp@test.inholland.nl");
 
         Map<String, Object> request = new HashMap<>();
-        request.put("absoluteTransferLimit", "500.00");
+        request.put("minimumBalanceLimit", "500.00");
 
         // unknown IBAN should be 404
         mockMvc.perform(patch("/accounts/NL99XXXX0000000000")

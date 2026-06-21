@@ -60,7 +60,7 @@ class TransactionRulesTest {
         activeFromAccount.setType(AccountType.CHECKING);
         activeFromAccount.setStatus(AccountStatus.ACTIVE);
         activeFromAccount.setBalance(new BigDecimal("1000.00"));
-        activeFromAccount.setAbsoluteTransferLimit(new BigDecimal("-500.00"));
+        activeFromAccount.setMinimumBalanceLimit(new BigDecimal("-500.00"));
         activeFromAccount.setDailyTransferLimit(new BigDecimal("2000.00"));
         activeFromAccount.setUser(customerUser);
 
@@ -178,7 +178,7 @@ class TransactionRulesTest {
         TransactionCreateRequest request = new TransactionCreateRequest(
                 FROM_IBAN, TO_IBAN, null, new BigDecimal("1600.00"), TransactionType.TRANSFER, null);
 
-        // balance 1000 - 1600 = -600, below absoluteTransferLimit of -500
+        // balance 1000 - 1600 = -600, below minimumBalanceLimit of -500
         assertThrows(BadRequestException.class,
                 () -> rules.validateTransfer(
                         request, activeFromAccount, activeToAccount, customerUser, NO_PRIOR_SPEND));
@@ -272,20 +272,20 @@ class TransactionRulesTest {
         assertDoesNotThrow(() -> rules.requireSourceOwner(activeFromAccount, employeeUser));
     }
 
-    // --- validateAbsoluteLimit (individual rule) ---
+    // --- validateMinimumBalanceLimit (individual rule) ---
 
     @Test
-    void validateAbsoluteLimit_throwsWhenAmountBreachesLimit() {
-        // balance 1000 - 1600 = -600, below absoluteTransferLimit of -500
+    void validateMinimumBalanceLimit_throwsWhenAmountBreachesLimit() {
+        // balance 1000 - 1600 = -600, below minimumBalanceLimit of -500
         assertThrows(BadRequestException.class,
-                () -> rules.validateAbsoluteLimit(activeFromAccount, new BigDecimal("1600.00")));
+                () -> rules.validateMinimumBalanceLimit(activeFromAccount, new BigDecimal("1600.00")));
     }
 
     @Test
-    void validateAbsoluteLimit_allowsAmountWithinLimit() {
-        // balance 1000 - 1400 = -400, above absoluteTransferLimit of -500
+    void validateMinimumBalanceLimit_allowsAmountWithinLimit() {
+        // balance 1000 - 1400 = -400, above minimumBalanceLimit of -500
         assertDoesNotThrow(
-                () -> rules.validateAbsoluteLimit(activeFromAccount, new BigDecimal("1400.00")));
+                () -> rules.validateMinimumBalanceLimit(activeFromAccount, new BigDecimal("1400.00")));
     }
 
     // --- validateDailyLimit (individual rule — outgoingToday is now supplied directly, no repo needed) ---

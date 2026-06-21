@@ -4,7 +4,7 @@ export type OwnAccountRow = {
 	iban: string;
 	accountType: string;
 	balance: number;
-	absoluteLimit: number;
+	minimumBalanceLimit: number;
 	active: boolean;
 };
 
@@ -17,7 +17,7 @@ type OwnAccountResponse = {
 	iban: string;
 	type: string;
 	balance: number;
-	absoluteTransferLimit: number;
+	minimumBalanceLimit: number;
 	dailyTransferLimit: number;
 	status: 'ACTIVE' | 'CLOSED';
 };
@@ -38,7 +38,7 @@ export async function fetchMyAccounts(): Promise<MyAccountsSummary> {
 		iban: account.iban,
 		accountType: account.type,
 		balance: account.balance,
-		absoluteLimit: account.absoluteTransferLimit ?? 0,
+		minimumBalanceLimit: account.minimumBalanceLimit ?? 0,
 		active: account.status === 'ACTIVE',
 	}));
 	const combinedBalance = accounts.reduce((sum, account) => sum + account.balance, 0);

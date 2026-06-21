@@ -89,11 +89,11 @@ public class TransactionRules {
         }
     }
 
-    public void validateAbsoluteLimit(Account from, BigDecimal amount) {
+    public void validateMinimumBalanceLimit(Account from, BigDecimal amount) {
         BigDecimal balanceAfter = from.getBalance().subtract(amount);
-        if (balanceAfter.compareTo(from.getAbsoluteTransferLimit()) < 0) {
+        if (balanceAfter.compareTo(from.getMinimumBalanceLimit()) < 0) {
             throw new BadRequestException(
-                    "This transfer would exceed the absolute limit for IBAN " + from.getIban());
+                    "This transfer would leave the balance below the minimum allowed for IBAN " + from.getIban());
         }
     }
 
@@ -105,7 +105,7 @@ public class TransactionRules {
     }
 
     private void validateOutgoingLimits(Account from, BigDecimal outgoingToday, BigDecimal amount) {
-        validateAbsoluteLimit(from, amount);
+        validateMinimumBalanceLimit(from, amount);
         validateDailyLimit(from, outgoingToday, amount);
     }
 

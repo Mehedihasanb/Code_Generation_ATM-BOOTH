@@ -59,7 +59,7 @@ class AccountServiceTest {
     }
 
     @Test
-    void createAccountsForUser_requiresAbsoluteTransferLimitBeforeSaving() {
+    void createAccountsForUser_requiresminimumBalanceLimitBeforeSaving() {
         TestAccountRepository accountRepository = new TestAccountRepository(iban -> Optional.empty());
         AccountService accountService = accountService(accountRepository, sequenceGenerator("NL01INHO0000000001"));
         User user = new User(1, "user@example.com", "secret", "Test", "User", UserRole.CUSTOMER, LocalDateTime.now());
@@ -99,7 +99,7 @@ class AccountServiceTest {
         Account updated = accountService.updateAccount(account.getIban(),
                 new AccountUpdateRequest(new BigDecimal("250.00"), null, null));
 
-        assertEquals(new BigDecimal("250.00"), updated.getAbsoluteTransferLimit());
+        assertEquals(new BigDecimal("250.00"), updated.getMinimumBalanceLimit());
         assertEquals(new BigDecimal("500.00"), updated.getDailyTransferLimit());
         assertEquals(AccountStatus.ACTIVE, updated.getStatus());
         assertEquals(1, accountRepository.saveCount());
@@ -114,7 +114,7 @@ class AccountServiceTest {
         Account updated = accountService.updateAccount(account.getIban(),
                 new AccountUpdateRequest(null, new BigDecimal("750.00"), null));
 
-        assertEquals(new BigDecimal("100.00"), updated.getAbsoluteTransferLimit());
+        assertEquals(new BigDecimal("100.00"), updated.getMinimumBalanceLimit());
         assertEquals(new BigDecimal("750.00"), updated.getDailyTransferLimit());
         assertEquals(AccountStatus.ACTIVE, updated.getStatus());
         assertEquals(1, accountRepository.saveCount());
@@ -130,7 +130,7 @@ class AccountServiceTest {
         Account updated = accountService.updateAccount(account.getIban(),
                 new AccountUpdateRequest(null, null, AccountStatus.CLOSED));
 
-        assertEquals(new BigDecimal("100.00"), updated.getAbsoluteTransferLimit());
+        assertEquals(new BigDecimal("100.00"), updated.getMinimumBalanceLimit());
         assertEquals(new BigDecimal("500.00"), updated.getDailyTransferLimit());
         assertEquals(AccountStatus.CLOSED, updated.getStatus());
         assertEquals(1, accountRepository.saveCount());
@@ -203,7 +203,7 @@ class AccountServiceTest {
         Account account = new Account();
         account.setIban("NL02INHO0000000001");
         account.setBalance(new BigDecimal("100.00"));
-        account.setAbsoluteTransferLimit(new BigDecimal("100.00"));
+        account.setMinimumBalanceLimit(new BigDecimal("100.00"));
         account.setDailyTransferLimit(new BigDecimal("500.00"));
         account.setStatus(AccountStatus.ACTIVE);
         return account;

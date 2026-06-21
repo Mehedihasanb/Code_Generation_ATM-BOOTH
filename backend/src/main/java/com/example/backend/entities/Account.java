@@ -44,7 +44,7 @@ public class Account {
     private BigDecimal balance;
 
     @Column(nullable = false)
-    private BigDecimal absoluteTransferLimit;
+    private BigDecimal minimumBalanceLimit;
 
     @Column(nullable = false)
     private BigDecimal dailyTransferLimit;

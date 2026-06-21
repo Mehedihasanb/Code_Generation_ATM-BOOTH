@@ -73,7 +73,7 @@ class TransactionServiceTest {
                 fromAccount.setIban(FROM_IBAN);
                 fromAccount.setStatus(AccountStatus.ACTIVE);
                 fromAccount.setBalance(new BigDecimal("1000.00"));
-                fromAccount.setAbsoluteTransferLimit(new BigDecimal("-500.00"));
+                fromAccount.setMinimumBalanceLimit(new BigDecimal("-500.00"));
                 fromAccount.setDailyTransferLimit(new BigDecimal("2000.00"));
                 fromAccount.setUser(customerUser);
 
@@ -268,13 +268,13 @@ class TransactionServiceTest {
                 when(accountRepository.findByIban(TO_IBAN)).thenReturn(Optional.of(toAccount));
                 when(transactionRepository.findByFromIbanAndTypeInAndTimestampGreaterThanEqual(
                                 eq(FROM_IBAN), any(), any())).thenReturn(List.of());
-                doThrow(new BadRequestException("This transfer would exceed the absolute limit for IBAN " + FROM_IBAN))
+                doThrow(new BadRequestException("This transfer would leave the balance below the minimum allowed for IBAN " + FROM_IBAN))
                                 .when(rules).validateTransfer(any(), any(), any(), any(), any());
 
                 BadRequestException exception = assertThrows(BadRequestException.class,
                                 () -> transactionService.create(request, customerUser));
 
-                assertEquals("This transfer would exceed the absolute limit for IBAN " + FROM_IBAN,
+                assertEquals("This transfer would leave the balance below the minimum allowed for IBAN " + FROM_IBAN,
                                 exception.getMessage());
                 verify(transactionRepository, never()).save(any());
                 verify(accountRepository, never()).save(any());

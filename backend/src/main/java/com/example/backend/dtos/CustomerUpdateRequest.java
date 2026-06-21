@@ -8,7 +8,6 @@ import com.example.backend.entities.enums.CustomerStatus;
 import java.math.BigDecimal;
 
 public record CustomerUpdateRequest(
-        // Jackson converts the JSON string "ACTIVE" / "PENDING" to this enum for us
         CustomerStatus status,
 
         @Size(max = 64, message = "First name must be at most 64 characters")
@@ -20,8 +19,8 @@ public record CustomerUpdateRequest(
         @Pattern(regexp = "\\+?[0-9]{10,15}", message = "Phone number must be between 10 and 15 digits")
         String phoneNumber,
 
-        @PositiveOrZero(message = "Absolute transfer limit must be zero or greater")
-        BigDecimal absoluteTransferLimit,
+        @PositiveOrZero(message = "Minimum balance limit must be zero or greater")
+        BigDecimal minimumBalanceLimit,
 
         @PositiveOrZero(message = "Daily transfer limit must be zero or greater")
         BigDecimal dailyTransferLimit

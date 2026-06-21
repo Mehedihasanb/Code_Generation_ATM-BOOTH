@@ -20,7 +20,7 @@ const totalPages = ref(0);
 const loadingTx = ref(false);
 const txError = ref<string | null>(null);
 
-const absoluteLimitInput = ref<number>(0);
+const minimumBalanceInput = ref<number>(0);
 const dailyLimitInput = ref<number>(0);
 const limitsError = ref<string | null>(null);
 const limitsSuccess = ref<string | null>(null);
@@ -113,7 +113,7 @@ const loadEmployeeAccounts = async (userId: number) => {
     const data = await response.json();
     employeeAccounts.value = data.content || [];
     if (employeeAccounts.value.length > 0) {
-        absoluteLimitInput.value = Number(employeeAccounts.value[0].absoluteTransferLimit ?? 0);
+        minimumBalanceInput.value = Number(employeeAccounts.value[0].minimumBalanceLimit ?? 0);
         dailyLimitInput.value = Number(employeeAccounts.value[0].dailyTransferLimit ?? 0);
     }
 };
@@ -166,7 +166,7 @@ const updateCustomerLimits = async () => {
 
     try {
         const body = JSON.stringify({
-            absoluteTransferLimit: Number(absoluteLimitInput.value),
+            minimumBalanceLimit: Number(minimumBalanceInput.value),
             dailyTransferLimit: Number(dailyLimitInput.value),
         });
 
@@ -294,12 +294,12 @@ const getTypeBadgeClass = (type: string) => {
                 <section v-if="employeeAccounts.length" class="limits-panel">
                     <h3 style="margin: 0 0 0.75rem 0; font-size: 1rem;">Transfer limits</h3>
                     <p class="muted" style="margin: 0 0 1rem 0; font-size: 0.9rem;">
-                        Applied to all of this customer's accounts via PATCH /accounts/{iban}.
+                        Daily limit = max outgoing per day. Minimum balance = lowest balance allowed after a transfer or withdrawal.
                     </p>
                     <div class="limits-form-row">
                         <label class="form-field">
-                            Absolute limit (€)
-                            <input type="number" v-model.number="absoluteLimitInput" step="0.01" />
+                            Min. balance after transfer (€)
+                            <input type="number" v-model.number="minimumBalanceInput" step="0.01" />
                         </label>
                         <label class="form-field">
                             Daily limit (€)

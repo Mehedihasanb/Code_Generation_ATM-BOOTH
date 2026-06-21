@@ -194,7 +194,7 @@ class ApiDtoBoundaryTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""
                         {
-                          "absoluteTransferLimit": 1200.00,
+                          "minimumBalanceLimit": 1200.00,
                           "dailyTransferLimit": 600.00
                         }
                         """))
@@ -299,7 +299,7 @@ class ApiDtoBoundaryTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""
                         {
-                          "absoluteTransferLimit": 1000.00
+                          "minimumBalanceLimit": 1000.00
                         }
                         """))
                 .andExpect(status().isNotFound());
@@ -309,7 +309,7 @@ class ApiDtoBoundaryTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""
                         {
-                          "absoluteTransferLimit": -1.00
+                          "minimumBalanceLimit": -1.00
                         }
                         """))
                 .andExpect(status().isBadRequest());

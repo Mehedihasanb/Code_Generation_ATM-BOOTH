@@ -8,7 +8,7 @@ import { fetchMyAccounts } from '@/composables/useMyAccounts';
 type AccountSummary = {
 	customerName: string;
 	combinedBalance: number;
-	accounts: { iban: string; accountType: string; balance: number; absoluteLimit: number }[];
+	accounts: { iban: string; accountType: string; balance: number; minimumBalanceLimit: number }[];
 };
 
 const auth = useAuthStore();
@@ -30,7 +30,7 @@ async function loadAccounts() {
 				iban: account.iban,
 				accountType: account.accountType,
 				balance: account.balance,
-				absoluteLimit: account.absoluteLimit,
+				minimumBalanceLimit: account.minimumBalanceLimit,
 			})),
 		};
 	} catch (err) {

@@ -14,18 +14,18 @@ public class AccountRules {
         }
     }
 
-    public void requireLimitsForNewAccount(BigDecimal absoluteLimit, BigDecimal dailyLimit) {
-        if (absoluteLimit == null) {
-            throw new IllegalArgumentException("An absolute transfer limit is required when opening accounts");
+    public void requireLimitsForNewAccount(BigDecimal minimumBalanceLimit, BigDecimal dailyLimit) {
+        if (minimumBalanceLimit == null) {
+            throw new IllegalArgumentException("A minimum balance limit is required when opening accounts");
         }
         if (dailyLimit == null) {
             throw new IllegalArgumentException("A daily transfer limit is required when opening accounts");
         }
-        validateLimits(absoluteLimit, dailyLimit);
+        validateLimits(minimumBalanceLimit, dailyLimit);
     }
 
-    public void validateLimits(BigDecimal absoluteLimit, BigDecimal dailyLimit) {
-        rejectIfNegative(absoluteLimit, "absoluteTransferLimit");
+    public void validateLimits(BigDecimal minimumBalanceLimit, BigDecimal dailyLimit) {
+        rejectIfNegative(minimumBalanceLimit, "minimumBalanceLimit");
         rejectIfNegative(dailyLimit, "dailyTransferLimit");
     }
 

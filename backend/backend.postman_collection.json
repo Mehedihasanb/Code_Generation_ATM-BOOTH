@@ -121,7 +121,7 @@
             "body": {
               "mode": "raw",
               "options": { "raw": { "language": "json" } },
-              "raw": "{\n  \"status\": \"ACTIVE\",\n  \"firstName\": \"Joe\",\n  \"lastName\": \"Davtian\",\n  \"phoneNumber\": \"0612345678\",\n  \"absoluteTransferLimit\": 1000.00,\n  \"dailyTransferLimit\": 500.00\n}"
+              "raw": "{\n  \"status\": \"ACTIVE\",\n  \"firstName\": \"Joe\",\n  \"lastName\": \"Davtian\",\n  \"phoneNumber\": \"0612345678\",\n  \"minimumBalanceLimit\": 1000.00,\n  \"dailyTransferLimit\": 500.00\n}"
             }
           }
         },
@@ -214,7 +214,7 @@
             "body": {
               "mode": "raw",
               "options": { "raw": { "language": "json" } },
-              "raw": "{\n  \"absoluteTransferLimit\": 500.00,\n  \"dailyTransferLimit\": 200.00,\n  \"status\": \"ACTIVE\"\n}"
+              "raw": "{\n  \"minimumBalanceLimit\": 500.00,\n  \"dailyTransferLimit\": 200.00,\n  \"status\": \"ACTIVE\"\n}"
             },
             "description": "At least one field must be provided. Setting status to CLOSED requires a zero balance."
           }
