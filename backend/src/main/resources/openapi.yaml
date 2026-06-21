@@ -717,8 +717,7 @@ components:
         minimumBalanceLimit:
           type: number
           minimum: 0
-          description: Minimum balance that must remain after a transfer or withdrawal (not a max account balance).
-          description: Minimum balance applied to both accounts on first activation. Defaults to 0.00 if omitted.
+          description: Minimum balance that must remain after transfers or withdrawals. Applied to both accounts on first activation; defaults to 0.00 if omitted.
         dailyTransferLimit:
           type: number
           minimum: 0
