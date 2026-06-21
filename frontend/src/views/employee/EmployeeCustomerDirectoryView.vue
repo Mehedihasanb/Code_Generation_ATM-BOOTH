@@ -299,11 +299,11 @@ const getTypeBadgeClass = (type: string) => {
                     <div class="limits-form-row">
                         <label class="form-field">
                             Absolute limit (€)
-                            <input type="number" v-model.number="absoluteLimitInput" min="0" step="0.01" required />
+                            <input type="number" v-model.number="absoluteLimitInput" step="0.01" />
                         </label>
                         <label class="form-field">
                             Daily limit (€)
-                            <input type="number" v-model.number="dailyLimitInput" min="0.01" step="0.01" required />
+                            <input type="number" v-model.number="dailyLimitInput" step="0.01" />
                         </label>
                         <button class="btn primary-btn" type="button" @click="updateCustomerLimits" :disabled="savingLimits">
                             {{ savingLimits ? 'Saving...' : 'Update limits' }}

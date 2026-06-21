@@ -70,24 +70,6 @@ const selectToAccount = (acc: any) => {
 };
 
 const submitTransfer = async () => {
-    if (!form.fromIban || !form.toIban || !form.amount) {
-        error.value = "Please select accounts from the dropdown and enter an amount.";
-        successMessage.value = null;
-        return;
-    }
-    
-    if (form.fromIban === form.toIban) {
-        error.value = "Sender and Receiver accounts cannot be the same.";
-        successMessage.value = null;
-        return;
-    }
-
-    if (parseFloat(form.amount) <= 0) {
-        error.value = "Amount must be greater than zero.";
-        successMessage.value = null;
-        return;
-    }
-
     loading.value = true;
     error.value = null;
     successMessage.value = null;
@@ -162,7 +144,6 @@ onMounted(() => {
                         @blur="showFromDropdown = false"
                         @input="form.fromIban = ''" 
                         placeholder="Search by name or IBAN..." 
-                        required 
                         class="search-input" 
                     />
                     <ul v-if="showFromDropdown && filteredFromAccounts.length > 0" class="dropdown-list">
@@ -189,7 +170,6 @@ onMounted(() => {
                         @blur="showToDropdown = false"
                         @input="form.toIban = ''" 
                         placeholder="Search by name or IBAN..." 
-                        required 
                         class="search-input" 
                     />
                     <ul v-if="showToDropdown && filteredToAccounts.length > 0" class="dropdown-list">
@@ -209,12 +189,12 @@ onMounted(() => {
 
                 <label class="form-field">
                     <span>Amount (€)</span>
-                    <input type="number" v-model="form.amount" step="0.01" min="0.01" placeholder="0.00" required />
+                    <input type="number" v-model="form.amount" step="0.01" placeholder="0.00" />
                 </label>
 
                 <label class="form-field">
                     <span>Description</span>
-                    <input type="text" v-model="form.description" placeholder="Reason for transfer" required />
+                    <input type="text" v-model="form.description" placeholder="Reason for transfer" />
                 </label>
 
                 <button type="submit" class="btn danger-btn" :disabled="loading">

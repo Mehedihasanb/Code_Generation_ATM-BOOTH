@@ -17,37 +17,7 @@ const form = reactive<LoginForm>({
 	password: '',
 });
 
-const fieldError = reactive<Record<keyof LoginForm, string>>({
-	email: '',
-	password: '',
-});
-
 const isLoggedIn = computed(() => auth.isAuthenticated);
-
-function clearFieldErrors() {
-	fieldError.email = '';
-	fieldError.password = '';
-}
-
-function validate(): boolean {
-	clearFieldErrors();
-	let valid = true;
-
-	if (!form.email.trim()) {
-		fieldError.email = 'Email is required.';
-		valid = false;
-	} else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
-		fieldError.email = 'Email format is invalid.';
-		valid = false;
-	}
-
-	if (!form.password) {
-		fieldError.password = 'Password is required.';
-		valid = false;
-	}
-
-	return valid;
-}
 
 function clearLoginError() {
     auth.error = null;
@@ -58,10 +28,6 @@ onMounted(() => {
 });
 
 async function submit() {
-    if (!validate()) {
-        return;
-    }
-
     clearLoginError();
 
     try {
@@ -81,15 +47,6 @@ async function submit() {
             return;
         }
 
-        if (auth.isPendingCustomer || auth.isDeniedCustomer) {
-            await router.push('/pending-approval');
-            return;
-        }
-
-		if (auth.role === 'CUSTOMER') {
-			await router.push('/accounts');
-			return;
-		}
         await router.push('/');
         
     } catch {
@@ -106,13 +63,11 @@ async function submit() {
 			<label>
 				<span>Email</span>
 				<input v-model="form.email" type="email" autocomplete="email" @input="clearLoginError" />
-				<small v-if="fieldError.email" class="error">{{ fieldError.email }}</small>
 			</label>
 
 			<label>
 				<span>Password</span>
 				<input v-model="form.password" type="password" autocomplete="current-password" @input="clearLoginError" />
-				<small v-if="fieldError.password" class="error">{{ fieldError.password }}</small>
 			</label>
 
 			<p v-if="auth.error" class="error">{{ auth.error }}</p>

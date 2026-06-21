@@ -8,8 +8,6 @@ const error = ref<string | null>(null);
 
 const selectedCustomer = ref<any | null>(null);
 const showModal = ref(false);
-const dailyLimit = ref<number>(1000);
-const absoluteLimit = ref<number>(0);
 
 const fetchPendingCustomers = async () => {
     loading.value = true;
@@ -31,8 +29,6 @@ const fetchPendingCustomers = async () => {
 
 const openReviewModal = (customer: any) => {
     selectedCustomer.value = customer;
-    dailyLimit.value = 1000;
-    absoluteLimit.value = 0;
     showModal.value = true;
 };
 
@@ -49,8 +45,6 @@ const submitApproval = async () => {
             method: 'PATCH',
             body: JSON.stringify({
                 status: 'ACTIVE',
-                absoluteTransferLimit: Number(absoluteLimit.value),
-                dailyTransferLimit: Number(dailyLimit.value),
             }),
         });
 
@@ -134,21 +128,9 @@ onMounted(() => {
         <div v-if="showModal" class="modal-overlay">
             <div class="panel modal-content">
                 <h2>Approve Customer</h2>
-                <p class="muted">Approving <strong>{{ selectedCustomer?.firstName }} {{ selectedCustomer?.lastName }}</strong> will automatically generate their Checking and Savings accounts.</p>
+                <p class="muted">Approving <strong>{{ selectedCustomer?.firstName }} {{ selectedCustomer?.lastName }}</strong> will create their accounts. Transfer limits use the backend defaults.</p>
 
                 <form class="auth-form" @submit.prevent="submitApproval">
-                    <label>
-                        <span>Daily Transfer Limit (€)</span>
-                        <input type="number" v-model.number="dailyLimit" required min="1" />
-                        <small class="muted">Maximum amount that customer can transfer per day.</small>
-                    </label>
-
-                    <label>
-                        <span>Absolute Account Limit (€)</span>
-                        <input type="number" v-model.number="absoluteLimit" required />
-                        <small class="muted">Account balance cannot exceed this amount.</small>
-                    </label>
-
                     <div class="button-group">
                         <button type="button" class="btn secondary-btn" @click="closeReviewModal">Cancel</button>
                         <button type="submit" class="btn primary-btn">Approve & Create Accounts</button>
