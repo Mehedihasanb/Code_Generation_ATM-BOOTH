@@ -41,4 +41,55 @@ public class AccountSpecification {
             return cb.and(predicates.toArray(new Predicate[0]));
         };
     }
+
+    public static Specification<Account> forTransferTargetSearch(int excludeUserId, String searchTerm) {
+        return (root, q, cb) -> {
+            Join<Account, User> user = root.join("user");
+            List<Predicate> predicates = new ArrayList<>();
+
+            predicates.add(cb.notEqual(user.get("id"), excludeUserId));
+            predicates.add(cb.equal(root.get("type"), com.example.backend.entities.enums.AccountType.CHECKING));
+            predicates.add(cb.equal(root.get("status"), com.example.backend.entities.enums.AccountStatus.ACTIVE));
+
+            String normalized = searchTerm.trim().replaceAll("\\s+", " ");
+            if (normalized.isEmpty()) {
+                return cb.disjunction();
+            }
+
+            var fullName = cb.lower(cb.concat(cb.concat(user.get("firstName"), " "), user.get("lastName")));
+            String lowered = normalized.toLowerCase();
+            String containsPattern = "%" + lowered + "%";
+
+            List<Predicate> searchStrategies = new ArrayList<>();
+            searchStrategies.add(cb.like(cb.lower(root.get("iban")), containsPattern));
+            searchStrategies.add(cb.like(fullName, containsPattern));
+
+            if (!normalized.contains(" ")) {
+                searchStrategies.add(cb.or(
+                        cb.like(cb.lower(user.get("firstName")), containsPattern),
+                        cb.like(cb.lower(user.get("lastName")), containsPattern)
+                ));
+            } else {
+                List<Predicate> tokenPredicates = new ArrayList<>();
+                for (String token : normalized.split(" ")) {
+                    if (token.isBlank()) {
+                        continue;
+                    }
+                    String tokenPattern = "%" + token.toLowerCase() + "%";
+                    tokenPredicates.add(cb.or(
+                            cb.like(cb.lower(user.get("firstName")), tokenPattern),
+                            cb.like(cb.lower(user.get("lastName")), tokenPattern),
+                            cb.like(fullName, tokenPattern),
+                            cb.like(cb.lower(root.get("iban")), tokenPattern)
+                    ));
+                }
+                if (!tokenPredicates.isEmpty()) {
+                    searchStrategies.add(cb.and(tokenPredicates.toArray(new Predicate[0])));
+                }
+            }
+
+            predicates.add(cb.or(searchStrategies.toArray(new Predicate[0])));
+            return cb.and(predicates.toArray(new Predicate[0]));
+        };
+    }
 }

@@ -1,7 +1,10 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted, watch } from 'vue';
+import { useRoute } from 'vue-router';
 import { authorizedFetch } from '@/composables/useAuthorizedFetch';
 import { fetchMyAccounts as loadMyAccounts } from '@/composables/useMyAccounts';
+
+const route = useRoute();
 
 const myAccounts = ref<any[]>([]);
 const selectedIban = ref('');
@@ -25,9 +28,16 @@ const fetchMyAccounts = async () => {
     try {
         const summary = await loadMyAccounts();
         myAccounts.value = summary.accounts;
-        
-        if (myAccounts.value.length > 0) {
+
+        const queryIban = typeof route.query.accountIban === 'string' ? route.query.accountIban : '';
+        const matchingAccount = myAccounts.value.find((acc) => acc.iban === queryIban);
+        if (matchingAccount) {
+            selectedIban.value = matchingAccount.iban;
+        } else if (myAccounts.value.length > 0) {
             selectedIban.value = myAccounts.value[0].iban;
+        }
+
+        if (selectedIban.value) {
             await fetchTransactions(0);
         }
     } catch (err) {
@@ -53,7 +63,10 @@ const fetchTransactions = async (pageIndex: number) => {
         if (filters.amount) {
             url += `&amount=${filters.amount}&amountOperator=${filters.amountOperator}`;
         }
-        if (filters.counterpartIban) url += `&counterpartIban=${filters.counterpartIban}`;
+        if (filters.counterpartIban) {
+            const compactIban = filters.counterpartIban.replace(/\s/g, '').toUpperCase();
+            url += `&counterpartIban=${encodeURIComponent(compactIban)}`;
+        }
 
         const response = await authorizedFetch(url);
         if (!response.ok) throw new Error("Failed to load transactions.");
@@ -162,7 +175,7 @@ onMounted(() => {
 
                 <label class="filter-field">
                     Receiver IBAN
-                    <input type="text" v-model="filters.counterpartIban" placeholder="NL99 INGB..." />
+                    <input type="text" v-model="filters.counterpartIban" placeholder="Partial IBAN, e.g. NL44" />
                 </label>
 
                 <div class="filter-actions">

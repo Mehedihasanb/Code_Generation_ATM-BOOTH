@@ -9,6 +9,7 @@ import com.example.backend.entities.enums.AccountStatus;
 import com.example.backend.entities.enums.AccountType;
 import com.example.backend.exceptions.ResourceNotFoundException;
 import com.example.backend.repositories.AccountRepository;
+import com.example.backend.repositories.AccountSpecification;
 import com.example.backend.util.IbanGenerator;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -57,7 +58,9 @@ public class AccountService {
         if (name == null || name.isBlank()) {
             return Page.empty(pageable);
         }
-        return accountRepository.findTransferTargetsByCustomerName(excludeUserId, name.trim(), pageable);
+        return accountRepository.findAll(
+                AccountSpecification.forTransferTargetSearch(excludeUserId, name.trim()),
+                pageable);
     }
 
     public Account getByIban(String iban) {

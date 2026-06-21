@@ -898,6 +898,53 @@ form .btn:not(.secondary-btn):not(.danger-btn):not(.btn-link):not(.atm-btn):not(
 	background: var(--color-surface-muted);
 }
 
+.recipient-dropdown li {
+	cursor: default;
+}
+
+.recipient-dropdown li:hover {
+	background: transparent;
+}
+
+.recipient-option-row {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 0.75rem;
+	padding: 0.75rem;
+	border-bottom: 1px solid var(--color-border);
+}
+
+.recipient-option-row:last-child {
+	border-bottom: none;
+}
+
+.recipient-option-details {
+	display: grid;
+	gap: 0.15rem;
+	flex: 1;
+	min-width: 0;
+}
+
+.recipient-option-name {
+	font-weight: 700;
+}
+
+.recipient-option-iban {
+	font-size: 0.85rem;
+	font-family: monospace;
+}
+
+.recipient-select-btn {
+	flex-shrink: 0;
+	padding: 0.35rem 0.75rem;
+	font-size: 0.85rem;
+}
+
+.recipient-option-status {
+	padding: 0.75rem;
+}
+
 .field-relative {
 	position: relative;
 	display: grid;

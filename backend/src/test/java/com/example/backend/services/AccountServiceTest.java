@@ -174,14 +174,13 @@ class AccountServiceTest {
     }
 
     @Test
-    void searchTransferTargetsUsesDedicatedPublicLookupQuery() {
+    void searchTransferTargetsUsesSpecificationLookup() {
         TestAccountRepository accountRepository = new TestAccountRepository(iban -> Optional.empty());
         AccountService accountService = accountService(accountRepository, sequenceGenerator("NL01INHO0000000001"));
 
         accountService.searchTransferTargets(9, "  Jane  ", PageRequest.of(0, 20));
 
-        assertEquals(9, accountRepository.transferTargetUserId());
-        assertEquals("Jane", accountRepository.transferTargetName());
+        assertNotNull(accountRepository.transferTargetSpecification());
     }
 
     @Test
@@ -228,12 +227,8 @@ class AccountServiceTest {
             return ownAccountsUserIds[0];
         }
 
-        int transferTargetUserId() {
-            return (Integer) transferTargetArgs[0];
-        }
-
-        String transferTargetName() {
-            return (String) transferTargetArgs[1];
+        Object transferTargetSpecification() {
+            return transferTargetArgs[0];
         }
 
         AccountRepository proxy() {
@@ -254,10 +249,12 @@ class AccountServiceTest {
                             }
                             yield List.of();
                         }
-                        case "findTransferTargetsByCustomerName" -> {
-                            transferTargetArgs[0] = args[0];
-                            transferTargetArgs[1] = args[1];
-                            yield Page.empty((Pageable) args[2]);
+                        case "findAll" -> {
+                            if (args.length == 2) {
+                                transferTargetArgs[0] = args[0];
+                                yield Page.empty((Pageable) args[1]);
+                            }
+                            yield List.of();
                         }
                         case "save" -> {
                             saves[0]++;

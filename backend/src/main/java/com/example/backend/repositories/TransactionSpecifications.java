@@ -20,7 +20,7 @@ public class TransactionSpecifications {
         Specification<Transaction> spec = (root, q, cb) -> cb.conjunction();
         spec = andIfPresent(spec, withIban(filters.getIban()));
         spec = andIfPresent(spec, involvingAccount(filters.getAccountIban()));
-        spec = andIfPresent(spec, involvingAccount(filters.getCounterpartIban()));
+        spec = andIfPresent(spec, withCounterpartIban(filters.getCounterpartIban()));
         spec = andIfPresent(spec, withType(filters.getType()));
         spec = andIfPresent(spec, withMinAmount(filters.getMinAmount()));
         spec = andIfPresent(spec, withMaxAmount(filters.getMaxAmount()));
@@ -39,11 +39,15 @@ public class TransactionSpecifications {
     private static Specification<Transaction> withIban(String iban) {
         if (iban == null || iban.isBlank()) return null;
         return (root, q, cb) -> {
-            String pattern = "%" + iban.toLowerCase() + "%";
+            String pattern = "%" + iban.trim().replaceAll("\\s+", "").toLowerCase() + "%";
             return cb.or(
                     cb.like(cb.lower(root.get("fromIban")), pattern),
                     cb.like(cb.lower(root.get("toIban")), pattern));
         };
+    }
+
+    private static Specification<Transaction> withCounterpartIban(String counterpartIban) {
+        return withIban(counterpartIban);
     }
 
     private static Specification<Transaction> involvingAccount(String iban) {

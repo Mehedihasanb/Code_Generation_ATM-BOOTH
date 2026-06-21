@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
+import { useRouter } from 'vue-router';
 import { useAuthStore } from '@/stores/auth';
 import { fetchMyAccounts } from '@/composables/useMyAccounts';
 
 const auth = useAuthStore();
+const router = useRouter();
 
 const loading = ref(true);
 const error = ref<string | null>(null);
@@ -30,6 +32,10 @@ const fetchAccounts = async () => {
 const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('nl-NL', { style: 'currency', currency: 'EUR' }).format(amount);
 };
+
+function viewHistory(iban: string) {
+    router.push({ path: '/transactions', query: { accountIban: iban } });
+}
 
 onMounted(() => {
     fetchAccounts();
@@ -73,7 +79,7 @@ onMounted(() => {
                     </div>
 
                     <div class="button-group">
-                        <router-link to="/transactions" class="btn secondary-btn">View History</router-link>
+                        <button class="btn secondary-btn" type="button" @click="viewHistory(account.iban)">View History</button>
                     </div>
                 </article>
             </section>

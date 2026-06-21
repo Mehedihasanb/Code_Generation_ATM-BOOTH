@@ -38,7 +38,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @SpringBootTest
 @AutoConfigureMockMvc
-@Transactional // rolls back DB changes after each test
+@Transactional 
 @DisplayName("Account REST endpoints")
 class AccountRestControllerTest {
 
@@ -267,6 +267,51 @@ class AccountRestControllerTest {
     @Nested
     @DisplayName("GET /accounts/transfer-targets")
     class TransferTargetSearch {
+
+    @Test
+    void searchTargets_byIbanPrefix_returnsMatch() throws Exception {
+        User searchingCustomer = createCustomer("ac-lookup-iban-searcher@test.inholland.nl");
+        User matchingCustomer = createCustomer("ac-lookup-iban-match@test.inholland.nl");
+
+        matchingCustomer.setFirstName("Iban");
+        matchingCustomer.setLastName("Holder");
+        userRepository.saveAndFlush(matchingCustomer);
+
+        createAccount(searchingCustomer, "RHINOIBANOWN");
+        createAccount(matchingCustomer, "NL99INHO0000001234", AccountType.CHECKING, AccountStatus.ACTIVE);
+
+        mockMvc.perform(get("/accounts/transfer-targets")
+                        .param("name", "nl99")
+                        .param("size", "100")
+                        .header("Authorization", bearerToken(searchingCustomer)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content.length()").value(1))
+                .andExpect(jsonPath("$.content[0].iban").value("NL99INHO0000001234"));
+    }
+
+
+    @Test
+    void searchTargets_byFirstAndLastName_returnsMatch() throws Exception {
+        User searchingCustomer = createCustomer("ac-lookup-multi-searcher@test.inholland.nl");
+        User matchingCustomer = createCustomer("ac-lookup-multi-match@test.inholland.nl");
+
+        matchingCustomer.setFirstName("Xylophone");
+        matchingCustomer.setLastName("Zenith");
+        userRepository.saveAndFlush(matchingCustomer);
+
+        createAccount(searchingCustomer, "RHINOMULTIOWN");
+        createAccount(matchingCustomer, "RHINOMULTICHK", AccountType.CHECKING, AccountStatus.ACTIVE);
+
+        mockMvc.perform(get("/accounts/transfer-targets")
+                        .param("name", "xylophone zen")
+                        .param("size", "100")
+                        .header("Authorization", bearerToken(searchingCustomer)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content.length()").value(1))
+                .andExpect(jsonPath("$.content[0].firstName").value("Xylophone"))
+                .andExpect(jsonPath("$.content[0].lastName").value("Zenith"));
+    }
+
 
     @Test
     void searchTargets_byName_returnsSafeFieldsOnly() throws Exception {
