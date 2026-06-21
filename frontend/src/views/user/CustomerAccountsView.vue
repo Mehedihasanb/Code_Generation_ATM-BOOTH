@@ -7,7 +7,6 @@ const auth = useAuthStore();
 
 const loading = ref(true);
 const error = ref<string | null>(null);
-
 const customerName = ref('');
 const combinedBalance = ref(0);
 const accounts = ref<Awaited<ReturnType<typeof fetchMyAccounts>>['accounts']>([]);
@@ -74,7 +73,7 @@ onMounted(() => {
                     </div>
 
                     <div class="button-group">
-                        <button class="btn secondary-btn" type="button">View History</button>
+                        <router-link to="/transactions" class="btn secondary-btn">View History</router-link>
                     </div>
                 </article>
             </section>

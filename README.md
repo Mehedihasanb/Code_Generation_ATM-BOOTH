@@ -15,9 +15,9 @@ You do not need a global Maven install: the backend includes the Maven Wrapper (
 
 ## Repository layout
 
-| Folder | Role |
-|--------|------|
-| `backend/` | Spring Boot API (port **8080**) |
+| Folder      | Role                                            |
+| ----------- | ----------------------------------------------- |
+| `backend/`  | Spring Boot API (port **8080**)                 |
 | `frontend/` | Vue + Vite + vue-router + Pinia (port **5173**) |
 
 ---
@@ -26,8 +26,8 @@ You do not need a global Maven install: the backend includes the Maven Wrapper (
 
 These accounts are created by `DataLoader` when the backend starts:
 
-| Role | Email | Password |
-|------|-------|----------|
+| Role     | Email                   | Password       |
+| -------- | ----------------------- | -------------- |
 | Employee | `employee@inholland.nl` | `Password123!` |
 | Customer | `customer@inholland.nl` | `Password123!` |
 
@@ -48,19 +48,19 @@ Wait until you see something like “Started BackendApplication”. The API list
 
 ### Useful backend URLs
 
-| URL | Purpose |
-|-----|---------|
-| http://localhost:8080/api/health | JSON health check (no auth) |
-| http://localhost:8080/auth/register | Public customer registration (`POST` JSON body) |
-| http://localhost:8080/auth/login | Public login (`POST` JSON body, returns JWT) |
+| URL                                         | Purpose                                                                                                    |
+| ------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| http://localhost:8080/api/health            | JSON health check (no auth)                                                                                |
+| http://localhost:8080/auth/register         | Public customer registration (`POST` JSON body)                                                            |
+| http://localhost:8080/auth/login            | Public login (`POST` JSON body, returns JWT)                                                               |
 | http://localhost:8080/swagger-ui/index.html | Swagger UI — title **ATM Booth Banking API**; use **Authorize** with `Bearer <token>` for protected routes |
-| http://localhost:8080/h2-console | H2 console (in-memory DB) |
+| http://localhost:8080/h2-console            | H2 console (in-memory DB)                                                                                  |
 
 **H2 console login (dev):**
 
-- JDBC URL: `jdbc:h2:mem:appdb`
+- JDBC URL: `jdbc:h2:mem:testdb`
 - User name: `sa`
-- Password: *(leave empty)*
+- Password: _(leave empty)_
 
 ### Run tests
 
@@ -118,14 +118,14 @@ For **GitHub Pages** (static hosting) you cannot use the Vite dev proxy: set the
 
 ## 4. Where to add your own code
 
-| Area | Location |
-|------|----------|
-| REST controllers | `backend/src/main/java/com/example/backend/controllers/` |
-| Business rules | `backend/src/main/java/com/example/backend/domain/rules/` |
-| Entities & enums | `backend/src/main/java/com/example/backend/entities/` |
-| Repositories | `backend/src/main/java/com/example/backend/repositories/` |
-| Security / JWT | `backend/src/main/java/com/example/backend/config/` |
-| Config (DB, ports) | `backend/src/main/resources/application.properties` |
-| Vue pages | `frontend/src/views/` |
-| Routes | `frontend/src/router/index.ts` |
-| Global state | `frontend/src/stores/` |
+| Area               | Location                                                  |
+| ------------------ | --------------------------------------------------------- |
+| REST controllers   | `backend/src/main/java/com/example/backend/controllers/`  |
+| Business rules     | `backend/src/main/java/com/example/backend/domain/rules/` |
+| Entities & enums   | `backend/src/main/java/com/example/backend/entities/`     |
+| Repositories       | `backend/src/main/java/com/example/backend/repositories/` |
+| Security / JWT     | `backend/src/main/java/com/example/backend/config/`       |
+| Config (DB, ports) | `backend/src/main/resources/application.properties`       |
+| Vue pages          | `frontend/src/views/`                                     |
+| Routes             | `frontend/src/router/index.ts`                            |
+| Global state       | `frontend/src/stores/`                                    |
