@@ -38,52 +38,30 @@ function clearFieldErrors() {
     fieldError.lastName = '';
     fieldError.email = '';
     fieldError.password = '';
+    fieldError.bsnNumber = '';
+    fieldError.phoneNumber = '';
 }
 
-function validate(): boolean {
+function applyBackendFieldErrors(errors: Record<string, string>) {
     clearFieldErrors();
-    let valid = true;
-
-    if (!form.firstName.trim()) {
-        fieldError.firstName = 'First name is required.';
-        valid = false;
+    const fieldMap: Record<string, keyof RegistrationForm> = {
+        firstName: 'firstName',
+        lastName: 'lastName',
+        email: 'email',
+        password: 'password',
+        bsn: 'bsnNumber',
+        phoneNumber: 'phoneNumber',
+    };
+    for (const [key, message] of Object.entries(errors)) {
+        const formField = fieldMap[key];
+        if (formField) {
+            fieldError[formField] = message;
+        }
     }
-
-    if (!form.lastName.trim()) {
-        fieldError.lastName = 'Last name is required.';
-        valid = false;
-    }
-
-    if (!form.email.trim()) {
-        fieldError.email = 'Email is required.';
-        valid = false;
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
-        fieldError.email = 'Email format is invalid.';
-        valid = false;
-    }
-
-    if (form.password.length < 8) {
-        fieldError.password = 'Password must be at least 8 characters.';
-        valid = false;
-    }
-
-    if (!form.bsnNumber.trim()) {
-        fieldError.bsnNumber = 'BSN number is required.';
-        valid = false;
-    }
-
-    if (!form.phoneNumber.trim()) {
-        fieldError.phoneNumber = 'Phone number is required.';
-        valid = false;
-    }
-
-    return valid;
 }
 
 async function submit() {
-    if (!validate()) {
-        return;
-    }
+    clearFieldErrors();
 
     try {
         await registration.submitRegistration({
@@ -94,6 +72,8 @@ async function submit() {
             bsnNumber: form.bsnNumber.trim(),
             phoneNumber: form.phoneNumber.trim(),
         });
+
+        applyBackendFieldErrors(registration.fieldErrors);
 
         if (!registration.error) {
             
@@ -110,6 +90,7 @@ async function submit() {
             }, 1500);
         }
     } catch {
+        applyBackendFieldErrors(registration.fieldErrors);
         if (!registration.error) {
             registration.error =
                 'Something went wrong while connecting to the server. Please try again later.';

@@ -36,19 +36,13 @@ const fetchMyAccounts = async () => {
 };
 
 const searchDirectory = async () => {
-    const name = searchName.value.trim();
-
-    if (!name) {
-        error.value = 'Please enter a recipient name to search.';
-        return;
-    }
-
     searching.value = true;
     searchResults.value = [];
     error.value = null;
     successMessage.value = null;
 
     try {
+        const name = searchName.value.trim();
         const response = await authorizedFetch(`/accounts/transfer-targets?name=${encodeURIComponent(name)}&size=20`);
         if (!response.ok) throw new Error('Failed to search transfer targets.');
         const data = await response.json();
@@ -74,20 +68,6 @@ const selectExternalAccount = (iban: string) => {
 const submitTransfer = async () => {
     error.value = null;
     successMessage.value = null;
-
-    if (!fromIban.value || !toIban.value) {
-        error.value = "Please select both a sender and receiver account.";
-        return;
-    }
-    if (fromIban.value === toIban.value) {
-        error.value = "You cannot transfer money to the same account.";
-        return;
-    }
-    if (!amount.value || amount.value <= 0) {
-        error.value = "Please enter a valid amount greater than 0.";
-        return;
-    }
-
     submitting.value = true;
 
     try {
@@ -172,7 +152,7 @@ onMounted(() => {
                 
                 <label>
                     <span>From Account</span>
-                    <select v-model="fromIban" required>
+                    <select v-model="fromIban">
                         <option disabled value="">Select an account</option>
                         <option v-for="acc in myAccounts" :key="acc.iban" :value="acc.iban">
                             {{ acc.accountType }} - {{ acc.iban }} ({{ formatCurrency(acc.balance) }})
@@ -182,7 +162,7 @@ onMounted(() => {
 
                 <label v-if="transferType === 'INTERNAL'">
                     <span>To Account (Internal)</span>
-                    <select v-model="toIban" required>
+                    <select v-model="toIban">
                         <option disabled value="">Select destination</option>
                         <option v-for="acc in myAccounts" :key="acc.iban" :value="acc.iban">
                             {{ acc.accountType }} - {{ acc.iban }}
@@ -216,7 +196,7 @@ onMounted(() => {
                 
                 <label>
                     <span>Amount (€)</span>
-                    <input type="number" v-model="amount" min="0.01" step="0.01" required placeholder="0.00" />
+                    <input type="number" v-model="amount" step="0.01" placeholder="0.00" />
                 </label>
 
                 <label>

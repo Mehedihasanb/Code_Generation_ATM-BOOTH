@@ -245,6 +245,37 @@ class ApiDtoBoundaryTest {
     }
 
     @Test
+    void customerSearchMatchesFullName() throws Exception {
+        TestData data = createActiveCustomer();
+
+        mockMvc.perform(get("/users")
+                        .header("Authorization", bearerToken(createEmployee()))
+                        .param("search", "Casey Customer"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content.length()").value(1))
+                .andExpect(jsonPath("$.content[0].email").value(data.user().getEmail()))
+                .andExpect(content().string(not(containsString("passwordHash"))));
+    }
+
+    @Test
+    void transactionAmountEqualToFilterWorks() throws Exception {
+        TestData data = createActiveCustomer();
+        transactionRepository.save(new Transaction(0, data.checking().getIban(), data.savings().getIban(), data.user(),
+                new BigDecimal("100.00"), TransactionType.TRANSFER, "exact", LocalDateTime.now()));
+        transactionRepository.save(new Transaction(0, data.checking().getIban(), data.savings().getIban(), data.user(),
+                new BigDecimal("50.00"), TransactionType.TRANSFER, "other", LocalDateTime.now()));
+
+        mockMvc.perform(get("/transactions")
+                        .header("Authorization", bearerToken(createEmployee()))
+                        .param("customerId", String.valueOf(data.user().getId()))
+                        .param("amount", "100.00")
+                        .param("amountOperator", "eq"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content.length()").value(1))
+                .andExpect(jsonPath("$.content[0].description").value("exact"));
+    }
+
+    @Test
     void accountSearchReturnsAllAccountsForMatchingCustomer() throws Exception {
         TestData data = createActiveCustomer();
 

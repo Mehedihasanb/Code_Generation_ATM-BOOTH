@@ -46,7 +46,8 @@ public class SecurityConfig {
                                 "/auth/register",
                                 "/swagger-ui/**",
                                 "/openapi.yaml",
-                                "/static/**"
+                                "/static/**",
+                                "/h2-console/**"
                         ).permitAll()
                         .anyRequest().authenticated()
                 )
@@ -57,6 +58,7 @@ public class SecurityConfig {
                 )
                 .formLogin(formLogin -> formLogin.disable())
                 .httpBasic(httpBasic -> httpBasic.disable())
+                .headers(headers -> headers.frameOptions(frame -> frame.sameOrigin()))
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();

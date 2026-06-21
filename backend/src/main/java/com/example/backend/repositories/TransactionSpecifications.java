@@ -16,12 +16,15 @@ public class TransactionSpecifications {
     private TransactionSpecifications() {}
 
     public static Specification<Transaction> fromFilters(TransactionFilterParams filters) {
-        // Start with an always-true base so the result is never null when all filters are empty.
+
         Specification<Transaction> spec = (root, q, cb) -> cb.conjunction();
         spec = andIfPresent(spec, withIban(filters.getIban()));
+        spec = andIfPresent(spec, involvingAccount(filters.getAccountIban()));
+        spec = andIfPresent(spec, involvingAccount(filters.getCounterpartIban()));
         spec = andIfPresent(spec, withType(filters.getType()));
         spec = andIfPresent(spec, withMinAmount(filters.getMinAmount()));
         spec = andIfPresent(spec, withMaxAmount(filters.getMaxAmount()));
+        spec = andIfPresent(spec, withAmount(filters.getAmount(), filters.getAmountOperator()));
         spec = andIfPresent(spec, visibleToCustomer(filters.getCustomerId()));
         spec = andIfPresent(spec, withStartDate(filters.getStartDate()));
         spec = andIfPresent(spec, withEndDate(filters.getEndDate()));
@@ -43,6 +46,13 @@ public class TransactionSpecifications {
         };
     }
 
+    private static Specification<Transaction> involvingAccount(String iban) {
+        if (iban == null || iban.isBlank()) return null;
+        return (root, q, cb) -> cb.or(
+                cb.equal(root.get("fromIban"), iban),
+                cb.equal(root.get("toIban"), iban));
+    }
+
     private static Specification<Transaction> withType(TransactionType type) {
         if (type == null) return null;
         return (root, q, cb) -> cb.equal(root.get("type"), type);
@@ -58,10 +68,16 @@ public class TransactionSpecifications {
         return (root, q, cb) -> cb.lessThanOrEqualTo(root.get("amount"), max);
     }
 
-    /**
-     * Matches transactions the customer initiated OR where they own the fromIban/toIban account.
-     * This fixes the bug where a recipient (e.g. Charlie) could not see an incoming transfer.
-     */
+    private static Specification<Transaction> withAmount(BigDecimal amount, String operator) {
+        if (amount == null) return null;
+        String op = operator == null || operator.isBlank() ? "eq" : operator;
+        return switch (op) {
+            case "gt" -> (root, q, cb) -> cb.greaterThan(root.get("amount"), amount);
+            case "lt" -> (root, q, cb) -> cb.lessThan(root.get("amount"), amount);
+            default -> (root, q, cb) -> cb.equal(root.get("amount"), amount);
+        };
+    }
+
     private static Specification<Transaction> visibleToCustomer(Integer customerId) {
         if (customerId == null) return null;
         return (root, query, cb) -> {

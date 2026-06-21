@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
 import { apiUrl } from '@/config/api';
-import { parseApiErrorMessage } from '@/utils/apiError';
+import { parseApiError } from '@/utils/apiError';
 
 export type RegisterPayload = {
 	firstName: string;
@@ -23,11 +23,13 @@ type RegisterResponse = {
 export const useRegistrationStore = defineStore('registration', () => {
 	const loading = ref(false);
 	const error = ref<string | null>(null);
+	const fieldErrors = ref<Record<string, string>>({});
 	const success = ref<string | null>(null);
 
 	async function submitRegistration(registerRequest: RegisterPayload) {
 		loading.value = true;
 		error.value = null;
+		fieldErrors.value = {};
 		success.value = null;
 
 		try {
@@ -35,17 +37,24 @@ export const useRegistrationStore = defineStore('registration', () => {
 			const registerHttpResponse = await fetch(apiUrl('/auth/register'), {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify(registerRequest),
+				body: JSON.stringify({
+					firstName: registerRequest.firstName,
+					lastName: registerRequest.lastName,
+					email: registerRequest.email,
+					password: registerRequest.password,
+					bsn: registerRequest.bsnNumber,
+					phoneNumber: registerRequest.phoneNumber,
+				}),
 			});
 
 			if (!registerHttpResponse.ok) {
 				const errorText = await registerHttpResponse.text();
-				throw new Error(
-					parseApiErrorMessage(
-						errorText,
-						`Registration failed (${registerHttpResponse.status})`
-					)
+				const parsed = parseApiError(
+					errorText,
+					`Registration failed (${registerHttpResponse.status})`
 				);
+				fieldErrors.value = parsed.fieldErrors ?? {};
+				throw new Error(parsed.message);
 			}
 
 			const registerResponseBody = (await registerHttpResponse.json()) as RegisterResponse;
@@ -61,5 +70,5 @@ export const useRegistrationStore = defineStore('registration', () => {
 		}
 	}
 
-	return { loading, error, success, submitRegistration };
+	return { loading, error, fieldErrors, success, submitRegistration };
 });

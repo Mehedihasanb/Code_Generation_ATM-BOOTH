@@ -1,14 +1,15 @@
 <script setup lang="ts">
-// ATM deposit screen — calls POST /atm/deposit with customer JWT.
+// ATM deposit — submits POST /transactions; rules enforced by the backend.
 import { computed, onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { authorizedFetch } from '@/composables/useAuthorizedFetch';
+import { parseApiErrorMessage } from '@/utils/apiError';
 import { fetchMyAccounts } from '@/composables/useMyAccounts';
 
 type AccountSummary = {
 	customerName: string;
 	combinedBalance: number;
-	accounts: { iban: string; accountType: string; balance: number; absoluteLimit?: number }[];
+	accounts: { iban: string; accountType: string; balance: number }[];
 };
 
 const router = useRouter();
@@ -21,12 +22,10 @@ const submitting = ref(false);
 const error = ref<string | null>(null);
 const success = ref<string | null>(null);
 
-const checkingAccounts = computed(() =>
-	(summary.value?.accounts ?? []).filter((account) => account.accountType === 'CHECKING')
-);
+const accounts = computed(() => summary.value?.accounts ?? []);
 
 const selectedAccount = computed(() =>
-	checkingAccounts.value.find((account) => account.iban === selectedIban.value) ?? null
+	accounts.value.find((account) => account.iban === selectedIban.value) ?? null
 );
 
 async function loadAccounts() {
@@ -41,12 +40,10 @@ async function loadAccounts() {
 				iban: account.iban,
 				accountType: account.accountType,
 				balance: account.balance,
-				absoluteLimit: account.absoluteLimit,
 			})),
 		};
-		const accounts = checkingAccounts.value;
-		if (accounts.length > 0 && !accounts.some((a) => a.iban === selectedIban.value)) {
-			selectedIban.value = accounts[0].iban;
+		if (accounts.value.length > 0 && !accounts.value.some((a) => a.iban === selectedIban.value)) {
+			selectedIban.value = accounts.value[0].iban;
 		}
 	} catch (err) {
 		error.value = err instanceof Error ? err.message : String(err);
@@ -56,15 +53,6 @@ async function loadAccounts() {
 }
 
 async function submitDeposit() {
-	if (!amount.value || amount.value <= 0) {
-		error.value = 'Enter an amount greater than zero.';
-		return;
-	}
-	if (!selectedIban.value) {
-		error.value = 'Select a checking account.';
-		return;
-	}
-
 	submitting.value = true;
 	error.value = null;
 	success.value = null;
@@ -82,7 +70,7 @@ async function submitDeposit() {
 
 		if (!response.ok) {
 			const message = await response.text();
-			throw new Error(message || `Deposit failed (${response.status})`);
+			throw new Error(parseApiErrorMessage(message, `Deposit failed (${response.status})`));
 		}
 
 		const result = await response.json();
@@ -98,11 +86,6 @@ async function submitDeposit() {
 
 function formatCurrency(value: number) {
 	return new Intl.NumberFormat('nl-NL', { style: 'currency', currency: 'EUR' }).format(value);
-}
-
-function roomLeft(account: { balance: number; absoluteLimit?: number }) {
-	const cap = account.absoluteLimit ?? 0;
-	return Math.max(0, cap - account.balance);
 }
 
 onMounted(() => {
@@ -129,36 +112,30 @@ onMounted(() => {
 				<span class="atm-balance-label">Current balance</span>
 				<strong class="atm-balance-value">{{ formatCurrency(selectedAccount.balance) }}</strong>
 				<span class="muted atm-balance-iban">{{ selectedAccount.iban }}</span>
-				<span class="muted atm-balance-total">
-					Room left: {{ formatCurrency(roomLeft(selectedAccount)) }}
-				</span>
 				<span v-if="summary" class="muted atm-balance-total">
 					Total across accounts: {{ formatCurrency(summary.combinedBalance) }}
 				</span>
 			</div>
 
 			<form v-if="!loading" class="atm-form" @submit.prevent="submitDeposit">
-				<label v-if="checkingAccounts.length > 1">
-					<span>Checking account</span>
-					<select v-model="selectedIban" required>
+				<label v-if="accounts.length > 1">
+					<span>Account</span>
+					<select v-model="selectedIban">
 						<option disabled value="">Select account</option>
-						<option v-for="account in checkingAccounts" :key="account.iban" :value="account.iban">
-							{{ account.iban }} — {{ formatCurrency(account.balance) }}
-							(room: {{ formatCurrency(roomLeft(account)) }})
+						<option v-for="account in accounts" :key="account.iban" :value="account.iban">
+							{{ account.accountType }} — {{ account.iban }} — {{ formatCurrency(account.balance) }}
 						</option>
 					</select>
 				</label>
 
-				<p v-if="checkingAccounts.length === 0" class="error">No checking account available.</p>
+				<p v-if="accounts.length === 0" class="error">No accounts available.</p>
 
 				<label>
 					<span>Amount (€)</span>
 					<input
 						v-model.number="amount"
 						type="number"
-						min="0.01"
 						step="0.01"
-						required
 						placeholder="0.00" />
 				</label>
 
@@ -168,7 +145,7 @@ onMounted(() => {
 				<button
 					type="submit"
 					class="atm-btn atm-btn-primary atm-btn-deposit"
-					:disabled="submitting || checkingAccounts.length === 0">
+					:disabled="submitting || accounts.length === 0">
 					{{ submitting ? 'Processing...' : 'Deposit' }}
 				</button>
 			</form>
