@@ -28,6 +28,7 @@ public interface UserRepository extends JpaRepository<User, Integer> {
            "WHERE (:status IS NULL OR cp.status = :status) AND " +
            "(:search IS NULL OR LOWER(u.firstName) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
            "LOWER(u.lastName) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
+           "LOWER(CONCAT(u.firstName, ' ', u.lastName)) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
            "LOWER(u.email) LIKE LOWER(CONCAT('%', :search, '%')))")
     Page<User> findCustomers(@Param("status") CustomerStatus status,
                              @Param("search") String search,

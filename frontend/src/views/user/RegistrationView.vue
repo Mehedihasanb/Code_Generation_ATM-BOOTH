@@ -38,6 +38,8 @@ function clearFieldErrors() {
     fieldError.lastName = '';
     fieldError.email = '';
     fieldError.password = '';
+    fieldError.bsnNumber = '';
+    fieldError.phoneNumber = '';
 }
 
 function validate(): boolean {
@@ -62,18 +64,24 @@ function validate(): boolean {
         valid = false;
     }
 
-    if (form.password.length < 8) {
-        fieldError.password = 'Password must be at least 8 characters.';
+    if (!/^(?=.*[A-Z])(?=.*[a-z])(?=.*[^a-zA-Z0-9]).{8,}$/.test(form.password)) {
+        fieldError.password = 'Password needs 8+ chars with upper, lower, and a special character.';
         valid = false;
     }
 
     if (!form.bsnNumber.trim()) {
         fieldError.bsnNumber = 'BSN number is required.';
         valid = false;
+    } else if (!/^\d{8,9}$/.test(form.bsnNumber.trim())) {
+        fieldError.bsnNumber = 'BSN must be 8 or 9 digits.';
+        valid = false;
     }
 
     if (!form.phoneNumber.trim()) {
         fieldError.phoneNumber = 'Phone number is required.';
+        valid = false;
+    } else if (!/^06[0-9]{8}$/.test(form.phoneNumber.trim())) {
+        fieldError.phoneNumber = 'Phone must start with 06 followed by 8 digits.';
         valid = false;
     }
 

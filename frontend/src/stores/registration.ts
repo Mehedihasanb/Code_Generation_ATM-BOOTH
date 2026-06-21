@@ -35,7 +35,14 @@ export const useRegistrationStore = defineStore('registration', () => {
 			const registerHttpResponse = await fetch(apiUrl('/auth/register'), {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify(registerRequest),
+				body: JSON.stringify({
+					firstName: registerRequest.firstName,
+					lastName: registerRequest.lastName,
+					email: registerRequest.email,
+					password: registerRequest.password,
+					bsn: registerRequest.bsnNumber,
+					phoneNumber: registerRequest.phoneNumber,
+				}),
 			});
 
 			if (!registerHttpResponse.ok) {
