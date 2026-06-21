@@ -2,7 +2,7 @@ openapi: 3.0.3
 info:
   title: ATM Booth Banking API
   version: 0.0.1
-  description: REST backend for the ATM Booth full-stack project (InHolland). Demo users are seeded on startup — see README.
+  description: REST backend for the ATM Booth full-stack project (InHolland). Demo users are seeded on startup.
 
 servers:
   - url: http://localhost:8080
@@ -25,6 +25,13 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/RegisterRequest'
+            example:
+              email: demo.register@inholland.nl
+              password: Password123!
+              firstName: Demo
+              lastName: Customer
+              bsn: "123456789"
+              phoneNumber: "0612345678"
       responses:
         '200':
           description: Registered user
@@ -49,6 +56,9 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/LoginRequest'
+            example:
+              email: customer@inholland.nl
+              password: Password123!
       responses:
         '200':
           description: Login successful
@@ -220,9 +230,10 @@ paths:
         - name: name
           in: query
           required: true
-          description: Customer first or last name fragment
+          description: Customer first or last name fragment, or IBAN prefix
           schema:
             type: string
+            example: carol
         - name: page
           in: query
           required: false
@@ -276,13 +287,16 @@ paths:
           required: true
           schema:
             type: string
-            example: NL91ABNA0417164300
+            example: NL44INHO0000000007
       requestBody:
         required: true
         content:
           application/json:
             schema:
               $ref: '#/components/schemas/AccountUpdateRequest'
+            example:
+              dailyTransferLimit: 500
+              minimumBalanceLimit: 0
       responses:
         '200':
           description: Updated account
@@ -384,6 +398,7 @@ paths:
           required: true
           schema:
             type: integer
+            example: 3
       responses:
         '200':
           description: Customer user detail with accounts
@@ -415,12 +430,17 @@ paths:
           required: true
           schema:
             type: integer
+            example: 3
       requestBody:
         required: true
         content:
           application/json:
             schema:
               $ref: '#/components/schemas/CustomerUpdateRequest'
+            example:
+              status: ACTIVE
+              minimumBalanceLimit: 0
+              dailyTransferLimit: 500
       responses:
         '200':
           description: Updated customer profile
@@ -547,6 +567,29 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/TransactionCreateRequest'
+            examples:
+              transfer:
+                summary: Transfer to another customer
+                value:
+                  fromIban: NL11INHO0000000001
+                  toIban: NL44INHO0000000007
+                  amount: 25.00
+                  type: TRANSFER
+                  description: Swagger transfer demo
+              deposit:
+                summary: ATM deposit
+                value:
+                  toIban: NL11INHO0000000001
+                  amount: 50.00
+                  type: DEPOSIT
+                  description: Swagger deposit demo
+              withdrawal:
+                summary: ATM withdrawal
+                value:
+                  fromIban: NL11INHO0000000001
+                  amount: 10.00
+                  type: WITHDRAWAL
+                  description: Swagger withdrawal demo
       responses:
         '201':
           description: Created transaction
@@ -591,6 +634,7 @@ paths:
           required: true
           schema:
             type: integer
+            example: 3
       responses:
         '200':
           description: Transaction details
@@ -653,6 +697,13 @@ components:
     RegisterRequest:
       type: object
       required: [email, password, firstName, lastName, bsn, phoneNumber]
+      example:
+        email: demo.register@inholland.nl
+        password: Password123!
+        firstName: Demo
+        lastName: Customer
+        bsn: "123456789"
+        phoneNumber: "0612345678"
       properties:
         email:
           type: string
@@ -678,6 +729,9 @@ components:
     LoginRequest:
       type: object
       required: [email, password]
+      example:
+        email: customer@inholland.nl
+        password: Password123!
       properties:
         email:
           type: string
@@ -689,6 +743,9 @@ components:
     AccountUpdateRequest:
       type: object
       description: At least one field must be provided.
+      example:
+        dailyTransferLimit: 500
+        minimumBalanceLimit: 0
       properties:
         minimumBalanceLimit:
           type: number
@@ -702,6 +759,10 @@ components:
 
     CustomerUpdateRequest:
       type: object
+      example:
+        status: ACTIVE
+        minimumBalanceLimit: 0
+        dailyTransferLimit: 500
       properties:
         status:
           $ref: '#/components/schemas/CustomerStatus'
@@ -727,6 +788,12 @@ components:
       type: object
       description: TRANSFER requires both `fromIban` and `toIban`; DEPOSIT requires `toIban`; WITHDRAWAL requires `fromIban`.
       required: [amount, type]
+      example:
+        fromIban: NL11INHO0000000001
+        toIban: NL44INHO0000000007
+        amount: 25.00
+        type: TRANSFER
+        description: Swagger transfer demo
       properties:
         fromIban:
           type: string
