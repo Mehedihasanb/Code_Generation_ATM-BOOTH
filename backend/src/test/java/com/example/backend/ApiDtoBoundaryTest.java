@@ -4,13 +4,6 @@ import com.example.backend.controllers.AccountRestController;
 import com.example.backend.controllers.AuthRestController;
 import com.example.backend.controllers.TransactionRestController;
 import com.example.backend.controllers.UserRestController;
-import com.example.backend.dtos.CurrentUserResponse;
-import com.example.backend.dtos.CustomerDetailResponse;
-import com.example.backend.dtos.CustomerProfileResponse;
-import com.example.backend.dtos.CustomerSummaryResponse;
-import com.example.backend.dtos.LoginResponse;
-import com.example.backend.dtos.TransactionResponse;
-import com.example.backend.dtos.UserResponse;
 import com.example.backend.entities.Account;
 import com.example.backend.entities.CustomerProfile;
 import com.example.backend.entities.Transaction;
@@ -70,15 +63,13 @@ class ApiDtoBoundaryTest {
             AuthRestController.class,
             UserRestController.class,
             AccountRestController.class,
-            TransactionRestController.class
-    );
+            TransactionRestController.class);
 
     private static final Set<Class<?>> ENTITY_TYPES = Set.of(
             User.class,
             CustomerProfile.class,
             Account.class,
-            Transaction.class
-    );
+            Transaction.class);
 
     @Autowired
     private MockMvc mockMvc;
@@ -110,10 +101,12 @@ class ApiDtoBoundaryTest {
     void mappedControllerMethodsReturnDtoTypesOnly() {
         for (Class<?> controller : CONTROLLERS) {
             for (Method method : controller.getDeclaredMethods()) {
-                if (!isMappedEndpoint(method)) continue;
+                if (!isMappedEndpoint(method))
+                    continue;
 
                 Type returnType = method.getGenericReturnType();
-                assertFalse(usesForbiddenResponseType(returnType), method + " must not return entities or raw transport types");
+                assertFalse(usesForbiddenResponseType(returnType),
+                        method + " must not return entities or raw transport types");
                 assertTrue(isAllowedDtoResponse(returnType), method + " must return DTOs or collections of DTOs");
             }
         }
@@ -122,36 +115,36 @@ class ApiDtoBoundaryTest {
     @Test
     void authEndpointsReturnDtoJsonWithoutPasswordHash() throws Exception {
         mockMvc.perform(post("/auth/register")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {
-                                  "email": "new@test.inholland.nl",
-                                  "password": "Secret!123",
-                                  "firstName": "New",
-                                  "lastName": "Customer",
-                                  "bsn": "123456789",
-                                  "phoneNumber": "0612345678"
-                                }
-                                """))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                        {
+                          "email": "new@test.inholland.nl",
+                          "password": "Secret!123",
+                          "firstName": "New",
+                          "lastName": "Customer",
+                          "bsn": "123456789",
+                          "phoneNumber": "0612345678"
+                        }
+                        """))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.email").value("new@test.inholland.nl"))
                 .andExpect(content().string(not(containsString("passwordHash"))));
 
         User user = userRepository.findByEmail("new@test.inholland.nl").orElseThrow();
         mockMvc.perform(post("/auth/login")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {
-                                  "email": "new@test.inholland.nl",
-                                  "password": "Secret!123"
-                                }
-                                """))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                        {
+                          "email": "new@test.inholland.nl",
+                          "password": "Secret!123"
+                        }
+                        """))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.token.value").exists())
                 .andExpect(content().string(not(containsString("passwordHash"))));
 
         mockMvc.perform(get("/auth/me")
-                        .header("Authorization", bearerToken(user)))
+                .header("Authorization", bearerToken(user)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.email").value("new@test.inholland.nl"))
                 .andExpect(content().string(not(containsString("passwordHash"))));
@@ -165,52 +158,52 @@ class ApiDtoBoundaryTest {
                 new BigDecimal("100.00"), TransactionType.TRANSFER, "transfer", LocalDateTime.now()));
 
         mockMvc.perform(get("/users")
-                        .header("Authorization", bearerToken(employee)))
+                .header("Authorization", bearerToken(employee)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content[0].email").value(data.user().getEmail()))
                 .andExpect(content().string(not(containsString("passwordHash"))));
 
         mockMvc.perform(get("/users/" + data.user().getId())
-                        .header("Authorization", bearerToken(employee)))
+                .header("Authorization", bearerToken(employee)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.accounts[0].iban").exists())
                 .andExpect(content().string(not(containsString("passwordHash"))));
 
         mockMvc.perform(get("/accounts")
-                        .header("Authorization", bearerToken(employee)))
+                .header("Authorization", bearerToken(employee)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content[0].iban").exists())
                 .andExpect(content().string(not(containsString("passwordHash"))));
 
         mockMvc.perform(get("/accounts")
-                        .param("iban", data.checking().getIban())
-                        .header("Authorization", bearerToken(employee)))
+                .param("iban", data.checking().getIban())
+                .header("Authorization", bearerToken(employee)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content[0].iban").value(data.checking().getIban()))
                 .andExpect(content().string(not(containsString("passwordHash"))));
 
         mockMvc.perform(get("/accounts/me")
-                        .header("Authorization", bearerToken(data.user())))
+                .header("Authorization", bearerToken(data.user())))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content[0].iban").exists())
                 .andExpect(jsonPath("$.content[0].userId").doesNotExist())
                 .andExpect(content().string(not(containsString("passwordHash"))));
 
         mockMvc.perform(patch("/accounts/" + data.checking().getIban())
-                        .header("Authorization", bearerToken(employee))
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {
-                                  "absoluteTransferLimit": 1200.00,
-                                  "dailyTransferLimit": 600.00
-                                }
-                                """))
+                .header("Authorization", bearerToken(employee))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                        {
+                          "absoluteTransferLimit": 1200.00,
+                          "dailyTransferLimit": 600.00
+                        }
+                        """))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.iban").value(data.checking().getIban()))
                 .andExpect(content().string(not(containsString("passwordHash"))));
 
         mockMvc.perform(get("/transactions")
-                        .header("Authorization", bearerToken(employee)))
+                .header("Authorization", bearerToken(employee)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content[0].initiatedByUserId").value(data.user().getId()))
                 .andExpect(content().string(not(containsString("passwordHash"))));
@@ -227,11 +220,11 @@ class ApiDtoBoundaryTest {
                 new BigDecimal("100.00"), TransactionType.DEPOSIT, "wrong type", LocalDateTime.now()));
 
         mockMvc.perform(get("/transactions")
-                        .header("Authorization", bearerToken(createEmployee()))
-                        .param("customerId", String.valueOf(data.user().getId()))
-                        .param("type", "TRANSFER")
-                        .param("minAmount", "50.00")
-                        .param("maxAmount", "150.00"))
+                .header("Authorization", bearerToken(createEmployee()))
+                .param("customerId", String.valueOf(data.user().getId()))
+                .param("type", "TRANSFER")
+                .param("minAmount", "50.00")
+                .param("maxAmount", "150.00"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content.length()").value(1))
                 .andExpect(jsonPath("$.content[0].description").value("included"))
@@ -243,8 +236,8 @@ class ApiDtoBoundaryTest {
         TestData data = createActiveCustomer();
 
         mockMvc.perform(get("/users")
-                        .header("Authorization", bearerToken(createEmployee()))
-                        .param("search", "customer@test.inholland.nl"))
+                .header("Authorization", bearerToken(createEmployee()))
+                .param("search", "customer@test.inholland.nl"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content.length()").value(1))
                 .andExpect(jsonPath("$.content[0].email").value(data.user().getEmail()))
@@ -256,8 +249,8 @@ class ApiDtoBoundaryTest {
         TestData data = createActiveCustomer();
 
         mockMvc.perform(get("/accounts")
-                        .header("Authorization", bearerToken(createEmployee()))
-                        .param("name", data.user().getFirstName()))
+                .header("Authorization", bearerToken(createEmployee()))
+                .param("name", data.user().getFirstName()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content.length()").value(2))
                 .andExpect(jsonPath("$.content[?(@.iban == '" + data.checking().getIban() + "')]").exists())
@@ -271,42 +264,43 @@ class ApiDtoBoundaryTest {
         User employee = createEmployee();
 
         mockMvc.perform(patch("/accounts/NL99BANK0000009999")
-                        .header("Authorization", bearerToken(employee))
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {
-                                  "absoluteTransferLimit": 1000.00
-                                }
-                                """))
+                .header("Authorization", bearerToken(employee))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                        {
+                          "absoluteTransferLimit": 1000.00
+                        }
+                        """))
                 .andExpect(status().isNotFound());
 
         mockMvc.perform(patch("/accounts/" + data.checking().getIban())
-                        .header("Authorization", bearerToken(employee))
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {
-                                  "absoluteTransferLimit": -1.00
-                                }
-                                """))
+                .header("Authorization", bearerToken(employee))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                        {
+                          "absoluteTransferLimit": -1.00
+                        }
+                        """))
                 .andExpect(status().isBadRequest());
     }
 
     @Test
     void activatingCustomerProvisionsAccountsThroughDtoEndpoint() throws Exception {
-        User user = userRepository.save(new User(0, "pending@test.inholland.nl", "secret", "Pending", "Customer", UserRole.CUSTOMER, LocalDateTime.now()));
+        User user = userRepository.save(new User(0, "pending@test.inholland.nl", "secret", "Pending", "Customer",
+                UserRole.CUSTOMER, LocalDateTime.now()));
         customerProfileRepository.save(new CustomerProfile(0, user, "987654321", "0698765432", CustomerStatus.PENDING));
 
         mockMvc.perform(patch("/users/" + user.getId())
-                        .header("Authorization", bearerToken(createEmployee()))
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {
-                                  "status": "ACTIVE",
-                                  "firstName": "Active",
-                                  "lastName": "Customer",
-                                  "phoneNumber": "0600000000"
-                                }
-                                """))
+                .header("Authorization", bearerToken(createEmployee()))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                        {
+                          "status": "ACTIVE",
+                          "firstName": "Active",
+                          "lastName": "Customer",
+                          "phoneNumber": "0600000000"
+                        }
+                        """))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("ACTIVE"))
                 .andExpect(content().string(not(containsString("passwordHash"))));
@@ -317,17 +311,21 @@ class ApiDtoBoundaryTest {
     }
 
     private TestData createActiveCustomer() {
-        User user = userRepository.save(new User(0, "customer@test.inholland.nl", "secret", "Casey", "Customer", UserRole.CUSTOMER, LocalDateTime.now()));
+        User user = userRepository.save(new User(0, "customer@test.inholland.nl", "secret", "Casey", "Customer",
+                UserRole.CUSTOMER, LocalDateTime.now()));
         customerProfileRepository.save(new CustomerProfile(0, user, "111222333", "0611111111", CustomerStatus.ACTIVE));
         Account checking = accountRepository.save(new Account(0, user, "NL01BANK0000000001", AccountType.CHECKING,
-                new BigDecimal("250.00"), new BigDecimal("1000.00"), new BigDecimal("500.00"), AccountStatus.ACTIVE, LocalDateTime.now()));
+                new BigDecimal("250.00"), new BigDecimal("1000.00"), new BigDecimal("500.00"), AccountStatus.ACTIVE,
+                LocalDateTime.now()));
         Account savings = accountRepository.save(new Account(0, user, "NL02BANK0000000002", AccountType.SAVINGS,
-                new BigDecimal("750.00"), new BigDecimal("1000.00"), new BigDecimal("500.00"), AccountStatus.ACTIVE, LocalDateTime.now()));
+                new BigDecimal("750.00"), new BigDecimal("1000.00"), new BigDecimal("500.00"), AccountStatus.ACTIVE,
+                LocalDateTime.now()));
         return new TestData(user, checking, savings);
     }
 
     private User createEmployee() {
-        return userRepository.save(new User(0, "employee-" + System.nanoTime() + "@test.inholland.nl", "secret", "Erin", "Employee", UserRole.EMPLOYEE, LocalDateTime.now()));
+        return userRepository.save(new User(0, "employee-" + System.nanoTime() + "@test.inholland.nl", "secret", "Erin",
+                "Employee", UserRole.EMPLOYEE, LocalDateTime.now()));
     }
 
     private String bearerToken(User user) {
@@ -353,9 +351,11 @@ class ApiDtoBoundaryTest {
         }
         if (type instanceof ParameterizedType parameterizedType) {
             Type rawType = parameterizedType.getRawType();
-            if (rawType == Map.class) return true;
+            if (rawType == Map.class)
+                return true;
             for (Type argument : parameterizedType.getActualTypeArguments()) {
-                if (usesForbiddenResponseType(argument)) return true;
+                if (usesForbiddenResponseType(argument))
+                    return true;
             }
         }
         return false;
@@ -366,7 +366,8 @@ class ApiDtoBoundaryTest {
             return isDto(clazz);
         }
         if (type instanceof ParameterizedType parameterizedType) {
-            if (parameterizedType.getRawType() != List.class && parameterizedType.getRawType() != Page.class) return false;
+            if (parameterizedType.getRawType() != List.class && parameterizedType.getRawType() != Page.class)
+                return false;
             Type[] arguments = parameterizedType.getActualTypeArguments();
             return arguments.length == 1 && arguments[0] instanceof Class<?> clazz && isDto(clazz);
         }
@@ -377,5 +378,6 @@ class ApiDtoBoundaryTest {
         return clazz.getPackageName().equals("com.example.backend.dtos");
     }
 
-    private record TestData(User user, Account checking, Account savings) {}
+    private record TestData(User user, Account checking, Account savings) {
+    }
 }

@@ -23,8 +23,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigDecimal;
-import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -60,7 +58,6 @@ class UserRestControllerTest {
     @Autowired
     private JwtUtil jwtUtil;
 
-
     private User createCustomer(String email) {
         User user = new User();
         user.setEmail(email);
@@ -90,270 +87,242 @@ class UserRestControllerTest {
         return customerProfileRepository.save(profile);
     }
 
-    private CustomerProfile createActiveProfile(User user, String bsn) {
-        CustomerProfile profile = new CustomerProfile();
-        profile.setUser(user);
-        profile.setBsn(bsn);
-        profile.setPhoneNumber("0612345678");
-        profile.setStatus(CustomerStatus.ACTIVE);
-        return customerProfileRepository.save(profile);
-    }
+    // private CustomerProfile createActiveProfile(User user, String bsn) {
+    // CustomerProfile profile = new CustomerProfile();
+    // profile.setUser(user);
+    // profile.setBsn(bsn);
+    // profile.setPhoneNumber("0612345678");
+    // profile.setStatus(CustomerStatus.ACTIVE);
+    // return customerProfileRepository.save(profile);
+    // }
+    // Commented by Fernando bc showed that it was unused
 
     private String bearerToken(User user) {
         return "Bearer " + jwtUtil.generateToken(user);
     }
 
-
-
-
-
     @Nested
     @DisplayName("GET /users")
     class ListCustomers {
 
-    @Test
-    void list_unauthenticated_returns401() throws Exception {
-        // no token = 401
-        mockMvc.perform(get("/users"))
-                .andExpect(status().isUnauthorized());
-    }
+        @Test
+        void list_unauthenticated_returns401() throws Exception {
+            // no token = 401
+            mockMvc.perform(get("/users"))
+                    .andExpect(status().isUnauthorized());
+        }
 
+        @Test
+        void list_asCustomer_returns403() throws Exception {
+            User customer = createCustomer("usr-getall-customer@test.inholland.nl");
+            createProfile(customer, "100000001");
 
+            // customers can't access this endpoint
+            mockMvc.perform(get("/users")
+                    .header("Authorization", bearerToken(customer)))
+                    .andExpect(status().isForbidden());
+        }
 
-    @Test
-    void list_asCustomer_returns403() throws Exception {
-        User customer = createCustomer("usr-getall-customer@test.inholland.nl");
-        createProfile(customer, "100000001");
+        @Test
+        void list_asEmployee_returnsPagedResults() throws Exception {
+            User customer = createCustomer("usr-listed@test.inholland.nl");
+            createProfile(customer, "100000002");
+            User employee = createEmployee("usr-getall-employee@test.inholland.nl");
 
-        // customers can't access this endpoint
-        mockMvc.perform(get("/users")
-                        .header("Authorization", bearerToken(customer)))
-                .andExpect(status().isForbidden());
-    }
+            mockMvc.perform(get("/users")
+                    .header("Authorization", bearerToken(employee)))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.content").isArray());
+        }
 
+        @Test
+        void list_asEmployee_emptySearch_returnsNoRows() throws Exception {
+            User employee = createEmployee("usr-empty-employee@test.inholland.nl");
 
-
-    @Test
-    void list_asEmployee_returnsPagedResults() throws Exception {
-        User customer = createCustomer("usr-listed@test.inholland.nl");
-        createProfile(customer, "100000002");
-        User employee = createEmployee("usr-getall-employee@test.inholland.nl");
-
-        mockMvc.perform(get("/users")
-                        .header("Authorization", bearerToken(employee)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.content").isArray());
-    }
-
-
-
-    @Test
-    void list_asEmployee_emptySearch_returnsNoRows() throws Exception {
-        User employee = createEmployee("usr-empty-employee@test.inholland.nl");
-
-        // no customers in this test's transaction, so search should return nothing
-        mockMvc.perform(get("/users?search=nonexistent-name-xyz987")
-                        .header("Authorization", bearerToken(employee)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.content", hasSize(0)));
-    }
-
+            // no customers in this test's transaction, so search should return nothing
+            mockMvc.perform(get("/users?search=nonexistent-name-xyz987")
+                    .header("Authorization", bearerToken(employee)))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.content", hasSize(0)));
+        }
 
     }
+
     @Nested
     @DisplayName("GET /users/{id}")
     class CustomerDetail {
 
-    @Test
-    void detail_unauthenticated_returns401() throws Exception {
-        mockMvc.perform(get("/users/1"))
-                .andExpect(status().isUnauthorized());
-    }
+        @Test
+        void detail_unauthenticated_returns401() throws Exception {
+            mockMvc.perform(get("/users/1"))
+                    .andExpect(status().isUnauthorized());
+        }
 
+        @Test
+        void detail_asCustomer_returns403() throws Exception {
+            User customer = createCustomer("usr-getbyid-customer@test.inholland.nl");
 
+            // Customers cannot look up user details — only employees can.
+            mockMvc.perform(get("/users/{id}", customer.getId())
+                    .header("Authorization", bearerToken(customer)))
+                    .andExpect(status().isForbidden());
+        }
 
-    @Test
-    void detail_asCustomer_returns403() throws Exception {
-        User customer = createCustomer("usr-getbyid-customer@test.inholland.nl");
+        @Test
+        void detail_asEmployee_returnsCustomer() throws Exception {
+            User customer = createCustomer("usr-detail-customer@test.inholland.nl");
+            createProfile(customer, "100000003");
+            User employee = createEmployee("usr-detail-employee@test.inholland.nl");
 
-        // Customers cannot look up user details — only employees can.
-        mockMvc.perform(get("/users/{id}", customer.getId())
-                        .header("Authorization", bearerToken(customer)))
-                .andExpect(status().isForbidden());
-    }
+            mockMvc.perform(get("/users/{id}", customer.getId())
+                    .header("Authorization", bearerToken(employee)))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.id").value(customer.getId()))
+                    .andExpect(jsonPath("$.email").value(customer.getEmail()));
+        }
 
+        @Test
+        void detail_unknownId_returns404() throws Exception {
+            User employee = createEmployee("usr-missing-detail-employee@test.inholland.nl");
 
+            mockMvc.perform(get("/users/{id}", 999999)
+                    .header("Authorization", bearerToken(employee)))
+                    .andExpect(status().isNotFound())
+                    .andExpect(jsonPath("$.message").value("No customer with id 999999"));
+        }
 
-    @Test
-    void detail_asEmployee_returnsCustomer() throws Exception {
-        User customer = createCustomer("usr-detail-customer@test.inholland.nl");
-        createProfile(customer, "100000003");
-        User employee = createEmployee("usr-detail-employee@test.inholland.nl");
+        @Test
+        void detail_employeeId_returns404() throws Exception {
+            User employee = createEmployee("usr-employee-detail-employee@test.inholland.nl");
 
-        mockMvc.perform(get("/users/{id}", customer.getId())
-                        .header("Authorization", bearerToken(employee)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id").value(customer.getId()))
-                .andExpect(jsonPath("$.email").value(customer.getEmail()));
-    }
-
-
-
-    @Test
-    void detail_unknownId_returns404() throws Exception {
-        User employee = createEmployee("usr-missing-detail-employee@test.inholland.nl");
-
-        mockMvc.perform(get("/users/{id}", 999999)
-                        .header("Authorization", bearerToken(employee)))
-                .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.message").value("No customer with id 999999"));
-    }
-
-
-
-    @Test
-    void detail_employeeId_returns404() throws Exception {
-        User employee = createEmployee("usr-employee-detail-employee@test.inholland.nl");
-
-        mockMvc.perform(get("/users/{id}", employee.getId())
-                        .header("Authorization", bearerToken(employee)))
-                .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.message").value("No customer with id " + employee.getId()));
-    }
-
+            mockMvc.perform(get("/users/{id}", employee.getId())
+                    .header("Authorization", bearerToken(employee)))
+                    .andExpect(status().isNotFound())
+                    .andExpect(jsonPath("$.message").value("No customer with id " + employee.getId()));
+        }
 
     }
+
     @Nested
     @DisplayName("PATCH /users/{id}")
     class UpdateCustomer {
 
-    @Test
-    void patch_unauthenticated_returns401() throws Exception {
-        mockMvc.perform(patch("/users/1")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{}"))
-                .andExpect(status().isUnauthorized());
-    }
+        @Test
+        void patch_unauthenticated_returns401() throws Exception {
+            mockMvc.perform(patch("/users/1")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("{}"))
+                    .andExpect(status().isUnauthorized());
+        }
 
+        @Test
+        void patch_asCustomer_returns403() throws Exception {
+            User customer = createCustomer("usr-patch-forbidden@test.inholland.nl");
 
+            // customers can't update users
+            mockMvc.perform(patch("/users/{id}", customer.getId())
+                    .header("Authorization", bearerToken(customer))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("{}"))
+                    .andExpect(status().isForbidden());
+        }
 
-    @Test
-    void patch_asCustomer_returns403() throws Exception {
-        User customer = createCustomer("usr-patch-forbidden@test.inholland.nl");
+        @Test
+        void patch_asEmployee_updatesProfileFields() throws Exception {
+            User customer = createCustomer("usr-patch-customer@test.inholland.nl");
+            createProfile(customer, "100000004");
+            User employee = createEmployee("usr-patch-employee@test.inholland.nl");
 
-        // customers can't update users
-        mockMvc.perform(patch("/users/{id}", customer.getId())
-                        .header("Authorization", bearerToken(customer))
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{}"))
-                .andExpect(status().isForbidden());
-    }
+            Map<String, Object> request = new HashMap<>();
+            request.put("firstName", "Updated");
+            request.put("lastName", "Name");
+            request.put("phoneNumber", "0698765432");
 
+            mockMvc.perform(patch("/users/{id}", customer.getId())
+                    .header("Authorization", bearerToken(employee))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(objectMapper.writeValueAsString(request)))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.phoneNumber").value("0698765432"));
+        }
 
+        @Test
+        void patch_approve_setsStatusActive() throws Exception {
+            User customer = createCustomer("usr-approve-customer@test.inholland.nl");
+            createProfile(customer, "100000005");
+            User employee = createEmployee("usr-approve-employee@test.inholland.nl");
 
-    @Test
-    void patch_asEmployee_updatesProfileFields() throws Exception {
-        User customer = createCustomer("usr-patch-customer@test.inholland.nl");
-        createProfile(customer, "100000004");
-        User employee = createEmployee("usr-patch-employee@test.inholland.nl");
+            Map<String, Object> request = new HashMap<>();
+            request.put("status", "ACTIVE");
+            request.put("absoluteTransferLimit", "1000.00");
+            request.put("dailyTransferLimit", "500.00");
 
-        Map<String, Object> request = new HashMap<>();
-        request.put("firstName", "Updated");
-        request.put("lastName", "Name");
-        request.put("phoneNumber", "0698765432");
+            mockMvc.perform(patch("/users/{id}", customer.getId())
+                    .header("Authorization", bearerToken(employee))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(objectMapper.writeValueAsString(request)))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.status").value("ACTIVE"));
+        }
 
-        mockMvc.perform(patch("/users/{id}", customer.getId())
-                        .header("Authorization", bearerToken(employee))
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.phoneNumber").value("0698765432"));
-    }
+        @Test
+        void patch_approve_provisionsTwoAccounts() throws Exception {
+            User customer = createCustomer("usr-accounts-customer@test.inholland.nl");
+            createProfile(customer, "100000006");
+            User employee = createEmployee("usr-accounts-employee@test.inholland.nl");
 
+            Map<String, Object> request = new HashMap<>();
+            request.put("status", "ACTIVE");
+            request.put("absoluteTransferLimit", "1000.00");
+            request.put("dailyTransferLimit", "500.00");
 
+            mockMvc.perform(patch("/users/{id}", customer.getId())
+                    .header("Authorization", bearerToken(employee))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(objectMapper.writeValueAsString(request)))
+                    .andExpect(status().isOk());
 
-    @Test
-    void patch_approve_setsStatusActive() throws Exception {
-        User customer = createCustomer("usr-approve-customer@test.inholland.nl");
-        createProfile(customer, "100000005");
-        User employee = createEmployee("usr-approve-employee@test.inholland.nl");
+            // Activation must create exactly one CHECKING and one SAVINGS account for the
+            // customer.
+            List<Account> accounts = accountRepository.findByUser_Id(customer.getId(), Pageable.unpaged()).getContent();
+            long checkingCount = accounts.stream().filter(a -> a.getType() == AccountType.CHECKING).count();
+            long savingsCount = accounts.stream().filter(a -> a.getType() == AccountType.SAVINGS).count();
+            assertEquals(1, checkingCount, "Expected 1 CHECKING account");
+            assertEquals(1, savingsCount, "Expected 1 SAVINGS account");
+            accounts.forEach(a -> assertEquals(AccountStatus.ACTIVE, a.getStatus()));
+        }
 
-        Map<String, Object> request = new HashMap<>();
-        request.put("status", "ACTIVE");
-        request.put("absoluteTransferLimit", "1000.00");
-        request.put("dailyTransferLimit", "500.00");
+        @Test
+        void patch_invalidPhone_returns400() throws Exception {
+            User customer = createCustomer("usr-invalid-phone@test.inholland.nl");
+            createProfile(customer, "100000007");
+            User employee = createEmployee("usr-invalid-phone-emp@test.inholland.nl");
 
-        mockMvc.perform(patch("/users/{id}", customer.getId())
-                        .header("Authorization", bearerToken(employee))
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.status").value("ACTIVE"));
-    }
+            Map<String, Object> request = new HashMap<>();
+            request.put("phoneNumber", "not-a-phone");
 
+            mockMvc.perform(patch("/users/{id}", customer.getId())
+                    .header("Authorization", bearerToken(employee))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(objectMapper.writeValueAsString(request)))
+                    .andExpect(status().isBadRequest());
+        }
 
+        @Test
+        void patch_negativeLimit_returns400() throws Exception {
+            User customer = createCustomer("usr-neg-limit@test.inholland.nl");
+            createProfile(customer, "100000008");
+            User employee = createEmployee("usr-neg-limit-emp@test.inholland.nl");
 
-    @Test
-    void patch_approve_provisionsTwoAccounts() throws Exception {
-        User customer = createCustomer("usr-accounts-customer@test.inholland.nl");
-        createProfile(customer, "100000006");
-        User employee = createEmployee("usr-accounts-employee@test.inholland.nl");
+            Map<String, Object> request = new HashMap<>();
+            request.put("absoluteTransferLimit", "-50.00");
 
-        Map<String, Object> request = new HashMap<>();
-        request.put("status", "ACTIVE");
-        request.put("absoluteTransferLimit", "1000.00");
-        request.put("dailyTransferLimit", "500.00");
-
-        mockMvc.perform(patch("/users/{id}", customer.getId())
-                        .header("Authorization", bearerToken(employee))
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isOk());
-
-        // Activation must create exactly one CHECKING and one SAVINGS account for the customer.
-        List<Account> accounts = accountRepository.findByUser_Id(customer.getId(), Pageable.unpaged()).getContent();
-        long checkingCount = accounts.stream().filter(a -> a.getType() == AccountType.CHECKING).count();
-        long savingsCount  = accounts.stream().filter(a -> a.getType() == AccountType.SAVINGS).count();
-        assertEquals(1, checkingCount, "Expected 1 CHECKING account");
-        assertEquals(1, savingsCount,  "Expected 1 SAVINGS account");
-        accounts.forEach(a -> assertEquals(AccountStatus.ACTIVE, a.getStatus()));
-    }
-
-
-
-    @Test
-    void patch_invalidPhone_returns400() throws Exception {
-        User customer = createCustomer("usr-invalid-phone@test.inholland.nl");
-        createProfile(customer, "100000007");
-        User employee = createEmployee("usr-invalid-phone-emp@test.inholland.nl");
-
-        Map<String, Object> request = new HashMap<>();
-        request.put("phoneNumber", "not-a-phone");
-
-        mockMvc.perform(patch("/users/{id}", customer.getId())
-                        .header("Authorization", bearerToken(employee))
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isBadRequest());
-    }
-
-
-
-    @Test
-    void patch_negativeLimit_returns400() throws Exception {
-        User customer = createCustomer("usr-neg-limit@test.inholland.nl");
-        createProfile(customer, "100000008");
-        User employee = createEmployee("usr-neg-limit-emp@test.inholland.nl");
-
-        Map<String, Object> request = new HashMap<>();
-        request.put("absoluteTransferLimit", "-50.00");
-
-        mockMvc.perform(patch("/users/{id}", customer.getId())
-                        .header("Authorization", bearerToken(employee))
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isBadRequest());
-    }
+            mockMvc.perform(patch("/users/{id}", customer.getId())
+                    .header("Authorization", bearerToken(employee))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(objectMapper.writeValueAsString(request)))
+                    .andExpect(status().isBadRequest());
+        }
 
     }
 }

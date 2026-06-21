@@ -30,8 +30,7 @@ public class GlobalExceptionHandler {
             fieldErrors.put(fieldError.getField(), fieldError.getDefaultMessage());
         }
 
-        ResponseEntity<Map<String, Object>> response =
-                buildErrorResponse(HttpStatus.BAD_REQUEST, "Validation failed");
+        ResponseEntity<Map<String, Object>> response = buildErrorResponse(HttpStatus.BAD_REQUEST, "Validation failed");
         if (response.getBody() != null) {
             response.getBody().put("fieldErrors", fieldErrors);
         }
@@ -48,7 +47,7 @@ public class GlobalExceptionHandler {
         return buildErrorResponse(HttpStatus.BAD_REQUEST, ex.getMessage());
     }
 
-    @ExceptionHandler({IllegalArgumentException.class, MissingServletRequestParameterException.class})
+    @ExceptionHandler({ IllegalArgumentException.class, MissingServletRequestParameterException.class })
     public ResponseEntity<Map<String, Object>> handleIllegalArgument(Exception ex) {
         return buildErrorResponse(HttpStatus.BAD_REQUEST, ex.getMessage());
     }
@@ -66,6 +65,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Map<String, Object>> handleGeneric(Exception ex) {
+        ex.printStackTrace();
         return buildErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR, "Unexpected error occurred");
     }
 
