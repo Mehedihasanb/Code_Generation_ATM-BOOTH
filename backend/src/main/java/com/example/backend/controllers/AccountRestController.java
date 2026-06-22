@@ -44,6 +44,7 @@ public class AccountRestController {
         return employeePage(accounts.getAll(filters, page));
     }
 
+    // Employee updates limits on an account (minimum balance + daily transfer cap)
     @PatchMapping("/{iban}")
     @PreAuthorize("hasRole('EMPLOYEE')")
     public EmployeeAccountResponse applyUpdate(

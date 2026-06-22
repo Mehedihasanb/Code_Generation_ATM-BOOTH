@@ -18,6 +18,7 @@ const form = reactive<LoginForm>({
 	password: '',
 });
 
+// Log in with normal banking credentials, then go to ATM home (or redirect target)
 async function submit() {
 	try {
 		await auth.login({

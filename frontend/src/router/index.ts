@@ -155,14 +155,14 @@ router.beforeEach((to) => {
 		}
 	}
 
-	// Block ATM pages without approved customer JWT
+	// Withdraw/deposit need an approved customer JWT and send others to ATM login
 	if (to.meta.requiresAtmApprovedCustomer) {
 		if (!token || !isApprovedCustomer) {
 			return { path: '/atm/login', query: { redirect: to.fullPath } };
 		}
 	}
 
-	// Already logged in at ATM? Skip login page and go straight to home
+	// Already logged in? Skip ATM login and go straight to the menu
 	if (to.path === '/atm/login' && token && isApprovedCustomer) {
 		return '/atm/home';
 	}

@@ -68,6 +68,7 @@ public class AccountService {
                 .orElseThrow(() -> new ResourceNotFoundException("No account for IBAN " + iban));
     }
 
+    // Validate limits, apply changes to the account, then save
     @Transactional
     public Account updateAccount(String iban, AccountUpdateRequest request) {
         rules.validateLimits(request.getMinimumBalanceLimit(), request.getDailyTransferLimit());

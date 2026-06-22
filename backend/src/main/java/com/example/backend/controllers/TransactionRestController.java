@@ -57,6 +57,7 @@ public class TransactionRestController {
         return toDto(transaction);
     }
 
+    // One endpoint for transfers, deposits, and withdrawals — type in the body decides the flow
     @PostMapping
     @PreAuthorize("hasRole('EMPLOYEE') or (hasRole('CUSTOMER') and @customerSecurity.isActiveCustomer(authentication))")
     @ResponseStatus(HttpStatus.CREATED)

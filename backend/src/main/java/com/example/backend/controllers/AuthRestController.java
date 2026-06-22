@@ -38,6 +38,7 @@ public class AuthRestController {
         return toUser.toResponse(created);
     }
 
+    // Same login endpoint as online banking after ATM uses it too and gets a JWT back
     @PostMapping("/login")
     public LoginResponse signIn(@Valid @RequestBody LoginRequest body) {
         User user = auth.login(body.email(), body.password());

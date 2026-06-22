@@ -18,6 +18,7 @@ const summary = ref<AccountSummary | null>(null);
 const loading = ref(true);
 const error = ref<string | null>(null);
 
+// Load accounts and balances for the ATM menu after login
 async function loadAccounts() {
 	loading.value = true;
 	error.value = null;
@@ -40,6 +41,7 @@ async function loadAccounts() {
 	}
 }
 
+// End ATM session and return to the login screen
 function logout() {
 	auth.logout();
 	router.push('/atm/login');
