@@ -31,13 +31,13 @@ public class TransactionRules {
         validateOutgoingLimits(fromAccount, outgoingToday, request.amount());
     }
 
-    // Deposit only needs a valid, active target account → validateDeposit()
+    // Deposit only needs a valid, active target account
     public void validateDeposit(TransactionCreateRequest request, Account toAccount) {
         requireIban(request.toIban(), "Deposit transactions require a destination IBAN");
         requireActive(toAccount, "Destination");
     }
 
-    // Withdraw must be from your own account and stay within min balance + daily limit → validateWithdrawal()
+    // Withdraw must be from your own account and stay within min balance + daily limit
     public void validateWithdrawal(TransactionCreateRequest request,
                                    Account fromAccount,
                                    User initiatedBy,
@@ -91,7 +91,7 @@ public class TransactionRules {
         }
     }
 
-    // Balance after withdraw/transfer cannot go below the employee-set minimum → validateMinimumBalanceLimit()
+    // Balance after withdraw/transfer cannot go below the employee-set minimum
     public void validateMinimumBalanceLimit(Account from, BigDecimal amount) {
         BigDecimal balanceAfter = from.getBalance().subtract(amount);
         if (balanceAfter.compareTo(from.getMinimumBalanceLimit()) < 0) {
@@ -100,7 +100,7 @@ public class TransactionRules {
         }
     }
 
-    // Total outgoing today (transfers + withdrawals) cannot exceed daily cap → validateDailyLimit()
+    // Total outgoing today (transfers + withdrawals) cannot exceed daily cap
     public void validateDailyLimit(Account from, BigDecimal outgoingToday, BigDecimal amount) {
         if (outgoingToday.add(amount).compareTo(from.getDailyTransferLimit()) > 0) {
             throw new BadRequestException(
