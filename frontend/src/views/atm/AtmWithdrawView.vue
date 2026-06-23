@@ -2,9 +2,8 @@
 // ATM withdraw — submits POST /transactions; rules enforced by the backend.
 import { computed, onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
-import { authorizedFetch } from '@/composables/useAuthorizedFetch';
 import { fetchMyAccounts } from '@/composables/useMyAccounts';
-import { parseApiErrorMessage } from '@/utils/apiError';
+import { submitAtmWithdrawal } from '@/composables/useAtmTransactions';
 type AccountSummary = {
 	customerName: string;
 	combinedBalance: number;
@@ -55,21 +54,7 @@ async function submitWithdraw() {
 	success.value = null;
 
 	try {
-		const body: { amount: number; fromIban: string; type: string } = {
-			amount: Number(amount.value),
-			fromIban: selectedIban.value,
-			type: 'WITHDRAWAL',
-		};
-		const response = await authorizedFetch('/transactions', {
-			method: 'POST',
-			body: JSON.stringify(body),
-		});
-
-		if (!response.ok) {
-			const message = await response.text();
-			throw new Error(parseApiErrorMessage(message, `Withdrawal failed (${response.status})`));
-		}
-		const result = await response.json();
+		const result = await submitAtmWithdrawal(selectedIban.value, Number(amount.value));
 		success.value = `Withdrawal successful. Dispensed €${Number(result.amount).toFixed(2)}.`;
 		amount.value = null;
 		await loadAccounts();

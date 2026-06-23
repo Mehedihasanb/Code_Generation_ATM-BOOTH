@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted, watch } from 'vue';
 import { useRoute } from 'vue-router';
-import { authorizedFetch } from '@/composables/useAuthorizedFetch';
 import { fetchMyAccounts as loadMyAccounts } from '@/composables/useMyAccounts';
+import { fetchCustomerTransactions } from '@/composables/useCustomerTransactions';
 
 const route = useRoute();
 
@@ -54,34 +54,10 @@ const fetchTransactions = async (pageIndex: number) => {
     error.value = null;
 
     try {
-        // Build the base URL
-        let url = `/transactions?accountIban=${selectedIban.value}&page=${pageIndex}&size=10`;
-        
-        // Append filters if they have been filled in
-        if (filters.startDate) url += `&startDate=${filters.startDate}`;
-        if (filters.endDate) url += `&endDate=${filters.endDate}`;
-        if (filters.amount) {
-            url += `&amount=${filters.amount}&amountOperator=${filters.amountOperator}`;
-        }
-        if (filters.counterpartIban) {
-            const compactIban = filters.counterpartIban.replace(/\s/g, '').toUpperCase();
-            url += `&counterpartIban=${encodeURIComponent(compactIban)}`;
-        }
-
-        const response = await authorizedFetch(url);
-        if (!response.ok) throw new Error("Failed to load transactions.");
-        
-        const pageData = await response.json();
-        
-        transactions.value = (pageData.content || []).map((tx: any) => ({
-            ...tx,
-            transactionId: tx.id,
-            type: tx.toIban === selectedIban.value ? 'INCOMING' : 'OUTGOING',
-            counterpartIban: tx.toIban === selectedIban.value ? tx.fromIban : tx.toIban,
-        }));
-        currentPage.value = pageData.number;   
+        const pageData = await fetchCustomerTransactions(selectedIban.value, pageIndex, filters);
+        transactions.value = pageData.transactions;
+        currentPage.value = pageData.page;
         totalPages.value = pageData.totalPages;
-
     } catch (err) {
         error.value = err instanceof Error ? err.message : String(err);
     } finally {

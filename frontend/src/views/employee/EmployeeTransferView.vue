@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import { reactive, ref, onMounted, computed } from 'vue';
-import { authorizedFetch } from '@/composables/useAuthorizedFetch';
+import {
+    fetchCheckingAccountOptions,
+    submitEmployeeTransfer,
+} from '@/composables/useEmployeeTransfer';
 
 const checkingAccounts = ref<any[]>([]);
 
@@ -36,22 +39,7 @@ const filteredToAccounts = computed(() => {
 
 const fetchCheckingAccounts = async () => {
     try {
-        const [usersResponse, accountsResponse] = await Promise.all([
-            authorizedFetch('/users?size=500'),
-            authorizedFetch('/accounts?type=CHECKING&size=500'),
-        ]);
-        if (!usersResponse.ok || !accountsResponse.ok) throw new Error('Failed to load account list.');
-
-        const usersData = await usersResponse.json();
-        const accountsData = await accountsResponse.json();
-        const nameByUserId = new Map<number, string>(
-            (usersData.content || []).map((user: any) => [user.id, `${user.firstName} ${user.lastName}`])
-        );
-
-        checkingAccounts.value = (accountsData.content || []).map((acc: any) => ({
-            iban: acc.iban,
-            ownerName: nameByUserId.get(acc.userId) ?? 'Unknown',
-        }));
+        checkingAccounts.value = await fetchCheckingAccountOptions();
     } catch (err) {
         error.value = 'Warning: Could not load the accounts. Please refresh the page.';
     }
@@ -75,28 +63,12 @@ const submitTransfer = async () => {
     successMessage.value = null;
 
     try {
-        const response = await authorizedFetch('/transactions', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                fromIban: form.fromIban,
-                toIban: form.toIban,
-                amount: parseFloat(form.amount),
-                type: 'TRANSFER',
-                description: form.description.trim()
-            })
+        await submitEmployeeTransfer({
+            fromIban: form.fromIban,
+            toIban: form.toIban,
+            amount: parseFloat(form.amount),
+            description: form.description.trim(),
         });
-
-        if (!response.ok) {
-            let errorMessage = "Transfer failed.";
-            try {
-                const errorData = await response.json();
-                errorMessage = errorData.message || errorMessage;
-            } catch (e) {
-                errorMessage = `Error: ${response.status} ${response.statusText}`;
-            }
-            throw new Error(errorMessage);
-        }
         successMessage.value = `Successfully transferred €${parseFloat(form.amount).toFixed(2)} from ${form.fromIban} to ${form.toIban}.`;
         
         // Reset the form and search bars
