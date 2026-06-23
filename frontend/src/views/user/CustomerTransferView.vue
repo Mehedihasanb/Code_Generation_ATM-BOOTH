@@ -1,13 +1,14 @@
 <script setup lang="ts">
 import { ref, onMounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
+import { authorizedFetch } from '@/composables/useAuthorizedFetch';
 import { fetchMyAccounts as loadMyAccounts } from '@/composables/useMyAccounts';
-import {
-    type TransferTarget,
-    normalizeSearchQuery,
-    searchTransferTargets,
-    submitCustomerTransfer,
-} from '@/composables/useCustomerTransfer';
+
+type TransferTarget = {
+    iban: string;
+    firstName: string;
+    lastName: string;
+};
 
 const router = useRouter();
 const myAccounts = ref<any[]>([]);
@@ -28,6 +29,39 @@ const selectedRecipient = ref<TransferTarget | null>(null);
 
 let searchTimer: ReturnType<typeof setTimeout> | null = null;
 let latestSearchId = 0;
+
+function looksLikeIbanQuery(query: string): boolean {
+    const compact = query.replace(/\s/g, '').toUpperCase();
+    if (compact.length < 2 || !/^[A-Z0-9]+$/.test(compact)) {
+        return false;
+    }
+    return /^[A-Z]{2}$/.test(compact) || compact.startsWith('NL') || /\d/.test(compact);
+}
+
+function normalizeSearchQuery(value: string): string {
+    const collapsed = value.replace(/\s+/g, ' ').trim();
+    if (looksLikeIbanQuery(collapsed)) {
+        return collapsed.replace(/\s/g, '').toUpperCase();
+    }
+    return collapsed;
+}
+
+function sortRecipientsForQuery(query: string, results: TransferTarget[]): TransferTarget[] {
+    if (!looksLikeIbanQuery(query)) {
+        return results;
+    }
+    const needle = query.toLowerCase();
+    return [...results].sort((a, b) => {
+        const aIban = a.iban.toLowerCase();
+        const bIban = b.iban.toLowerCase();
+        const aStarts = aIban.startsWith(needle) ? 0 : 1;
+        const bStarts = bIban.startsWith(needle) ? 0 : 1;
+        if (aStarts !== bStarts) {
+            return aStarts - bStarts;
+        }
+        return aIban.localeCompare(bIban);
+    });
+}
 
 function recipientLabel(target: TransferTarget): string {
     return `${target.firstName} ${target.lastName}`;
@@ -54,7 +88,44 @@ const fetchRecipients = async (query: string) => {
     error.value = null;
 
     try {
-        searchResults.value = await searchTransferTargets(query);
+        const pageSize = looksLikeIbanQuery(query) ? 50 : 20;
+        const response = await authorizedFetch(
+            `/accounts/transfer-targets?name=${encodeURIComponent(query)}&size=${pageSize}`
+        );
+        if (!response.ok) throw new Error('Failed to search transfer targets.');
+
+        const data = await response.json();
+        if (searchId !== latestSearchId) {
+            return;
+        }
+
+        let results: TransferTarget[] = data.content || [];
+
+        if (results.length === 0 && query.includes(' ')) {
+            const parts = query.split(/\s+/).filter(Boolean);
+            const firstNameQuery = parts[0];
+            const remainder = parts.slice(1).join(' ').toLowerCase();
+
+            const fallbackResponse = await authorizedFetch(
+                `/accounts/transfer-targets?name=${encodeURIComponent(firstNameQuery)}&size=20`
+            );
+            if (searchId !== latestSearchId) {
+                return;
+            }
+            if (fallbackResponse.ok) {
+                const fallbackData = await fallbackResponse.json();
+                results = (fallbackData.content || []).filter((target: TransferTarget) => {
+                    const fullName = `${target.firstName} ${target.lastName}`.toLowerCase();
+                    return (
+                        fullName.includes(remainder) ||
+                        target.lastName.toLowerCase().includes(remainder) ||
+                        target.iban.toLowerCase().includes(remainder)
+                    );
+                });
+            }
+        }
+
+        searchResults.value = sortRecipientsForQuery(query, results);
         showRecipientDropdown.value = true;
     } catch (err) {
         if (searchId !== latestSearchId) {
@@ -149,12 +220,27 @@ const submitTransfer = async () => {
     submitting.value = true;
 
     try {
-        await submitCustomerTransfer({
-            fromIban: fromIban.value,
-            toIban: toIban.value,
-            amount: amount.value,
-            description: description.value,
+        const response = await authorizedFetch('/transactions', {
+            method: 'POST',
+            body: JSON.stringify({
+                fromIban: fromIban.value,
+                toIban: toIban.value,
+                amount: amount.value,
+                type: 'TRANSFER',
+                description: description.value || 'Transfer',
+            }),
         });
+
+        if (!response.ok) {
+            let errorMessage = 'Transfer failed.';
+            try {
+                const errorData = await response.json();
+                errorMessage = errorData.message || errorMessage;
+            } catch {
+                errorMessage = `Error: ${response.status} ${response.statusText}`;
+            }
+            throw new Error(errorMessage);
+        }
 
         successMessage.value = `Successfully transferred €${amount.value} to ${toIban.value}!`;
 

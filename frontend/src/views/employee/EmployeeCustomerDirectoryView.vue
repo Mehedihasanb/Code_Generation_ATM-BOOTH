@@ -1,12 +1,6 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue';
-import {
-    fetchActiveCustomers,
-    searchActiveCustomers,
-    loadCustomerDetailPage,
-    fetchEmployeeAccounts,
-    updateAllAccountLimits,
-} from '@/composables/useCustomerDirectory';
+import { authorizedFetch } from '@/composables/useAuthorizedFetch';
 
 const searchQuery = ref('');
 const customerList = ref<any[]>([]);
@@ -37,11 +31,15 @@ const loadAllCustomers = async (pageIndex: number = 0) => {
     isSearchMode.value = false;
 
     try {
-        const data = await fetchActiveCustomers(pageIndex);
-        customerList.value = data.customers;
-        listPage.value = data.page;
-        listTotalPages.value = data.totalPages;
-        listTotalElements.value = data.totalElements;
+        const params = new URLSearchParams({ page: String(pageIndex), size: '10', status: 'ACTIVE' });
+        const response = await authorizedFetch(`/users?${params.toString()}`);
+        if (!response.ok) throw new Error('Could not load customers.');
+
+        const data = await response.json();
+        customerList.value = data.content || [];
+        listPage.value = data.number ?? pageIndex;
+        listTotalPages.value = data.totalPages ?? 0;
+        listTotalElements.value = data.totalElements ?? customerList.value.length;
     } catch (err) {
         listError.value = err instanceof Error ? err.message : String(err);
         customerList.value = [];
@@ -63,11 +61,15 @@ const searchCustomers = async () => {
     isSearchMode.value = true;
 
     try {
-        const data = await searchActiveCustomers(query);
-        customerList.value = data.customers;
-        listPage.value = data.page;
-        listTotalPages.value = data.totalPages;
-        listTotalElements.value = data.totalElements;
+        const params = new URLSearchParams({ search: query, size: '50', status: 'ACTIVE' });
+        const response = await authorizedFetch(`/users?${params.toString()}`);
+        if (!response.ok) throw new Error('Search failed.');
+
+        const data = await response.json();
+        customerList.value = data.content || [];
+        listPage.value = 0;
+        listTotalPages.value = 1;
+        listTotalElements.value = customerList.value.length;
         if (customerList.value.length === 0) {
             listError.value = 'No customers found.';
         }
@@ -88,7 +90,10 @@ onMounted(() => {
 });
 
 const loadEmployeeAccounts = async (userId: number) => {
-    employeeAccounts.value = await fetchEmployeeAccounts(userId);
+    const response = await authorizedFetch(`/accounts?userId=${userId}&size=10`);
+    if (!response.ok) throw new Error('Could not load account limits.');
+    const data = await response.json();
+    employeeAccounts.value = data.content || [];
     if (employeeAccounts.value.length > 0) {
         minimumBalanceInput.value = Number(employeeAccounts.value[0].minimumBalanceLimit ?? 0);
         dailyLimitInput.value = Number(employeeAccounts.value[0].dailyTransferLimit ?? 0);
@@ -103,16 +108,22 @@ const viewUserHistory = async (user: any, pageIndex: number = 0) => {
     txError.value = null;
 
     try {
-        const detail = await loadCustomerDetailPage(user.id, pageIndex);
-        selectedUser.value = detail.user;
-        employeeAccounts.value = detail.accounts;
-        if (employeeAccounts.value.length > 0) {
-            minimumBalanceInput.value = Number(employeeAccounts.value[0].minimumBalanceLimit ?? 0);
-            dailyLimitInput.value = Number(employeeAccounts.value[0].dailyTransferLimit ?? 0);
-        }
-        transactions.value = detail.transactions;
-        currentPage.value = detail.page;
-        totalPages.value = detail.totalPages;
+        const detailResponse = await authorizedFetch(`/users/${user.id}`);
+        if (!detailResponse.ok) throw new Error('Failed to load customer detail.');
+        selectedUser.value = await detailResponse.json();
+
+        await loadEmployeeAccounts(user.id);
+
+        const response = await authorizedFetch(`/transactions?customerId=${user.id}&page=${pageIndex}&size=10`);
+        if (!response.ok) throw new Error('Failed to load user transactions.');
+
+        const pageData = await response.json();
+        transactions.value = (pageData.content || []).map((tx: any) => ({
+            ...tx,
+            transactionId: tx.id,
+        }));
+        currentPage.value = pageData.number;
+        totalPages.value = pageData.totalPages;
     } catch (err) {
         txError.value = err instanceof Error ? err.message : String(err);
     } finally {
@@ -136,10 +147,21 @@ const updateCustomerLimits = async () => {
     limitsSuccess.value = null;
 
     try {
-        await updateAllAccountLimits(employeeAccounts.value, {
+        const body = JSON.stringify({
             minimumBalanceLimit: Number(minimumBalanceInput.value),
             dailyTransferLimit: Number(dailyLimitInput.value),
         });
+
+        for (const account of employeeAccounts.value) {
+            const response = await authorizedFetch(`/accounts/${account.iban}`, {
+                method: 'PATCH',
+                body,
+            });
+            if (!response.ok) {
+                const message = await response.text();
+                throw new Error(message || `Update failed (${response.status})`);
+            }
+        }
 
         limitsSuccess.value = `Limits updated on ${employeeAccounts.value.length} account(s).`;
         await loadEmployeeAccounts(selectedUser.value.id);

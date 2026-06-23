@@ -1,10 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
-import {
-    fetchPendingCustomers,
-    approveCustomer,
-    denyCustomer,
-} from '@/composables/useServiceDeskApprovals';
+import { authorizedFetch } from '@/composables/useAuthorizedFetch';
 
 const pendingCustomers = ref<any[]>([]);
 const loading = ref(true);
@@ -13,11 +9,17 @@ const error = ref<string | null>(null);
 const selectedCustomer = ref<any | null>(null);
 const showModal = ref(false);
 
-const loadPendingCustomers = async () => {
+const fetchPendingCustomers = async () => {
     loading.value = true;
     error.value = null;
     try {
-        pendingCustomers.value = await fetchPendingCustomers();
+        const response = await authorizedFetch('/users?status=PENDING');
+
+        if (!response.ok) throw new Error("Failed to fetch pending customers.");
+
+        const pageData = await response.json();
+        pendingCustomers.value = pageData.content || pageData.items || pageData;
+
     } catch (err) {
         error.value = err instanceof Error ? err.message : String(err);
     } finally {
@@ -39,25 +41,40 @@ const submitApproval = async () => {
     if (!selectedCustomer.value) return;
 
     try {
-        await approveCustomer(selectedCustomer.value.id);
+        const response = await authorizedFetch(`/users/${selectedCustomer.value.id}`, {
+            method: 'PATCH',
+            body: JSON.stringify({
+                status: 'ACTIVE',
+            }),
+        });
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(errorText || `Approval failed (${response.status})`);
+        }
 
         alert(`Customer ${selectedCustomer.value.firstName} approved! Accounts generated.`);
         closeReviewModal();
-        await loadPendingCustomers();
+        await fetchPendingCustomers();
     } catch (err) {
         console.error(err);
         alert(`Failed to approve customer: ${err instanceof Error ? err.message : String(err)}`);
     }
 };
 
-const handleDenyCustomer = async (id: number) => {
+const denyCustomer = async (id: number) => {
     if (!confirm("Are you sure you want to DENY this application?")) return;
 
     try {
-        await denyCustomer(id);
+        const response = await authorizedFetch(`/users/${id}`, {
+            method: 'PATCH',
+            body: JSON.stringify({ status: 'CLOSED' }),
+        });
+
+        if (!response.ok) throw new Error("Denial failed.");
 
         alert("Customer application denied.");
-        await loadPendingCustomers();
+        await fetchPendingCustomers();
     } catch (err) {
         console.error(err);
         alert("Failed to deny customer.");
@@ -65,7 +82,7 @@ const handleDenyCustomer = async (id: number) => {
 };
 
 onMounted(() => {
-    loadPendingCustomers();
+    fetchPendingCustomers();
 });
 </script>
 
@@ -100,7 +117,7 @@ onMounted(() => {
                             <td data-label="BSN">{{ customer.bsn || customer.bsnNumber || 'N/A' }}</td>
                             <td data-label="Actions" class="action-cell">
                                 <button type="button" class="btn primary-btn" @click="openReviewModal(customer)">Review</button>
-                                <button type="button" class="btn danger-btn" @click="handleDenyCustomer(customer.id)">Deny</button>
+                                <button type="button" class="btn danger-btn" @click="denyCustomer(customer.id)">Deny</button>
                             </td>
                         </tr>
                     </tbody>

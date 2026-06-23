@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue';
-import { fetchSystemTransactions } from '@/composables/useEmployeeTransactions';
+import { authorizedFetch } from '@/composables/useAuthorizedFetch';
 
 const transactions = ref<any[]>([]);
 const currentPage = ref(0);
@@ -20,10 +20,39 @@ const fetchAllTransactions = async (pageIndex: number) => {
     error.value = null;
 
     try {
-        const pageData = await fetchSystemTransactions(pageIndex, filters);
-        transactions.value = pageData.transactions;
-        currentPage.value = pageData.page;
+        // Added: &sort=timestamp,desc forces Spring Boot to order by Date (newest first)
+        let url = `/transactions?page=${pageIndex}&size=10&sort=timestamp,desc`;
+        
+        // Append filters if they have been filled in
+        if (filters.startDate) url += `&startDate=${filters.startDate}`;
+        if (filters.endDate) url += `&endDate=${filters.endDate}`;
+        if (filters.amount) {
+            url += `&amount=${filters.amount}&amountOperator=${filters.amountOperator}`;
+        }
+        
+
+        const response = await authorizedFetch(url);
+        
+        if (!response.ok) {
+            let errorMessage = "Failed to load system transactions.";
+            try {
+                const errorData = await response.json();
+                errorMessage = errorData.message || errorMessage;
+            } catch (e) {
+                errorMessage = `Error: ${response.status} ${response.statusText}`;
+            }
+            throw new Error(errorMessage);
+        }
+        
+        const pageData = await response.json();
+        transactions.value = (pageData.content || []).map((tx: any) => ({
+            ...tx,
+            transactionId: tx.id,
+            initiatingUser: tx.initiatingUserEmail,
+        }));
+        currentPage.value = pageData.number;   
         totalPages.value = pageData.totalPages;
+
     } catch (err) {
         error.value = err instanceof Error ? err.message : String(err);
     } finally {

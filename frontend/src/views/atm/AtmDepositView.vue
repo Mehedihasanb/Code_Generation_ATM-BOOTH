@@ -2,8 +2,9 @@
 // ATM deposit — submits POST /transactions; rules enforced by the backend.
 import { computed, onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
+import { authorizedFetch } from '@/composables/useAuthorizedFetch';
+import { parseApiErrorMessage } from '@/utils/apiError';
 import { fetchMyAccounts } from '@/composables/useMyAccounts';
-import { submitAtmDeposit } from '@/composables/useAtmTransactions';
 
 type AccountSummary = {
 	customerName: string;
@@ -57,7 +58,22 @@ async function submitDeposit() {
 	success.value = null;
 
 	try {
-		const result = await submitAtmDeposit(selectedIban.value, Number(amount.value));
+		const body: { amount: number; toIban: string; type: string } = {
+			amount: Number(amount.value),
+			toIban: selectedIban.value,
+			type: 'DEPOSIT',
+		};
+		const response = await authorizedFetch('/transactions', {
+			method: 'POST',
+			body: JSON.stringify(body),
+		});
+
+		if (!response.ok) {
+			const message = await response.text();
+			throw new Error(parseApiErrorMessage(message, `Deposit failed (${response.status})`));
+		}
+
+		const result = await response.json();
 		success.value = `Deposit successful. Accepted €${Number(result.amount).toFixed(2)}.`;
 		amount.value = null;
 		await loadAccounts();
