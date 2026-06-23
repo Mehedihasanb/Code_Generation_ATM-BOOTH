@@ -3,7 +3,10 @@ package com.example.backend.dtos;
 import com.example.backend.entities.enums.AccountStatus;
 import com.example.backend.entities.enums.AccountType;
 
-
+/**
+ * Optional filters for {@code GET /accounts} (employee account search).
+ * Spring binds query parameters by property name, e.g. {@code ?type=CHECKING&name=Jane}.
+ */
 public class AccountQuery {
 
     private String iban;
