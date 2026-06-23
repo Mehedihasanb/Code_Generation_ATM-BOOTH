@@ -28,6 +28,7 @@ const selectedAccount = computed(() =>
 	accounts.value.find((account) => account.iban === selectedIban.value) ?? null
 );
 
+// Load accounts on open so the customer can pick where to deposit
 async function loadAccounts() {
 	loading.value = true;
 	error.value = null;
@@ -52,6 +53,7 @@ async function loadAccounts() {
 	}
 }
 
+// Send deposit to backend — we only pass amount and target account
 async function submitDeposit() {
 	submitting.value = true;
 	error.value = null;

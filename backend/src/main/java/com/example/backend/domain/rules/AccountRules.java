@@ -24,6 +24,7 @@ public class AccountRules {
         validateLimits(minimumBalanceLimit, dailyLimit);
     }
 
+    // Limits cannot be negative — reject before we save anything → validateLimits()
     public void validateLimits(BigDecimal minimumBalanceLimit, BigDecimal dailyLimit) {
         rejectIfNegative(minimumBalanceLimit, "minimumBalanceLimit");
         rejectIfNegative(dailyLimit, "dailyTransferLimit");

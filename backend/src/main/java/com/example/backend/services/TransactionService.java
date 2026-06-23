@@ -90,11 +90,13 @@ public class TransactionService {
             credit(toAccount, request.amount());
 
         } else if (type == TransactionType.DEPOSIT) {
+            // ATM deposit: credit the chosen account after basic checks
             Account toAccount = findAccount(request.toIban(), "Destination");
             rules.validateDeposit(request, toAccount);
             credit(toAccount, request.amount());
 
         } else if (type == TransactionType.WITHDRAWAL) {
+            // ATM withdraw: debit after ownership + limit checks (same rules as transfers out)
             Account fromAccount = findAccount(request.fromIban(), "Source");
             BigDecimal outgoingToday = computeOutgoingToday(fromAccount.getIban());
             rules.validateWithdrawal(request, fromAccount, initiatedBy, outgoingToday);

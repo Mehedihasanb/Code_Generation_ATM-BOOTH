@@ -19,6 +19,7 @@ const totalPages = ref(0);
 const loadingTx = ref(false);
 const txError = ref<string | null>(null);
 
+// Form fields for minimum balance and daily transfer limits
 const minimumBalanceInput = ref<number>(0);
 const dailyLimitInput = ref<number>(0);
 const limitsError = ref<string | null>(null);
@@ -89,6 +90,7 @@ onMounted(() => {
     loadAllCustomers(0);
 });
 
+// Load this customer's accounts and fill the limit inputs from the first account
 const loadEmployeeAccounts = async (userId: number) => {
     const response = await authorizedFetch(`/accounts?userId=${userId}&size=10`);
     if (!response.ok) throw new Error('Could not load account limits.');
@@ -139,6 +141,7 @@ const backToSearch = () => {
     limitsSuccess.value = null;
 };
 
+// Save new limits and PATCH each account; backend validates the values
 const updateCustomerLimits = async () => {
     if (!selectedUser.value || employeeAccounts.value.length === 0) return;
 

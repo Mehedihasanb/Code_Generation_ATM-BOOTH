@@ -26,6 +26,7 @@ const accounts = computed(() => summary.value?.accounts ?? []);
 const selectedAccount = computed(() =>
 	accounts.value.find((account) => account.iban === selectedIban.value) ?? null
 );
+// Load accounts on open so the customer can pick which one to withdraw from
 async function loadAccounts() {
 	loading.value = true;
 	error.value = null;
@@ -49,6 +50,7 @@ async function loadAccounts() {
 	}
 }
 
+// Send withdraw to backend — balance and limit checks happen server-side, not here
 async function submitWithdraw() {
 	submitting.value = true;
 	error.value = null;
