@@ -40,7 +40,6 @@ class CustomerServiceTest {
     @Mock
     private CustomerProfileRepository customerProfileRepository;
 
-    // mocked so we can check whether account creation was called
     @Mock
     private AccountService accountService;
 
@@ -67,7 +66,6 @@ class CustomerServiceTest {
         profile.setStatus(CustomerStatus.PENDING);
     }
 
-    // --- getUserById ---
 
     @Test
     void getUserById_returnsUserWhenFound() {
@@ -81,7 +79,6 @@ class CustomerServiceTest {
 
     @Test
     void getUserById_returnsNullWhenNotFound() {
-        // user doesn't exist
         when(userRepository.findById(99)).thenReturn(Optional.empty());
 
         User result = customerService.getUserById(99);
@@ -90,7 +87,6 @@ class CustomerServiceTest {
         verify(userRepository).findById(99);
     }
 
-    // --- getProfileByUserId ---
 
     @Test
     void getProfileByUserId_delegatesToRepository() {
@@ -102,7 +98,6 @@ class CustomerServiceTest {
         verify(customerProfileRepository).findByUser_Id(1);
     }
 
-    // --- getAllCustomers ---
 
     @Test
     void getAllCustomers_delegatesToRepository() {
@@ -117,7 +112,6 @@ class CustomerServiceTest {
         verify(userRepository).findCustomers(CustomerStatus.PENDING, "Alice", pageable);
     }
 
-    // --- updateCustomer ---
 
       @Test
       void updateCustomer_happyPath_updatesNameAndPhoneAndSavesProfile() {
@@ -132,10 +126,8 @@ class CustomerServiceTest {
          assertEquals("Bob", customer.getFirstName());
          assertEquals("Jones", customer.getLastName());
          assertEquals("0698765432", profile.getPhoneNumber());
-         // only the profile needs saving — user changes go through automatically in the transaction
          verify(customerProfileRepository).save(profile);
          verify(userRepository, never()).save(any());
-         // Status did not change to ACTIVE, so no accounts should be created.
          verify(accountService, never()).createAccountsForUser(any(), any(), any());
      }
 
@@ -145,14 +137,12 @@ class CustomerServiceTest {
           when(customerProfileRepository.findByUser_Id(1)).thenReturn(profile);
           when(customerProfileRepository.save(profile)).thenReturn(profile);
 
-         // Activating a PENDING customer triggers account creation with the provided limits.
          CustomerUpdateRequest request = new CustomerUpdateRequest(
                  CustomerStatus.ACTIVE, null, null, null,
                  new BigDecimal("1000.00"), new BigDecimal("5000.00"));
 
          customerService.updateCustomer(1, request);
 
-         // accounts should be created with the limits from the request
          verify(accountService).createAccountsForUser(
                  eq(customer), eq(new BigDecimal("1000.00")), eq(new BigDecimal("5000.00")));
      }
@@ -164,7 +154,6 @@ class CustomerServiceTest {
           when(customerProfileRepository.findByUser_Id(1)).thenReturn(profile);
           when(customerProfileRepository.save(profile)).thenReturn(profile);
 
-         // Setting status to ACTIVE when already ACTIVE should not trigger account creation.
          CustomerUpdateRequest request = new CustomerUpdateRequest(
                  CustomerStatus.ACTIVE, null, null, null, null, null);
 
@@ -180,7 +169,6 @@ class CustomerServiceTest {
          CustomerUpdateRequest request = new CustomerUpdateRequest(null, "Bob", null, null, null, null);
 
          assertThrows(ResourceNotFoundException.class, () -> customerService.updateCustomer(99, request));
-         // nothing should be saved if user not found
          verify(userRepository, never()).save(any());
          verify(customerProfileRepository, never()).save(any());
      }
@@ -213,13 +201,12 @@ class CustomerServiceTest {
           when(customerProfileRepository.findByUser_Id(1)).thenReturn(profile);
           when(customerProfileRepository.save(profile)).thenReturn(profile);
 
-         // Only firstName provided — lastName, phone, and status must remain unchanged.
          CustomerUpdateRequest request = new CustomerUpdateRequest(null, "UpdatedFirst", null, null, null, null);
          customerService.updateCustomer(1, request);
 
          assertEquals("UpdatedFirst", customer.getFirstName());
-         assertEquals("Smith", customer.getLastName());         // unchanged
-         assertEquals("0612345678", profile.getPhoneNumber());  // unchanged
-         assertEquals(CustomerStatus.PENDING, profile.getStatus()); // unchanged
+         assertEquals("Smith", customer.getLastName());         
+         assertEquals("0612345678", profile.getPhoneNumber());  
+         assertEquals(CustomerStatus.PENDING, profile.getStatus()); 
      }
 }

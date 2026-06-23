@@ -10,7 +10,6 @@ const listTotalElements = ref(0);
 const loadingList = ref(false);
 const listError = ref<string | null>(null);
 const isSearchMode = ref(false);
-const showClosed = ref(false);
 
 const selectedUser = ref<any | null>(null);
 const employeeAccounts = ref<any[]>([]);
@@ -32,12 +31,7 @@ const loadAllCustomers = async (pageIndex: number = 0) => {
     isSearchMode.value = false;
 
     try {
-        const params = new URLSearchParams({ page: String(pageIndex), size: '10' });
-        if (showClosed.value) {
-            params.set('status', 'CLOSED');
-        } else {
-            params.set('status', 'ACTIVE');
-        }
+        const params = new URLSearchParams({ page: String(pageIndex), size: '10', status: 'ACTIVE' });
         const response = await authorizedFetch(`/users?${params.toString()}`);
         if (!response.ok) throw new Error('Could not load customers.');
 
@@ -67,12 +61,7 @@ const searchCustomers = async () => {
     isSearchMode.value = true;
 
     try {
-        const params = new URLSearchParams({ search: query, size: '50' });
-        if (showClosed.value) {
-            params.set('status', 'CLOSED');
-        } else {
-            params.set('status', 'ACTIVE');
-        }
+        const params = new URLSearchParams({ search: query, size: '50', status: 'ACTIVE' });
         const response = await authorizedFetch(`/users?${params.toString()}`);
         if (!response.ok) throw new Error('Search failed.');
 
@@ -92,13 +81,6 @@ const searchCustomers = async () => {
 };
 
 const clearSearch = async () => {
-    searchQuery.value = '';
-    await loadAllCustomers(0);
-};
-
-const toggleClosedList = async () => {
-    showClosed.value = !showClosed.value;
-    selectedUser.value = null;
     searchQuery.value = '';
     await loadAllCustomers(0);
 };
@@ -218,14 +200,6 @@ const getTypeBadgeClass = (type: string) => {
         <section class="panel hero-section">
             <h1 class="headline">Customer Directory</h1>
             <p class="muted subtitle">View customers, search by name, and open transaction history.</p>
-            <button
-                type="button"
-                class="btn secondary-btn"
-                style="margin-top: 1rem;"
-                @click="toggleClosedList"
-                :disabled="loadingList">
-                {{ showClosed ? 'Show active customers' : 'Show closed customers' }}
-            </button>
         </section>
 
         <section class="panel page-panel-wide">
@@ -248,7 +222,7 @@ const getTypeBadgeClass = (type: string) => {
 
                 <div v-else-if="customerList.length > 0" class="table-container table-cards">
                     <p class="muted" style="margin-bottom: 1rem;">
-                        {{ showClosed ? 'Closed customers' : isSearchMode ? 'Search results' : 'Active customers' }} ({{ listTotalElements }} total)
+                        {{ isSearchMode ? 'Search results' : 'Active customers' }} ({{ listTotalElements }} total)
                     </p>
                     <table class="transaction-table responsive-table">
                         <thead>

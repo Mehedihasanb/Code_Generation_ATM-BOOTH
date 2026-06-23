@@ -130,7 +130,7 @@ class TransactionServiceTest {
                                 () -> transactionService.getAll(filters, Pageable.unpaged()));
 
                 assertEquals("Start date cannot be after end date", exception.getMessage());
-                verify(transactionRepository).findAll(Mockito.<Specification<Transaction>>any(),
+                verify(transactionRepository, never()).findAll(Mockito.<Specification<Transaction>>any(),
                                 eq(Pageable.unpaged()));
         }
 

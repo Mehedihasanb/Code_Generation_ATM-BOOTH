@@ -41,7 +41,7 @@ public class AccountRestController {
     public Page<EmployeeAccountResponse> listForEmployee(
             @ModelAttribute AccountQuery filters,
             @PageableDefault(size = 20) Pageable page) {
-        return employeePage(accounts.getAll(filters, page));
+        return employeePage(accounts.getAll(filters, page));    
     }
 
     @PatchMapping("/{iban}")

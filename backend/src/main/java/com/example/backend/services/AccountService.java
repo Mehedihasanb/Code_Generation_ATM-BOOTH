@@ -37,8 +37,7 @@ public class AccountService {
     }
 
     @Transactional
-    public List<Account> createAccountsForUser(User user, BigDecimal minimumBalanceLimit,
-                                               BigDecimal dailyTransferLimit) {
+    public List<Account> createAccountsForUser(User user, BigDecimal minimumBalanceLimit, BigDecimal dailyTransferLimit) {
         rules.requireLimitsForNewAccount(minimumBalanceLimit, dailyTransferLimit);
 
         Account checking = buildAccount(user, AccountType.CHECKING, minimumBalanceLimit, dailyTransferLimit);
@@ -87,8 +86,7 @@ public class AccountService {
         return accountRepository.save(account);
     }
 
-    private Account buildAccount(User user, AccountType type,
-                                 BigDecimal minimumBalanceLimit, BigDecimal dailyTransferLimit) {
+    private Account buildAccount(User user, AccountType type, BigDecimal minimumBalanceLimit, BigDecimal dailyTransferLimit) {
         return new Account(0, user, ibanGenerator.generate(), type,
                 BigDecimal.ZERO, minimumBalanceLimit, dailyTransferLimit,
                 AccountStatus.ACTIVE, LocalDateTime.now());

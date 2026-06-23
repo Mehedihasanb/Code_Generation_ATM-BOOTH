@@ -35,11 +35,9 @@ class AuthServiceTest {
     @Mock
     private CustomerProfileRepository customerProfileRepository;
 
-    // mocked to avoid running real BCrypt in a unit test
     @Mock
     private PasswordEncoder passwordEncoder;
 
-    // mocked so we don't need a real JWT secret
     @Mock
     private JwtUtil jwtUtil;
 
@@ -61,7 +59,6 @@ class AuthServiceTest {
         customer.setRole(UserRole.CUSTOMER);
     }
 
-    // --- register ---
 
     @Test
     void register_happyPath_savesUserAndProfile() {
@@ -78,7 +75,6 @@ class AuthServiceTest {
         verify(userRepository).findByEmail("new@example.com");
         verify(passwordEncoder).encode(RAW_PASSWORD);
         verify(userRepository).save(any(User.class));
-        // profile should also be saved during registration
         verify(customerProfileRepository).save(any(CustomerProfile.class));
     }
 
@@ -87,17 +83,14 @@ class AuthServiceTest {
         RegisterRequest request = new RegisterRequest(
                 "auth@example.com", RAW_PASSWORD, "Alice", "Smith", "123456789", "0612345678");
 
-        // this email is already registered
         when(userRepository.findByEmail("auth@example.com")).thenReturn(Optional.of(customer));
 
         assertThrows(IllegalArgumentException.class, () -> authService.register(request));
 
-        // nothing should be saved if email is a duplicate
         verify(userRepository, never()).save(any());
         verify(customerProfileRepository, never()).save(any());
     }
 
-    // --- login ---
 
     @Test
     void login_happyPath_returnsUser() {
@@ -114,7 +107,6 @@ class AuthServiceTest {
     @Test
     void login_withWrongPassword_throwsUnauthorized() {
         when(userRepository.findByEmail("auth@example.com")).thenReturn(Optional.of(customer));
-        // wrong password
         when(passwordEncoder.matches("WrongPassword1!", ENCODED_PASSWORD)).thenReturn(false);
 
         ResponseStatusException exception = assertThrows(ResponseStatusException.class,
@@ -131,11 +123,9 @@ class AuthServiceTest {
                 () -> authService.login("nobody@example.com", RAW_PASSWORD));
 
         assertEquals(401, exception.getStatusCode().value());
-        // should fail before even checking the password
         verify(passwordEncoder, never()).matches(any(), any());
     }
 
-    // --- generateToken ---
 
     @Test
     void generateToken_delegatesToJwtUtil() {
@@ -148,7 +138,6 @@ class AuthServiceTest {
         verify(jwtUtil).generateToken(customer);
     }
 
-    // --- getTokenExpirationMs ---
 
     @Test
     void getTokenExpirationMs_delegatesToJwtUtil() {
